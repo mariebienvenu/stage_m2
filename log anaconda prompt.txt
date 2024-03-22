@@ -1,0 +1,556 @@
+
+(base) C:\Users\Marie Bienvenu>pip install bpy opencv-python
+ERROR: Ignored the following versions that require a different python version: 2.82.1 Requires-Python >=3.7, <3.8
+ERROR: Could not find a version that satisfies the requirement bpy (from versions: none)
+ERROR: No matching distribution found for bpy
+
+(base) C:\Users\Marie Bienvenu>conda install python=3.7
+Channels:
+ - defaults
+Platform: win-64
+Collecting package metadata (repodata.json): done
+Solving environment: done
+
+## Package Plan ##
+
+  environment location: C:\Users\Marie Bienvenu\miniconda3
+
+  added / updated specs:
+    - python=3.7
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    boltons-23.0.0             |   py37haa95532_0         420 KB
+    brotli-python-1.0.9        |   py37hd77b12b_7         309 KB
+    brotlipy-0.7.0             |py37h2bbff1b_1003         337 KB
+    certifi-2022.12.7          |   py37haa95532_0         149 KB
+    cffi-1.15.1                |   py37h2bbff1b_3         236 KB
+    colorama-0.4.6             |   py37haa95532_0          32 KB
+    conda-23.1.0               |   py37haa95532_0         940 KB
+    conda-content-trust-0.1.3  |   py37haa95532_0          86 KB
+    conda-libmamba-solver-23.1.0|   py37haa95532_0          65 KB
+    conda-package-handling-2.0.2|   py37haa95532_0         286 KB
+    conda-package-streaming-0.7.0|   py37haa95532_0          27 KB
+    cryptography-39.0.1        |   py37h21b164f_0         1.0 MB
+    distro-1.5.0               |     pyhd3eb1b0_1          22 KB
+    flit-core-3.6.0            |     pyhd3eb1b0_0          42 KB
+    idna-3.4                   |   py37haa95532_0          92 KB
+    importlib-metadata-4.11.3  |   py37haa95532_0          40 KB
+    importlib_metadata-4.11.3  |       hd3eb1b0_0          12 KB
+    libarchive-3.6.2           |       h2033e3e_1         1.8 MB
+    libmamba-1.3.1             |       h214f63a_0         3.4 MB
+    libmambapy-1.3.1           |   py37h214f63a_0         408 KB
+    libssh2-1.10.0             |       hcd4344a_2         236 KB
+    menuinst-1.4.19            |   py37h59b6b97_0          94 KB
+    openssl-1.1.1w             |       h2bbff1b_0         5.5 MB
+    packaging-22.0             |   py37haa95532_0          67 KB
+    pip-22.3.1                 |   py37haa95532_0         2.7 MB
+    platformdirs-2.5.2         |   py37haa95532_0          24 KB
+    pluggy-1.0.0               |   py37haa95532_1          29 KB
+    pycosat-0.6.4              |   py37h2bbff1b_0          72 KB
+    pyopenssl-23.0.0           |   py37haa95532_0          97 KB
+    pysocks-1.7.1              |           py37_1          28 KB
+    python-3.7.16              |       h6244533_0        17.2 MB
+    requests-2.28.1            |   py37haa95532_0          99 KB
+    ruamel.yaml-0.17.21        |   py37h2bbff1b_0         173 KB
+    ruamel.yaml.clib-0.2.6     |   py37h2bbff1b_1          99 KB
+    setuptools-65.6.3          |   py37haa95532_0         1.1 MB
+    six-1.16.0                 |     pyhd3eb1b0_1          18 KB
+    toolz-0.12.0               |   py37haa95532_0         105 KB
+    tqdm-4.64.1                |   py37haa95532_0         143 KB
+    typing_extensions-4.4.0    |   py37haa95532_0          46 KB
+    urllib3-1.26.14            |   py37haa95532_0         192 KB
+    wheel-0.38.4               |   py37haa95532_0          82 KB
+    win_inet_pton-1.1.0        |   py37haa95532_0          35 KB
+    wincertstore-0.2           |   py37haa95532_2          15 KB
+    yaml-cpp-0.7.0             |       hd77b12b_1         1.8 MB
+    zipp-3.11.0                |   py37haa95532_0          20 KB
+    zstandard-0.19.0           |   py37h2bbff1b_0         339 KB
+    ------------------------------------------------------------
+                                           Total:        39.9 MB
+
+The following NEW packages will be INSTALLED:
+
+  brotlipy           pkgs/main/win-64::brotlipy-0.7.0-py37h2bbff1b_1003
+  flit-core          pkgs/main/noarch::flit-core-3.6.0-pyhd3eb1b0_0
+  importlib-metadata pkgs/main/win-64::importlib-metadata-4.11.3-py37haa95532_0
+  importlib_metadata pkgs/main/noarch::importlib_metadata-4.11.3-hd3eb1b0_0
+  pyopenssl          pkgs/main/win-64::pyopenssl-23.0.0-py37haa95532_0
+  ruamel.yaml.clib   pkgs/main/win-64::ruamel.yaml.clib-0.2.6-py37h2bbff1b_1
+  six                pkgs/main/noarch::six-1.16.0-pyhd3eb1b0_1
+  toolz              pkgs/main/win-64::toolz-0.12.0-py37haa95532_0
+  typing_extensions  pkgs/main/win-64::typing_extensions-4.4.0-py37haa95532_0
+  wincertstore       pkgs/main/win-64::wincertstore-0.2-py37haa95532_2
+  zipp               pkgs/main/win-64::zipp-3.11.0-py37haa95532_0
+
+The following packages will be REMOVED:
+
+  truststore-0.8.0-py312haa95532_0
+
+The following packages will be UPDATED:
+
+  pysocks                             1.7.1-py312haa95532_0 --> 1.7.1-py37_1
+
+The following packages will be SUPERSEDED by a higher-priority channel:
+
+  conda-libmamba-so~ pkgs/main/noarch::conda-libmamba-solv~ --> pkgs/main/win-64::conda-libmamba-solver-23.1.0-py37haa95532_0
+  distro             pkgs/main/win-64::distro-1.8.0-py312h~ --> pkgs/main/noarch::distro-1.5.0-pyhd3eb1b0_1
+
+The following packages will be DOWNGRADED:
+
+  boltons                            23.0.0-py312haa95532_0 --> 23.0.0-py37haa95532_0
+  brotli-python                       1.0.9-py312hd77b12b_7 --> 1.0.9-py37hd77b12b_7
+  certifi                          2024.2.2-py312haa95532_0 --> 2022.12.7-py37haa95532_0
+  cffi                               1.16.0-py312h2bbff1b_0 --> 1.15.1-py37h2bbff1b_3
+  colorama                            0.4.6-py312haa95532_0 --> 0.4.6-py37haa95532_0
+  conda                              24.1.2-py312haa95532_0 --> 23.1.0-py37haa95532_0
+  conda-content-tru~                  0.2.0-py312haa95532_0 --> 0.1.3-py37haa95532_0
+  conda-package-han~                  2.2.0-py312haa95532_0 --> 2.0.2-py37haa95532_0
+  conda-package-str~                  0.9.0-py312haa95532_0 --> 0.7.0-py37haa95532_0
+  cryptography                       41.0.7-py312h89fc84f_0 --> 39.0.1-py37h21b164f_0
+  idna                                  3.4-py312haa95532_0 --> 3.4-py37haa95532_0
+  libarchive                               3.6.2-hb62f4d4_2 --> 3.6.2-h2033e3e_1
+  libmamba                                 1.5.3-hcd6fe79_0 --> 1.3.1-h214f63a_0
+  libmambapy                          1.5.3-py312h77c03ed_0 --> 1.3.1-py37h214f63a_0
+  libssh2                                 1.10.0-he2ea4bf_2 --> 1.10.0-hcd4344a_2
+  menuinst                            2.0.2-py312hd77b12b_0 --> 1.4.19-py37h59b6b97_0
+  openssl                                 3.0.13-h2bbff1b_0 --> 1.1.1w-h2bbff1b_0
+  packaging                            23.1-py312haa95532_0 --> 22.0-py37haa95532_0
+  pip                                23.3.1-py312haa95532_0 --> 22.3.1-py37haa95532_0
+  platformdirs                       3.10.0-py312haa95532_0 --> 2.5.2-py37haa95532_0
+  pluggy                              1.0.0-py312haa95532_1 --> 1.0.0-py37haa95532_1
+  pycosat                             0.6.6-py312h2bbff1b_0 --> 0.6.4-py37h2bbff1b_0
+  python                                  3.12.1-h1d929f7_0 --> 3.7.16-h6244533_0
+  requests                           2.31.0-py312haa95532_1 --> 2.28.1-py37haa95532_0
+  ruamel.yaml                       0.17.21-py312h2bbff1b_0 --> 0.17.21-py37h2bbff1b_0
+  setuptools                         68.2.2-py312haa95532_0 --> 65.6.3-py37haa95532_0
+  tqdm                               4.65.0-py312hfc267ef_0 --> 4.64.1-py37haa95532_0
+  urllib3                             2.1.0-py312haa95532_1 --> 1.26.14-py37haa95532_0
+  wheel                              0.41.2-py312haa95532_0 --> 0.38.4-py37haa95532_0
+  win_inet_pton                       1.1.0-py312haa95532_0 --> 1.1.0-py37haa95532_0
+  yaml-cpp                                 0.8.0-hd77b12b_0 --> 0.7.0-hd77b12b_1
+  zstandard                          0.19.0-py312h2bbff1b_0 --> 0.19.0-py37h2bbff1b_0
+
+
+Proceed ([y]/n)? y
+
+
+Downloading and Extracting Packages:
+
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+
+(base) C:\Users\Marie Bienvenu>pip install opencv-python bpy
+Collecting opencv-python
+  Downloading opencv_python-4.9.0.80-cp37-abi3-win_amd64.whl (38.6 MB)
+     ---------------------------------------- 38.6/38.6 MB 50.4 MB/s eta 0:00:00
+Collecting bpy
+  Downloading bpy-2.82.1-cp37-cp37m-win_amd64.whl (105.7 MB)
+     ---------------------------------------- 105.7/105.7 MB 8.0 MB/s eta 0:00:00
+Collecting numpy>=1.17.0
+  Downloading numpy-1.21.6-cp37-cp37m-win_amd64.whl (14.0 MB)
+     ---------------------------------------- 14.0/14.0 MB 54.4 MB/s eta 0:00:00
+Installing collected packages: numpy, bpy, opencv-python
+Successfully installed bpy-2.82.1 numpy-1.21.6 opencv-python-4.9.0.80
+WARNING: There was an error checking the latest version of pip.
+
+(base) C:\Users\Marie Bienvenu>pip install plotly
+Collecting plotly
+  Downloading plotly-5.18.0-py3-none-any.whl (15.6 MB)
+     ---------------------------------------- 15.6/15.6 MB 50.1 MB/s eta 0:00:00
+Collecting tenacity>=6.2.0
+  Downloading tenacity-8.2.3-py3-none-any.whl (24 kB)
+Requirement already satisfied: packaging in c:\users\marie bienvenu\miniconda3\lib\site-packages (from plotly) (22.0)
+Installing collected packages: tenacity, plotly
+Successfully installed plotly-5.18.0 tenacity-8.2.3
+WARNING: There was an error checking the latest version of pip.
+
+(base) C:\Users\Marie Bienvenu>pip install pandas
+Collecting pandas
+  Downloading pandas-1.3.5-cp37-cp37m-win_amd64.whl (10.0 MB)
+     ---------------------------------------- 10.0/10.0 MB 53.3 MB/s eta 0:00:00
+Collecting pytz>=2017.3
+  Downloading pytz-2024.1-py2.py3-none-any.whl (505 kB)
+     ---------------------------------------- 505.5/505.5 kB ? eta 0:00:00
+Collecting python-dateutil>=2.7.3
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+     ---------------------------------------- 229.9/229.9 kB ? eta 0:00:00
+Requirement already satisfied: numpy>=1.17.3 in c:\users\marie bienvenu\miniconda3\lib\site-packages (from pandas) (1.21.6)
+Requirement already satisfied: six>=1.5 in c:\users\marie bienvenu\miniconda3\lib\site-packages (from python-dateutil>=2.7.3->pandas) (1.16.0)
+Installing collected packages: pytz, python-dateutil, pandas
+Successfully installed pandas-1.3.5 python-dateutil-2.9.0.post0 pytz-2024.1
+WARNING: There was an error checking the latest version of pip.
+
+(base) C:\Users\Marie Bienvenu>pip install ipywidgets
+Collecting ipywidgets
+  Downloading ipywidgets-8.1.2-py3-none-any.whl (139 kB)
+     ---------------------------------------- 139.4/139.4 kB 4.2 MB/s eta 0:00:00
+Collecting ipython>=6.1.0
+  Downloading ipython-7.34.0-py3-none-any.whl (793 kB)
+     ---------------------------------------- 793.8/793.8 kB 9.9 MB/s eta 0:00:00
+Collecting traitlets>=4.3.1
+  Downloading traitlets-5.9.0-py3-none-any.whl (117 kB)
+     ---------------------------------------- 117.4/117.4 kB 6.7 MB/s eta 0:00:00
+Collecting widgetsnbextension~=4.0.10
+  Downloading widgetsnbextension-4.0.10-py3-none-any.whl (2.3 MB)
+     ---------------------------------------- 2.3/2.3 MB 18.3 MB/s eta 0:00:00
+Collecting jupyterlab-widgets~=3.0.10
+  Downloading jupyterlab_widgets-3.0.10-py3-none-any.whl (215 kB)
+     ---------------------------------------- 215.0/215.0 kB ? eta 0:00:00
+Collecting comm>=0.1.3
+  Downloading comm-0.1.4-py3-none-any.whl (6.6 kB)
+Requirement already satisfied: colorama in c:\users\marie bienvenu\miniconda3\lib\site-packages (from ipython>=6.1.0->ipywidgets) (0.4.6)
+Requirement already satisfied: setuptools>=18.5 in c:\users\marie bienvenu\miniconda3\lib\site-packages (from ipython>=6.1.0->ipywidgets) (65.6.3)
+Collecting decorator
+  Downloading decorator-5.1.1-py3-none-any.whl (9.1 kB)
+Collecting jedi>=0.16
+  Downloading jedi-0.19.1-py2.py3-none-any.whl (1.6 MB)
+     ---------------------------------------- 1.6/1.6 MB 25.1 MB/s eta 0:00:00
+Collecting prompt-toolkit!=3.0.0,!=3.0.1,<3.1.0,>=2.0.0
+  Downloading prompt_toolkit-3.0.43-py3-none-any.whl (386 kB)
+     ---------------------------------------- 386.1/386.1 kB ? eta 0:00:00
+Collecting backcall
+  Downloading backcall-0.2.0-py2.py3-none-any.whl (11 kB)
+Collecting matplotlib-inline
+  Downloading matplotlib_inline-0.1.6-py3-none-any.whl (9.4 kB)
+Collecting pickleshare
+  Downloading pickleshare-0.7.5-py2.py3-none-any.whl (6.9 kB)
+Collecting pygments
+  Downloading pygments-2.17.2-py3-none-any.whl (1.2 MB)
+     ---------------------------------------- 1.2/1.2 MB 37.7 MB/s eta 0:00:00
+Collecting parso<0.9.0,>=0.8.3
+  Downloading parso-0.8.3-py2.py3-none-any.whl (100 kB)
+     ---------------------------------------- 100.8/100.8 kB 5.7 MB/s eta 0:00:00
+Collecting wcwidth
+  Downloading wcwidth-0.2.13-py2.py3-none-any.whl (34 kB)
+Installing collected packages: wcwidth, pickleshare, backcall, widgetsnbextension, traitlets, pygments, prompt-toolkit, parso, jupyterlab-widgets, decorator, matplotlib-inline, jedi, comm, ipython, ipywidgets
+Successfully installed backcall-0.2.0 comm-0.1.4 decorator-5.1.1 ipython-7.34.0 ipywidgets-8.1.2 jedi-0.19.1 jupyterlab-widgets-3.0.10 matplotlib-inline-0.1.6 parso-0.8.3 pickleshare-0.7.5 prompt-toolkit-3.0.43 pygments-2.17.2 traitlets-5.9.0 wcwidth-0.2.13 widgetsnbextension-4.0.10
+WARNING: There was an error checking the latest version of pip.
+
+(base) C:\Users\Marie Bienvenu>pip list
+Package                 Version
+----------------------- -----------
+archspec                0.2.1
+backcall                0.2.0
+boltons                 23.0.0
+bpy                     2.82.1
+Brotli                  1.0.9
+brotlipy                0.7.0
+certifi                 2022.12.7
+cffi                    1.15.1
+charset-normalizer      2.0.4
+colorama                0.4.6
+comm                    0.1.4
+conda                   23.1.0
+conda-content-trust     0.1.3
+conda-libmamba-solver   22.8.1
+conda-package-handling  2.0.2
+conda_package_streaming 0.7.0
+cryptography            39.0.1
+decorator               5.1.1
+distro                  1.5.0
+flit_core               3.6.0
+idna                    3.4
+importlib-metadata      4.11.3
+ipython                 7.34.0
+ipywidgets              8.1.2
+jedi                    0.19.1
+jsonpatch               1.32
+jsonpointer             2.1
+jupyterlab_widgets      3.0.10
+libmambapy              1.3.1
+matplotlib-inline       0.1.6
+menuinst                1.4.19
+numpy                   1.21.6
+opencv-python           4.9.0.80
+packaging               22.0
+pandas                  1.3.5
+parso                   0.8.3
+pickleshare             0.7.5
+pip                     22.3.1
+platformdirs            2.5.2
+plotly                  5.18.0
+pluggy                  1.0.0
+prompt-toolkit          3.0.43
+pycosat                 0.6.4
+pycparser               2.21
+Pygments                2.17.2
+pyOpenSSL               23.0.0
+PySocks                 1.7.1
+python-dateutil         2.9.0.post0
+pytz                    2024.1
+requests                2.28.1
+ruamel.yaml             0.17.21
+ruamel.yaml.clib        0.2.6
+setuptools              65.6.3
+six                     1.16.0
+tenacity                8.2.3
+toolz                   0.12.0
+tqdm                    4.64.1
+traitlets               5.9.0
+typing_extensions       4.4.0
+urllib3                 1.26.14
+wcwidth                 0.2.13
+wheel                   0.38.4
+widgetsnbextension      4.0.10
+win-inet-pton           1.1.0
+wincertstore            0.2
+zipp                    3.11.0
+zstandard               0.19.0
+WARNING: There was an error checking the latest version of pip.
+
+(base) C:\Users\Marie Bienvenu>pip install matplotlib
+Collecting matplotlib
+  Downloading matplotlib-3.5.3-cp37-cp37m-win_amd64.whl (7.2 MB)
+     ---------------------------------------- 7.2/7.2 MB 33.0 MB/s eta 0:00:00
+Requirement already satisfied: packaging>=20.0 in c:\users\marie bienvenu\miniconda3\lib\site-packages (from matplotlib) (22.0)
+Collecting pyparsing>=2.2.1
+  Downloading pyparsing-3.1.2-py3-none-any.whl (103 kB)
+     ---------------------------------------- 103.2/103.2 kB 5.8 MB/s eta 0:00:00
+Collecting cycler>=0.10
+  Downloading cycler-0.11.0-py3-none-any.whl (6.4 kB)
+Requirement already satisfied: numpy>=1.17 in c:\users\marie bienvenu\miniconda3\lib\site-packages (from matplotlib) (1.21.6)
+Collecting pillow>=6.2.0
+  Downloading Pillow-9.5.0-cp37-cp37m-win_amd64.whl (2.5 MB)
+     ---------------------------------------- 2.5/2.5 MB 40.8 MB/s eta 0:00:00
+Requirement already satisfied: python-dateutil>=2.7 in c:\users\marie bienvenu\miniconda3\lib\site-packages (from matplotlib) (2.9.0.post0)
+Collecting kiwisolver>=1.0.1
+  Downloading kiwisolver-1.4.5-cp37-cp37m-win_amd64.whl (55 kB)
+     ---------------------------------------- 55.8/55.8 kB 3.0 MB/s eta 0:00:00
+Collecting fonttools>=4.22.0
+  Downloading fonttools-4.38.0-py3-none-any.whl (965 kB)
+     ---------------------------------------- 965.4/965.4 kB 59.7 MB/s eta 0:00:00
+Requirement already satisfied: typing-extensions in c:\users\marie bienvenu\miniconda3\lib\site-packages (from kiwisolver>=1.0.1->matplotlib) (4.4.0)
+Requirement already satisfied: six>=1.5 in c:\users\marie bienvenu\miniconda3\lib\site-packages (from python-dateutil>=2.7->matplotlib) (1.16.0)
+Installing collected packages: pyparsing, pillow, kiwisolver, fonttools, cycler, matplotlib
+Successfully installed cycler-0.11.0 fonttools-4.38.0 kiwisolver-1.4.5 matplotlib-3.5.3 pillow-9.5.0 pyparsing-3.1.2
+WARNING: There was an error checking the latest version of pip.
+
+(base) C:\Users\Marie Bienvenu>pip install fake-bpy-module
+Collecting fake-bpy-module
+  Downloading fake_bpy_module-20231205-py3-none-any.whl (935 kB)
+     ---------------------------------------- 935.4/935.4 kB 20.1 MB/s eta 0:00:00
+Installing collected packages: fake-bpy-module
+Successfully installed fake-bpy-module-20231205
+WARNING: There was an error checking the latest version of pip.
+
+(base) C:\Users\Marie Bienvenu>pip uninstall fake-bpy-module
+Found existing installation: fake-bpy-module 20231205
+Uninstalling fake-bpy-module-20231205:
+  Would remove:
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\addon_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\animsys_refactor\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\aud\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bgl\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_app_override\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_app_template_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_console_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_i18n_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_keymap_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_math\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_operators\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_previews_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_rna_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_text_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_ui\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bl_ui_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\blend_render_info\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\blf\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bmesh\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bpy\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bpy_extras\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bpy_restrict_state\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bpy_types\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\console_python\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\console_shell\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\fake_bpy_module-20231205.dist-info\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\freestyle\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\gpu\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\gpu_extras\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\graphviz_export\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\idprop\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\imbuf\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\keyingsets_builtins\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\keyingsets_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\mathutils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\nodeitems_builtins\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\nodeitems_utils\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\rna_info\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\rna_keymap_ui\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\rna_prop_ui\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\rna_xml\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\sys_info\*
+Proceed (Y/n)? y
+  Successfully uninstalled fake-bpy-module-20231205
+
+(base) C:\Users\Marie Bienvenu>pip install debugpy
+Collecting debugpy
+  Downloading debugpy-1.7.0-cp37-cp37m-win_amd64.whl (5.0 MB)
+     ---------------------------------------- 5.0/5.0 MB 26.6 MB/s eta 0:00:00
+Installing collected packages: debugpy
+Successfully installed debugpy-1.7.0
+WARNING: There was an error checking the latest version of pip.
+
+(base) C:\Users\Marie Bienvenu>pip uninstall bpy
+Found existing installation: bpy 2.82.1
+Uninstalling bpy-2.82.1:
+  Would remove:
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\avcodec-58.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\avdevice-58.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\avformat-58.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\avutil-56.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\blenderpy\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\blendthumb.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bpy-2.82.1.dist-info\*
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\bpy.cp37-win_amd64.pyd
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\libsndfile-1.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\openal32.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\sdl2.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\swresample-3.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\swscale-5.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\tbbmalloc.dll
+    c:\users\marie bienvenu\miniconda3\lib\site-packages\tbbmalloc_proxy.dll
+    c:\users\marie bienvenu\miniconda3\scripts\bpy_post_install.exe
+    c:\users\marie bienvenu\miniconda3\scripts\bpy_pre_uninstall.exe
+Proceed (Y/n)? y
+  Successfully uninstalled bpy-2.82.1
+ERROR: Exception:
+Traceback (most recent call last):
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_internal\cli\base_command.py", line 160, in exc_logging_wrapper
+    status = run_func(*args)
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_internal\commands\uninstall.py", line 103, in run
+    uninstall_pathset.commit()
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_internal\req\req_uninstall.py", line 424, in commit
+    self._moved_paths.commit()
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_internal\req\req_uninstall.py", line 277, in commit
+    save_dir.cleanup()
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_internal\utils\temp_dir.py", line 173, in cleanup
+    rmtree(self._path)
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_vendor\tenacity\__init__.py", line 328, in wrapped_f
+    return self(f, *args, **kw)
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_vendor\tenacity\__init__.py", line 408, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_vendor\tenacity\__init__.py", line 364, in iter
+    raise retry_exc.reraise()
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_vendor\tenacity\__init__.py", line 197, in reraise
+    raise self.last_attempt.result()
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\concurrent\futures\_base.py", line 428, in result
+    return self.__get_result()
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\concurrent\futures\_base.py", line 384, in __get_result
+    raise self._exception
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_vendor\tenacity\__init__.py", line 411, in __call__
+    result = fn(*args, **kwargs)
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\site-packages\pip\_internal\utils\misc.py", line 128, in rmtree
+    shutil.rmtree(dir, ignore_errors=ignore_errors, onerror=rmtree_errorhandler)
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\shutil.py", line 516, in rmtree
+    return _rmtree_unsafe(path, onerror)
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\shutil.py", line 400, in _rmtree_unsafe
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "C:\Users\Marie Bienvenu\miniconda3\lib\shutil.py", line 398, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 5] Accès refusé: 'C:\\Users\\MARIEB~1\\AppData\\Local\\Temp\\pip-uninstall-anp70v9u\\avcodec-58.dll'
+
+(base) C:\Users\Marie Bienvenu>pip uninstall bpy
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+WARNING: Skipping bpy as it is not installed.
+
+(base) C:\Users\Marie Bienvenu>pip list
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+Package                 Version
+----------------------- -----------
+archspec                0.2.1
+backcall                0.2.0
+boltons                 23.0.0
+Brotli                  1.0.9
+brotlipy                0.7.0
+certifi                 2022.12.7
+cffi                    1.15.1
+charset-normalizer      2.0.4
+colorama                0.4.6
+comm                    0.1.4
+conda                   23.1.0
+conda-content-trust     0.1.3
+conda-libmamba-solver   22.8.1
+conda-package-handling  2.0.2
+conda_package_streaming 0.7.0
+cryptography            39.0.1
+cycler                  0.11.0
+debugpy                 1.7.0
+decorator               5.1.1
+distro                  1.5.0
+flit_core               3.6.0
+fonttools               4.38.0
+idna                    3.4
+importlib-metadata      4.11.3
+ipython                 7.34.0
+ipywidgets              8.1.2
+jedi                    0.19.1
+jsonpatch               1.32
+jsonpointer             2.1
+jupyterlab_widgets      3.0.10
+kiwisolver              1.4.5
+libmambapy              1.3.1
+matplotlib              3.5.3
+matplotlib-inline       0.1.6
+menuinst                1.4.19
+numpy                   1.21.6
+opencv-python           4.9.0.80
+packaging               22.0
+pandas                  1.3.5
+parso                   0.8.3
+pickleshare             0.7.5
+Pillow                  9.5.0
+pip                     22.3.1
+platformdirs            2.5.2
+plotly                  5.18.0
+pluggy                  1.0.0
+prompt-toolkit          3.0.43
+pycosat                 0.6.4
+pycparser               2.21
+Pygments                2.17.2
+pyOpenSSL               23.0.0
+pyparsing               3.1.2
+PySocks                 1.7.1
+python-dateutil         2.9.0.post0
+pytz                    2024.1
+requests                2.28.1
+ruamel.yaml             0.17.21
+ruamel.yaml.clib        0.2.6
+setuptools              65.6.3
+six                     1.16.0
+tenacity                8.2.3
+toolz                   0.12.0
+tqdm                    4.64.1
+traitlets               5.9.0
+typing_extensions       4.4.0
+urllib3                 1.26.14
+wcwidth                 0.2.13
+wheel                   0.38.4
+widgetsnbextension      4.0.10
+win-inet-pton           1.1.0
+wincertstore            0.2
+zipp                    3.11.0
+zstandard               0.19.0
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+WARNING: There was an error checking the latest version of pip.
+
+(base) C:\Users\Marie Bienvenu>pip install fake-bpy-module
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+Collecting fake-bpy-module
+  Using cached fake_bpy_module-20231205-py3-none-any.whl (935 kB)
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+Installing collected packages: fake-bpy-module
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+Successfully installed fake-bpy-module-20231205
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+WARNING: Ignoring invalid distribution -py (c:\users\marie bienvenu\miniconda3\lib\site-packages)
+WARNING: There was an error checking the latest version of pip.
+
+(base) C:\Users\Marie Bienvenu>

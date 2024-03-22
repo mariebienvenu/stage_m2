@@ -1,0 +1,17 @@
+SOURIS
+
+                                gesture position x  gesture position y
+location X                                0.972234            0.052896
+location Z                               -0.833935            0.034494
+rotation_euler Y                          0.972171            0.052747
+first derivative of location Z            0.012114            0.179109
+
+
+
+CLOSE_STARTUP
+
+                                         gesture position x  gesture position y  gesture speed x  gesture speed y
+location X                                         0.952480            0.770294        -0.069461        -0.036358
+location Z                                        -0.826376           -0.748546         0.101015         0.048459
+rotation_euler Y                                   0.952361            0.770045        -0.069480        -0.036470
+absolute first derivative of location Z           -0.124975           -0.087399        -0.025820        -0.095228

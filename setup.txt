@@ -1,0 +1,25 @@
+-> Install Blender
+checker la version de python en regardant la console dans l'onglet Scripting
+
+-> Install Miniconda
+Open Anaconda Prompt
+Il faut le même python que celui de blender ! (-> 3.10 pour moi)
+"conda create --name blender2 python=3.10 plotly matplotlib pandas
+"conda activate blender2
+"pip install fake-bpy-module opencv-python
+
+-> Install VSCode
+extension VSCode: Python (+Pylance +Debugger), Blender Dev (de Jacques Lucke)
+Sélectionner le bon python en bas à droite (celui de l'environnement blender2 !)
+Ctrl+Maj+P pour avoir les commandes VSCode. Blender:Start pour lancer Blender.
+
+Blender ne se lance qu'après avoir modifié les permissions en écriture de son dossier python pour les utilisateurs.
+
+Ctrl+Maj+P et Blender: Run Script pour exécuter dans le blender le python.
+
+Un add-on : il faut un fichier __init__.py avec des trucs dedans (quelques lignes, checker https://youtu.be/VOMb_zmVrtk?si=QQ6fRcFFIbWRVOap)
+puis mettre ça et les autres fichiers dans un .zip et la loader dans Blender par l'interface.
+
+Pour utiliser les packages miniconda (comme opencv) dans Blender: il faut ajouter au path le chemin de ces packages avant l'import.
+< sys.path.append("C:/Users/Marie Bienvenu/miniconda3/envs/blender2/Lib/site-packages") > (celui de l'environnement)
+

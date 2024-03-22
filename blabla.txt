@@ -1,0 +1,30 @@
+Deuxième semaine (11-03)
+Lundi  arrivée 9h40 - bossé sur python : gestion de vidéo, calcul d'oflow
+todo demain : ajouter les courbes de l'oflow, essayer de faire marcher l'API blender
+
+Mardi (TT): 9h - bossé sur python: courbes de l'oflow done, archi galère de faire marcher blender ? pb entre bpy (->tourne) et fake-bpy (autocompletion).
+ctrl maj P pour l'extension Blender Dev et lancer blender depuis vs code. Pas trouvé comment faire tourner blender sur mon python (miniconda) et pas le sien.
+
+Mercredi: 10h - vidéo sur le setup Blender + VSCode ; réinstallé tout pour que blender puisse être lancé via VSCode en ayant l'autocomplétion sur bpy. Ca marche ! Fix le problème des packages mininconda pas accessibles (hack avec le path). Reste à fix les imports relatifs (locaux), quelques pages d'ouvertes là dessus. Codé l'accès à l'animation d'un objet. Penser à link la bibli easybpy, ça a l'air pratique.
+
+Jeudi: 10h - 18h réorganisé le workspace. réfléchis à la structure de courbe. Mangé avec Marc ! Finis de lire monster mash (papier n°5). Bossé diapo hebdo. Fait diapo pour meeting d'équipe. Participé au meeting d'équipe (17h-18h).
+
+Vendredi: 10h - commencé à lire Layered Acting. Réu hebdo avec Damien et Pascal : very good. Continuer code. Bon rythme. Entretien avec Théo sur blender. Départ 17h (migraine)
+
+---------------------
+
+Troisième semaine (18-03)
+Lundi arrivée 9h40 - codé l'interface Curve, avec attributs secondaires. Ecrit code de test et vérifié : pb sur les attributs textuels.
+todo demain : coder l'import d'animation complète et tester. Update la méthode display pour mettre les handles et la bonne interpolation.
+
+Mardi (TT): 9h20 - codé l'import d'anim complète + tests. Structure Animation. Meilleur affichage (handles).
+todo demain : utiliser l'interpolation ? coder des premiers descripteurs de courbes.
+
+Mercredi : 10h-12h = visite KinétiX (Théo). Travaillent sur de la deep mocap.  Aprem (TT): codé la corrélation de courbes. Testé sur données synthétiques. Codé le resampling d'animation, testé. Reglé quelques bugs.
+
+Jeudi : 9h50 - 18h débuggage. Premiers résultats corrélation vidéo(intégrale x, intégrale y)-anim(trajectoires, rotations, première derivée). Meeting d'équipe : fait une slide.
+  faire slide pour meeting d'équipe ?
+  faire slides pour meeting de demain avec Damien ! (lire une publi ?)
+todo : penser à créer un git ? pour garder trace de mon évolution...
+
+Vendredi : 10h fait slides pour meeting avec Damien. Mangé à l'IUT. Talk de Dinesh Manocha (simulation physique en temps réel par DL).
