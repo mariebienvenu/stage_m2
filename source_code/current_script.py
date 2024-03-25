@@ -16,7 +16,7 @@ import app.optical_flow as optical_flow
 import app.maths_utils as m_utils
 import app.visualisation as vis
 
-data_path = 'C:/Users/Marie Bienvenu/WORKSPACE/irl_scenes/'
+data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
 VIDEO_NAME = '03-- initial videos/souris'

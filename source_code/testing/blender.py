@@ -3,7 +3,7 @@ import os
 
 def check_sys_path(
         packages_path = "C:/Users/Marie Bienvenu/miniconda3/envs/blender2/Lib/site-packages",
-        source_code_path = "C:/Users/Marie Bienvenu/WORKSPACE/source_code/"
+        source_code_path = "C:/Users/Marie Bienvenu/stage_m2/source_code/"
     ):
     
     if packages_path not in sys.path:

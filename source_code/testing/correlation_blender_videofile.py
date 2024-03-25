@@ -2,7 +2,7 @@ import os, sys
 
 def check_sys_path(
         packages_path = "C:/Users/Marie Bienvenu/miniconda3/envs/blender2/Lib/site-packages",
-        source_code_path = "C:/Users/Marie Bienvenu/WORKSPACE/source_code/"
+        source_code_path = "C:/Users/Marie Bienvenu/stage_m2/source_code/"
     ):
     if packages_path not in sys.path:
          sys.path.append(packages_path)  # removes package import errors
@@ -39,7 +39,7 @@ blender_filepath = bpy.data.filepath
 scene_path = '/'.join(blender_filepath.split('\\')[:-1])+'/'
 assert os.path.exists(scene_path), "Blender scene directory not found."
 
-data_path = 'C:/Users/Marie Bienvenu/WORKSPACE/irl_scenes/'
+data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
 VIDEO_NAME = '03-21 added light and glove/close_startup.mp4'
