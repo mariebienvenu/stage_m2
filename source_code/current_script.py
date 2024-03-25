@@ -3,23 +3,19 @@ import os
 import cv2
 import numpy as np
 
-import matplotlib.pyplot as plt
-
-import pandas as pd
-
 from tqdm import tqdm
-
-#import bpy
 
 from app.Video import Video
 import app.optical_flow as optical_flow
 import app.maths_utils as m_utils
 import app.visualisation as vis
 
+import plotly.graph_objects as go
+
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
-VIDEO_NAME = '03-- initial videos/souris'
+VIDEO_NAME = '03-11 initial videos/souris'
 video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 #video.play_frame_by_frame()
 
@@ -58,7 +54,7 @@ for index in range(oflow_len):
     magnitude_stds[index] = np.std(mag_values)
 
     angle_means[index] = np.mean(mag_values*ang_values)/magnitude_means[index]
-    angle_stds[index] = np.std(mag_values*ang_values)/magnitude_stds[index]
+    angle_stds[index] = np.std(ang_values) # following formula gives way too big values : np.std(mag_values*ang_values)/magnitude_stds[index]
 
     '''
     plt.figure()
@@ -69,7 +65,9 @@ for index in range(oflow_len):
     plt.close()
     '''
 
-vis.magnitude_angle(
+start, stop = optical_flow.get_crop(magnitude_means)
+
+fig = vis.magnitude_angle(
     magnitude_means,    
     magnitude_stds,
     angle_means,
@@ -79,12 +77,19 @@ vis.magnitude_angle(
     data_path
 )
 
+fig.add_vline(x=start)
+fig.add_vline(x=stop)
+fig.show()
+
+## Intégrale première : trajectoire
+
 position_y = m_utils.integrale3(magnitude_means*np.sin(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
 position_x = m_utils.integrale3(magnitude_means*np.cos(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
 
-import plotly.graph_objects as go
 
-fig = vis.add_curve(position_y, color='rgb(100,100,0)', name="Translation along Y axis")
-vis.add_curve(position_x, color='rgb(255,0,255)', name="Translation along X axis", fig=fig)
-fig.write_html(data_path+f"/{VIDEO_NAME}_trajectory.html")
-#fig.show() 
+fig2 = vis.add_curve(position_y, color='rgb(100,100,0)', name="Translation along Y axis")
+vis.add_curve(position_x, color='rgb(255,0,255)', name="Translation along X axis", fig=fig2)
+fig2.write_html(data_path+f"/{VIDEO_NAME}_trajectory.html")
+#fig2.show() 
+
+# TODO Quid d'un portrait de phase ?
