@@ -86,3 +86,7 @@ anim.display(handles=False, fig=figure, doShow=True)
 
 addition = empty_anim + anim + resampled_anim
 print(addition)
+
+resampled_anim.crop(start=50)
+resampled_anim.display(handles=False, doShow=True)
+print("New time range: ", [curve.time_range for curve in resampled_anim])

@@ -217,3 +217,7 @@ class Curve:
 
     def get_values(self):
         return self.get_attribute(Attributes_Name.value)
+    
+    def update_time_range(self):
+        times = self.get_attribute('time')
+        self.time_range = (np.min(times), np.max(times))
