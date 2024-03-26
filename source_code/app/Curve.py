@@ -236,6 +236,7 @@ class Curve:
         self.update_time_range()
 
     def get_derivatives(self):
+        ## TODO : c'est FAUX dans le cas d'un handle de type différent !!!
         dx = self.get_attribute(Attributes_Name.handle_right_x) - self.get_attribute(Attributes_Name.handle_left_x)
         dy = self.get_attribute(Attributes_Name.handle_right_y) - self.get_attribute(Attributes_Name.handle_left_y)
         return dy/dx

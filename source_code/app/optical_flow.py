@@ -49,6 +49,7 @@ def measure_oflow(magnitude, angle):
     }
 
 def get_crop(frame_times, magnitude_mean, threshold=2, padding_out=10, padding_in=3, patience=0):
+    ## TODO -- passer à un input de type curve ? et ajouter un constant=0 pour gérer des courbes qui plateaux à autre chose que 0
     start = padding_out
     stop = magnitude_mean.size-padding_out
     used_patience_left = 0
