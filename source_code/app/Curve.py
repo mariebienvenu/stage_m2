@@ -221,3 +221,13 @@ class Curve:
     def update_time_range(self):
         times = self.get_attribute('time')
         self.time_range = (np.min(times), np.max(times))
+
+    def crop(self, start=None, stop=None):
+        start = start if start is not None else self.time_range[0]
+        stop = stop if stop is not None else self.time_range[1]
+        indexes = []
+        for i, time in enumerate(self.get_attribute('time')):
+            if time >= start and time <= stop:
+                indexes.append(i)
+        self.array = np.copy(self.array[indexes,:])
+        self.update_time_range()

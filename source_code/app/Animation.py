@@ -29,15 +29,8 @@ class Animation(List[Curve]):
         return resampled_anim
     
     def crop(self, start=None, stop=None):
-        start = start if start is not None else min(curve.time_range[0] for curve in self)
-        stop = stop if stop is not None else max(curve.time_range[1] for curve in self)
-        for j, curve in enumerate(self):
-            indexes = []
-            for i, time in enumerate(curve.get_attribute('time')):
-                if time >= start and time <= stop:
-                    indexes.append(i)
-            curve.array = np.copy(curve.array[indexes,:])
-            curve.update_time_range()
+        for curve in self:
+            curve.crop(start, stop)
 
     def __add__(self, other):
         return Animation(super().__add__(other)) #rely on List

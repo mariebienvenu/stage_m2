@@ -8,7 +8,7 @@
             "name": "Python Debugger: Module",
             "type": "debugpy",
             "request": "launch",
-            "module": "source_code.current_script",
+            "module": "source_code.testing.curve_and_animation",
             "env": {"PYTHONPATH": "${workspaceFolder}/source_code/"}
         }
     ]
