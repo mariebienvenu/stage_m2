@@ -42,7 +42,7 @@ assert os.path.exists(scene_path), "Blender scene directory not found."
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
-VIDEO_NAME = '03-21 added light and glove/close_startup.mp4'
+VIDEO_NAME = '03-11 initial videos/souris.mp4' #'03-21 added light and glove/close_startup.mp4'
 video = Video(data_path + f'{VIDEO_NAME}', verbose=1)
 
 oflow_len = video.frame_count - 1
@@ -84,18 +84,27 @@ for index in range(oflow_len):
     angle_means[index] = measures['angle_mean']
     angle_stds[index] = measures['angle_std']
 
-position_y = m_utils.integrale(magnitude_means*np.sin(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
-position_x = m_utils.integrale(magnitude_means*np.cos(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
+start, stop = optical_flow.get_crop(frame_times, magnitude_means, patience=2)
+
+position_y = m_utils.integrale3(magnitude_means*np.sin(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
+position_x = m_utils.integrale3(magnitude_means*np.cos(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
 
 video_movement = Animation([
     Curve(np.vstack((frame_times, position_x)).T, fullname='gesture position x'),
     Curve(np.vstack((frame_times, position_y)).T, fullname='gesture position y'),
-    Curve(np.vstack((frame_times, magnitude_means*np.sin(-angle_means*np.pi/180))).T, fullname='gesture speed x'),
-    Curve(np.vstack((frame_times, magnitude_means*np.cos(-angle_means*np.pi/180))).T, fullname='gesture speed y')
+    Curve(np.vstack((frame_times, np.abs(magnitude_means*np.sin(-angle_means*np.pi/180)))).T, fullname='gesture speed x'),
+    Curve(np.vstack((frame_times, np.abs(magnitude_means*np.cos(-angle_means*np.pi/180)))).T, fullname='gesture speed y')
 ])
+
+video_movement.crop(start, stop )
+
+frame_times = video_movement[0].get_times()
 
 NAME = 'Ball'
 animation = b_utils.get_animation(NAME)
+for curve in animation:
+    start, stop = b_utils.get_crop(curve)
+    curve.crop(start, stop)
 additionnal_curves = Animation()
 
 for curve in animation:
@@ -109,29 +118,28 @@ for curve in animation:
         coordinates = np.vstack((sampling_t[1:], absolute_first_derivative)).T
         additionnal_curves.append(Curve(coordinates, fullname=f'absolute first derivative of {curve.fullname}'))
 
-print(additionnal_curves)
+#print(additionnal_curves)
 resampled_animation = animation.resample(frame_times.size) + additionnal_curves
-print(resampled_animation)
+#print(resampled_animation)
 
 def compare_animations(anim1:Animation, anim2:Animation):
     correlation_matrix = np.zeros((len(anim1), len(anim2)), dtype=np.float64)
     for i, curve1 in enumerate(anim1):
         for j, curve2 in enumerate(anim2):
             assert len(curve1) == len(curve2), f"Cannot compare animation curves of different length: {len(curve1)} != {len(curve2)}"
-            values1 = curve1.get_attribute('value')
-            values2 = curve2.get_attribute('value')
+            values1 = curve1.get_values()
+            values2 = curve2.get_values()
             correlation_matrix[i,j] = m_utils.correlation(values1, values2)
     return correlation_matrix
 
 matrix = compare_animations(resampled_animation, video_movement)
-print(matrix)
+#print(matrix)
 
 rows = [curve.fullname for curve in resampled_animation]
 columns = [curve.fullname for curve in video_movement]
 
 dataframe = pd.DataFrame(matrix, columns=columns, index=rows)
 print(dataframe)
-
 
 resampled_animation.display(style='markers+lines', handles=False, doShow=True)
 video_movement.display(style='markers+lines', handles=False, doShow=True)
