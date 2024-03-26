@@ -29,6 +29,8 @@ blender_filepath = bpy.data.filepath
 scene_path = '/'.join(blender_filepath.split('\\')[:-1])+'/'
 assert os.path.exists(scene_path), "Blender scene directory not found."
 
+## Test of b_utils.get_animation()
+
 NAME = 'Ball'
 animation = b_utils.get_animation(NAME)
 print(animation)
@@ -60,3 +62,27 @@ for curve in animation:
 
 fig.write_html(scene_path+f'{NAME}_animation.html')
 fig.show()
+
+## Test of b_utils.get_crop()
+
+y = animation[1]
+start, stop = b_utils.get_crop(y)
+
+fig2 = y.display()
+
+sampling_step = 0.5
+sampling_t = [y.time_range[0] + i*sampling_step for i in range(int((y.time_range[1]-y.time_range[0])/sampling_step))]
+sampling_v = [y.pointer.evaluate(t) for t in sampling_t]
+fig2.add_trace(go.Scatter(
+        x = sampling_t,
+        y = sampling_v,
+        name = f'interpolation of {y.fullname}',
+        mode="lines",
+        marker_color = f'rgb{y.color}'
+    ))
+
+fig2.add_vline(x=start, annotation_text="Start", annotation_position="top right")
+fig2.add_vline(x=stop, annotation_text="Stop", annotation_position="top right")
+
+fig2.write_html(scene_path+f'{NAME}_height_crop.html')
+fig2.show()

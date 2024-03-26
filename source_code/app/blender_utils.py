@@ -66,3 +66,25 @@ def get_animation(obj_name):
         a=1
     
     return animation
+
+def get_crop(curve:Curve):
+    order = np.argsort(curve.get_times())
+    times = curve.get_times()[order]
+    values = curve.get_values()[order]
+    derivatives = curve.get_derivatives()[order]
+    zipped = zip(values, values[::-1], derivatives, derivatives[::-1])
+
+    start = 1
+    stop = len(curve)-2
+    for i, (value, opp_value, derivative, opp_derivative) in enumerate(zipped):
+        prec_value = values[i-1]
+        if start == i and derivative==0 and value==values[i-1]:
+            start += 1
+        opp_next_value = values[-i]
+        if stop == len(curve)-1-i and opp_derivative==0 and opp_value==values[-i]:
+            stop -= 1
+    
+    start -= 1
+    stop += 1
+    assert start <= stop, "Problem encountered when autocropping."
+    return (times[start], times[stop])
