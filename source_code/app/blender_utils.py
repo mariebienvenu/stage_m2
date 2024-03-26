@@ -77,10 +77,8 @@ def get_crop(curve:Curve):
     start = 1
     stop = len(curve)-2
     for i, (value, opp_value, derivative, opp_derivative) in enumerate(zipped):
-        prec_value = values[i-1]
         if start == i and derivative==0 and value==values[i-1]:
             start += 1
-        opp_next_value = values[-i]
         if stop == len(curve)-1-i and opp_derivative==0 and opp_value==values[-i]:
             stop -= 1
     
