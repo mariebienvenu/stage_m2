@@ -48,16 +48,28 @@ def measure_oflow(magnitude, angle):
         "angle_std":np.std(magnitude*angle)/np.std(magnitude)
     }
 
-def get_crop(magnitude_mean, threshold=2, padding_out=10, padding_in=3):
+def get_crop(magnitude_mean, threshold=2, padding_out=10, padding_in=3, patience=0):
     start = padding_out
     stop = magnitude_mean.size-padding_out
+    used_patience_left = 0
+    used_patience_right = 0
     for i, (mag, opp_mag) in enumerate(zip(magnitude_mean, magnitude_mean[::-1])):
-        if start == i and abs(mag)<threshold:
-            start += 1
-        if stop == magnitude_mean.size-i and abs(opp_mag)<threshold:
-            stop-=1
-    start -= padding_in
-    stop += padding_in
+        if start == i:
+            if not abs(mag)<threshold and used_patience_left<patience:
+                start += 1
+                used_patience_left += 1
+            elif abs(mag)<threshold:
+                start += 1
+                used_patience_left = 0
+        if stop == magnitude_mean.size-i:
+            if not abs(opp_mag)<threshold and used_patience_right<patience:
+                stop -= 1
+                used_patience_right += 1
+            elif abs(opp_mag)<threshold:
+                stop -= 1
+                used_patience_right = 0
+    start -= padding_in + used_patience_left
+    stop += padding_in + used_patience_right
     start = max(0, start)
     stop = min(stop, magnitude_mean.size)
     assert start <= stop, "Problem encountered when autocropping."

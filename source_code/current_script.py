@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
-VIDEO_NAME = '03-11 initial videos/souris'
+VIDEO_NAME = '03-11 initial videos/plat' #21 added light and glove/close_startup' #11 initial videos/souris'
 video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 #video.play_frame_by_frame()
 
@@ -66,6 +66,7 @@ for index in range(oflow_len):
     '''
 
 start, stop = optical_flow.get_crop(magnitude_means)
+start2, stop2 = optical_flow.get_crop(magnitude_means, patience=2)
 
 fig = vis.magnitude_angle(
     magnitude_means,    
@@ -77,9 +78,16 @@ fig = vis.magnitude_angle(
     data_path
 )
 
-fig.add_vline(x=start)
-fig.add_vline(x=stop)
-fig.show()
+fig.add_vline(x=start, annotation_text="Start, no patience", annotation_position="top right")
+fig.add_vline(x=stop, annotation_text="Stop, no patience", annotation_position="top right")
+
+if start2 != start:
+    fig.add_vline(x=start2, line_dash="dash", annotation_text="Start, patience=2", annotation_position="top right")
+if stop2 != stop:
+    fig.add_vline(x=stop2, line_dash="dash", annotation_text="Stop, patience=2", annotation_position="top right")
+
+fig.write_html(data_path+f"/{VIDEO_NAME}_oflow.html")
+#fig.show()
 
 ## Intégrale première : trajectoire
 
