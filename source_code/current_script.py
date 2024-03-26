@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
-VIDEO_NAME = '03-11 initial videos/plat' #21 added light and glove/close_startup' #11 initial videos/souris'
+VIDEO_NAME = '03-11 initial videos/souris' #21 added light and glove/far_startdown'
 video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 #video.play_frame_by_frame()
 
