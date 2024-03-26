@@ -162,8 +162,8 @@ class Curve:
     def display(self, handles=True, style="markers", color=None, fig=None, row=None, col=None, doShow=False):
         if fig is None:
             fig = go.Figure()
-        times = self.get_attribute('time')
-        values = self.get_attribute('value')
+        times = self.get_times()
+        values = self.get_values()
         color = self.color if 'color' in dir(self) else (color if color is not None else Color.next())
         fig.add_trace(go.Scatter(x=times, y=values, name=self.fullname, mode=style, marker_color=f'rgb{color}'), row=row, col=col) # drawing the keyframes
         if handles:
@@ -218,16 +218,24 @@ class Curve:
     def get_values(self):
         return self.get_attribute(Attributes_Name.value)
     
+    def get_times(self):
+        return self.get_attribute(Attributes_Name.time)
+    
     def update_time_range(self):
-        times = self.get_attribute('time')
+        times = self.get_times()
         self.time_range = (np.min(times), np.max(times))
 
     def crop(self, start=None, stop=None):
         start = start if start is not None else self.time_range[0]
         stop = stop if stop is not None else self.time_range[1]
         indexes = []
-        for i, time in enumerate(self.get_attribute('time')):
+        for i, time in enumerate(self.get_times()):
             if time >= start and time <= stop:
                 indexes.append(i)
         self.array = np.copy(self.array[indexes,:])
         self.update_time_range()
+
+    def get_derivatives(self):
+        dx = self.get_attribute(Attributes_Name.handle_right_x) - self.get_attribute(Attributes_Name.handle_left_x)
+        dy = self.get_attribute(Attributes_Name.handle_right_y) - self.get_attribute(Attributes_Name.handle_left_y)
+        return dy/dx

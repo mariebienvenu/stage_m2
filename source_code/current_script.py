@@ -20,6 +20,7 @@ video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 #video.play_frame_by_frame()
 
 oflow_len = video.frame_count - 1
+frame_times = np.arange(0, oflow_len/video.fps, 1/video.fps)
 
 oflows = np.zeros((oflow_len, video.frame_height, video.frame_width, 2), dtype=np.float64)
 magnitudes = np.zeros((oflow_len, video.frame_height, video.frame_width), dtype=np.float64)
@@ -65,15 +66,15 @@ for index in range(oflow_len):
     plt.close()
     '''
 
-start, stop = optical_flow.get_crop(magnitude_means)
-start2, stop2 = optical_flow.get_crop(magnitude_means, patience=2)
+start, stop = optical_flow.get_crop(frame_times, magnitude_means)
+start2, stop2 = optical_flow.get_crop(frame_times, magnitude_means, patience=2)
 
 fig = vis.magnitude_angle(
+    frame_times,
     magnitude_means,    
     magnitude_stds,
     angle_means,
     angle_stds,
-    oflow_len,
     VIDEO_NAME,
     data_path
 )
@@ -95,8 +96,8 @@ position_y = m_utils.integrale3(magnitude_means*np.sin(-angle_means*np.pi/180), 
 position_x = m_utils.integrale3(magnitude_means*np.cos(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
 
 
-fig2 = vis.add_curve(position_y, color='rgb(100,100,0)', name="Translation along Y axis")
-vis.add_curve(position_x, color='rgb(255,0,255)', name="Translation along X axis", fig=fig2)
+fig2 = vis.add_curve(position_y, x=frame_times, color='rgb(100,100,0)', name="Translation along Y axis")
+vis.add_curve(position_x, x=frame_times, color='rgb(255,0,255)', name="Translation along X axis", fig=fig2)
 fig2.write_html(data_path+f"/{VIDEO_NAME}_trajectory.html")
 #fig2.show() 
 

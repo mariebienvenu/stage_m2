@@ -44,11 +44,11 @@ def add_aplat(under, above, color, x = None, name = "", fig = None, row = None, 
 
 
 def magnitude_angle(
+        frame_times,
         magnitude_means,
         magnitude_stds,
         angle_means,
         angle_stds,
-        oflow_len,
         name,
         path,
         colors = [tuple(int(hex[i:i+2], 16) for i in (1, 3, 5)) for hex in list(px.colors.qualitative.Plotly)],
@@ -57,15 +57,15 @@ def magnitude_angle(
         
     fig = make_subplots(rows=2, cols=1)
 
-    add_curve(magnitude_means, f'rgb{colors[0]}', name='Magnitude', fig=fig, row=1, col=1)
-    add_curve(angle_means, f'rgb{colors[1]}', name='Angle', fig=fig, row=2, col=1)
+    add_curve(magnitude_means, f'rgb{colors[0]}', x=frame_times, name='Magnitude', fig=fig, row=1, col=1)
+    add_curve(angle_means, f'rgb{colors[1]}', x=frame_times, name='Angle', fig=fig, row=2, col=1)
 
-    add_aplat(magnitude_means-magnitude_stds, magnitude_means+magnitude_stds, f'rgba({colors[0][0]},{colors[0][1]},{colors[0][2]},0.3)', name='Magnitude', fig=fig, row=1, col=1)
-    add_aplat(angle_means-angle_stds, angle_means+angle_stds, f'rgba({colors[1][0]},{colors[1][1]},{colors[1][2]},0.3)', name='Angle', fig=fig, row=2, col=1)
+    add_aplat(magnitude_means-magnitude_stds, magnitude_means+magnitude_stds, f'rgba({colors[0][0]},{colors[0][1]},{colors[0][2]},0.3)', x=frame_times, name='Magnitude', fig=fig, row=1, col=1)
+    add_aplat(angle_means-angle_stds, angle_means+angle_stds, f'rgba({colors[1][0]},{colors[1][1]},{colors[1][2]},0.3)', x=frame_times, name='Angle', fig=fig, row=2, col=1)
 
     fig.update_layout(title=f'Optical flow  - {name}')
 
-    fig.update_xaxes(title_text="Frame number", row=2, col=1)
+    fig.update_xaxes(title_text="Frame number / Time in seconds", row=2, col=1)
     fig.update_yaxes(title_text="Magnitude in pixels", row=1, col=1)
     fig.update_yaxes(title_text="Angle in degrees", row=2, col=1)
 
