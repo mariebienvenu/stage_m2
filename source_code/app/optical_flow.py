@@ -40,12 +40,12 @@ def make_oflow_image(mag, ang): #magnitude, angle. Used for visualisation purpos
     bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
     return bgr
 
-def measure_oflow(magnitude, angle):
+def measure_oflow(magnitude, angle): # TODO: optical_flow.measure_oflow() renvoie un truc peu lisible pour l'autocomplete ; créer un énum ?
     return {
         "magnitude_mean":np.mean(magnitude),
         "magnitude_std":np.std(magnitude), 
         "angle_mean":np.mean(magnitude*angle)/np.mean(magnitude),
-        "angle_std":np.std(magnitude*angle)/np.std(magnitude)
+        "angle_std":np.std(angle) # following formula gives way too big values : np.std(magnitude*angle)/np.std(magnitude)
     }
 
 def get_crop(frame_times, magnitude_mean, threshold=2, padding_out=10, padding_in=3, patience=0):

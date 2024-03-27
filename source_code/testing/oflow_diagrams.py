@@ -10,7 +10,8 @@ import app.optical_flow as optical_flow
 import app.maths_utils as m_utils
 import app.visualisation as vis
 
-import plotly.graph_objects as go
+from app.Animation import Animation
+from app.Curve import Curve
 
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
@@ -22,18 +23,12 @@ video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 oflow_len = video.frame_count - 1
 frame_times = np.arange(0, oflow_len/video.fps, 1/video.fps)
 
-oflows = np.zeros((oflow_len, video.frame_height, video.frame_width, 2), dtype=np.float64)
 magnitudes = np.zeros((oflow_len, video.frame_height, video.frame_width), dtype=np.float64)
 angles = np.zeros((oflow_len, video.frame_height, video.frame_width), dtype=np.float64)
 
-
 for index in tqdm(range(oflow_len), desc='Oflow computation'):
-    frame1 = cv2.cvtColor(video.get_frame(index), cv2.COLOR_BGR2GRAY)
-    frame2 = cv2.cvtColor(video.get_frame(index+1), cv2.COLOR_BGR2GRAY)
-
+    frame1, frame2 = video.get_frame(index, to_gray=True), video.get_frame(index+1, to_gray=True)
     oflow = optical_flow.compute_oflow(frame1, frame2, levels=3, winsize=15, iterations=3, poly_n=5, poly_sigma=1.2)
-    oflows[index,:,:,:] = oflow
-
     magnitude, angle = optical_flow.cartesian_to_polar(oflow, degrees=True)
     angles[angles>180] -= 360
     magnitudes[index,:,:] = magnitude
@@ -51,11 +46,13 @@ for index in range(oflow_len):
     mag_filtered, ang_filtered = mag[mag>h], ang[mag>h]
     mag_values, ang_values = np.ravel(mag_filtered), np.ravel(ang_filtered)
 
-    magnitude_means[index] = np.mean(mag_values)
-    magnitude_stds[index] = np.std(mag_values)
+    measures = optical_flow.measure_oflow(mag_values, ang_values)
 
-    angle_means[index] = np.mean(mag_values*ang_values)/magnitude_means[index]
-    angle_stds[index] = np.std(ang_values) # following formula gives way too big values : np.std(mag_values*ang_values)/magnitude_stds[index]
+    magnitude_means[index] = measures["magnitude_mean"]
+    magnitude_stds[index] = measures["magnitude_std"]
+
+    angle_means[index] = measures["angle_mean"]
+    angle_stds[index] = measures["angle_std"]
 
     '''
     plt.figure()
@@ -102,3 +99,13 @@ fig2.write_html(data_path+f"/{VIDEO_NAME}_trajectory.html")
 #fig2.show() 
 
 # TODO Quid d'un portrait de phase ?
+
+anim = Animation([
+    Curve(np.vstack((frame_times, magnitude_means)).T, fullname='Oflow magnitude - mean'),
+    Curve(np.vstack((frame_times, magnitude_stds)).T, fullname='Oflow magnitude - std'),
+    Curve(np.vstack((frame_times, angle_means)).T, fullname='Oflow angle - mean'),
+    Curve(np.vstack((frame_times, angle_stds)).T, fullname='Oflow angle - std'),
+    Curve(np.vstack((frame_times, position_x)).T, fullname='Location X'),
+    Curve(np.vstack((frame_times, position_y)).T, fullname='Location Y'),
+])
+anim.save(data_path + VIDEO_NAME + '/')

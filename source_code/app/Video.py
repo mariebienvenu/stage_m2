@@ -76,10 +76,11 @@ class Video:
                 diff += 1
             print(f'Displaying frame {start+diff}')
 
-    def get_frame(self, index):
+    def get_frame(self, index, to_gray=False):
         self.load()
         assert index>=0 and index<self.frame_count, f"Index {index} out of video range [0, {self.frame_count}]."
-        return np.copy(self.video_content[index,:,:,:])
+        frame = np.copy(self.video_content[index,:,:,:])
+        return frame if not to_gray else cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
     @staticmethod
     def from_array(array, filepath='/tmp.mp4', fps=30, verbose=0):
