@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from enum import Enum, unique
 
@@ -249,3 +251,23 @@ class Curve:
         new_curve = Curve(coordinates, fullname=self.fullname+" sampled" if len(self.fullname)>0 else "sampled")
         new_curve.update_time_range()
         return new_curve
+    
+    def save(self, filename):
+        if os.path.exists(filename):
+            os.remove(filename)
+        np.savetxt(filename, X=self.array, header=self.fullname+'\n')
+
+    @staticmethod
+    def load(filename):
+        assert os.path.exists(filename), f"Unable to load content of '{filename}' as it does not exist."
+        file = open(filename)
+        content = np.loadtxt(filename)
+        if len(content.shape)==1:
+            content = np.expand_dims(content, axis=0)
+        curve = Curve.from_array(content)
+        curve.rename(file.readline()[2:-1]) #remove "# ", and "\n" at the end
+        curve.update_time_range()
+        file.close()
+        return curve
+        
+        

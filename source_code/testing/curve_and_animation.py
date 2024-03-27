@@ -94,3 +94,10 @@ resampled_anim.crop(start=50)
 resampled_anim[0].rename("cropped curve")
 resampled_anim.display(handles=False, doShow=True)
 print("New time range: ", [curve.time_range for curve in resampled_anim])
+
+PATH = 'C:/Users/Marie Bienvenu/stage_m2/afac/'
+
+for curve in anim:
+    curve.save(PATH+curve.fullname+'.txt')
+    loaded = Curve.load(PATH+curve.fullname+'.txt')
+    print(f"saved curve: {curve}, loaded curve: {loaded}")
