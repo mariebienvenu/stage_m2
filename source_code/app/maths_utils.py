@@ -24,7 +24,6 @@ def integrale1(array, step):
 
 def integrale3(array, step):
     x = np.array(list(range(np.array(array).size)))/step
-    print(x.shape, array.shape)
     res = [0]
     for i in range(1, x.size):
         y = array[:i]
