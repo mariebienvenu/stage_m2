@@ -16,10 +16,13 @@ class FakeCurvePointer:
             if t>=time:
                 return v
             
+DO_SHOW = False
+            
 # COLOR
             
 for _ in range(20):
-    print(Color.next())
+    color = Color.next()
+    #print(color)
 
 # CURVE
 
@@ -54,14 +57,14 @@ curve.display(fig=fig, handles=False)
 curve.check()
 
 values = curve.get_values()
-print(values.shape)
+print(f"Shape of curve values: {values.shape}")
 
-fig.show()
+if DO_SHOW : fig.show()
 
 ## ANIMATION
 
 empty_anim = Animation()
-print(empty_anim) # expect []
+print(f"Empty Animation: {empty_anim}") # expect []
 
 times = np.arange(0, 100, 1) # low resolution
 values = np.cos(times)*(1+times) + times
@@ -74,7 +77,7 @@ anim = Animation([
 
 anim[0].array # autocomplete: should be blue !
 
-print(anim)
+print(f"Animation: {anim}")
 
 resampled_anim = anim.sample(2000)
 for param_start, param_stop in zip(["all", "each", 10, [20, 5]],["all", "each", 90, [80, 10]]):
@@ -82,17 +85,17 @@ for param_start, param_stop in zip(["all", "each", 10, [20, 5]],["all", "each", 
     print(f"start={param_start}, stop={param_stop} -> sampled_anim={other}")
 
 
-print(resampled_anim) # every curve should be of length 2000 !
+print(f"Sampled animation: {resampled_anim}") # every curve should be of length 2000 !
 
 figure = resampled_anim.display(handles=False) # FakeCurveEvaluator does not handle interpolation -> plateaux
-anim.display(handles=False, fig=figure, doShow=True)
+anim.display(handles=False, fig=figure, doShow=DO_SHOW)
 
 addition = empty_anim + anim + resampled_anim
-print(addition)
+print(f"Addition of all animations: {addition}")
 
 resampled_anim.crop(start=50)
 resampled_anim[0].rename("cropped curve")
-resampled_anim.display(handles=False, doShow=True)
+resampled_anim.display(handles=False, doShow=DO_SHOW)
 print("New time range: ", [curve.time_range for curve in resampled_anim])
 
 PATH = 'C:/Users/Marie Bienvenu/stage_m2/afac/'
@@ -100,4 +103,8 @@ PATH = 'C:/Users/Marie Bienvenu/stage_m2/afac/'
 for curve in anim:
     curve.save(PATH+curve.fullname+'.txt')
     loaded = Curve.load(PATH+curve.fullname+'.txt')
-    print(f"saved curve: {curve}, loaded curve: {loaded}")
+    print(f"Saved curve: {curve}, loaded curve: {loaded}")
+
+anim.save(PATH+'/afac2/')
+loaded_anim = Animation.load(PATH+'/afac2/')
+print(f"Saved animation: {anim}, loaded animation: {loaded_anim}")

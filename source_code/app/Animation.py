@@ -1,3 +1,5 @@
+import os, csv
+
 import numpy as np
 from typing import List
 
@@ -52,3 +54,20 @@ class Animation(List[Curve]):
 
     def __add__(self, other):
         return Animation(super().__add__(other)) #rely on List
+    
+    def save(self, directory):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        names = [curve.fullname for curve in self]
+        for i, curve in enumerate(self):
+            curve.save(directory+f'/{i}.txt')
+
+    @staticmethod
+    def load(directory):
+        res, i = Animation(), 0
+        while os.path.exists(directory+f'/{i}.txt'):
+            curve = Curve.load(directory+f'/{i}.txt')
+            res.append(curve)
+            i += 1
+        return res
+        
