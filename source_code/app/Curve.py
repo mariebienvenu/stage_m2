@@ -213,7 +213,8 @@ class Curve:
     
     def __repr__(self):
         n = f', "{self.fullname}"' if len(self.fullname)>0 else ''
-        return f"Curve({len(self)}{n})"
+        r = f', ({self.time_range[0]:.1f},{self.time_range[1]:.1f})'
+        return f"Curve({len(self)}{n}{r})"
 
     def get_values(self):
         return self.get_attribute(Attributes_Name.value)
@@ -240,3 +241,11 @@ class Curve:
         dx = self.get_attribute(Attributes_Name.handle_right_x) - self.get_attribute(Attributes_Name.handle_left_x)
         dy = self.get_attribute(Attributes_Name.handle_right_y) - self.get_attribute(Attributes_Name.handle_left_y)
         return dy/dx
+    
+    def sample(self, times):
+        assert "pointer" in dir(self), "Cannot sample a curve with no associated fcurve."
+        values = np.array([self.pointer.evaluate(time) for time in times])
+        coordinates = np.vstack((times, values)).T
+        new_curve = Curve(coordinates, fullname=self.fullname+" sampled" if len(self.fullname)>0 else "sampled")
+        new_curve.update_time_range()
+        return new_curve

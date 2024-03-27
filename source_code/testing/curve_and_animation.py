@@ -69,15 +69,18 @@ coordinates = np.vstack((times, values)).T
 
 anim = Animation([
     Curve(coordinates, fullname='original curve', pointer=FakeCurvePointer(times, values)),
-    Curve(fullname='none', pointer=FakeCurvePointer())
+    Curve(pointer=FakeCurvePointer())
 ])
 
 anim[0].array # autocomplete: should be blue !
 
 print(anim)
 
-resampled_anim = anim.resample(2000)
-resampled_anim[0].rename('resampled curve')
+resampled_anim = anim.sample(2000)
+for param_start, param_stop in zip(["all", "each", 10, [20, 5]],["all", "each", 90, [80, 10]]):
+    other = anim.sample(20000, start=param_start, stop=param_stop)
+    print(f"start={param_start}, stop={param_stop} -> sampled_anim={other}")
+
 
 print(resampled_anim) # every curve should be of length 2000 !
 
@@ -88,5 +91,6 @@ addition = empty_anim + anim + resampled_anim
 print(addition)
 
 resampled_anim.crop(start=50)
+resampled_anim[0].rename("cropped curve")
 resampled_anim.display(handles=False, doShow=True)
 print("New time range: ", [curve.time_range for curve in resampled_anim])
