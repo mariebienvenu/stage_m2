@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 
 from tqdm import tqdm
+from plotly.subplots import make_subplots
 
 from app.Video import Video
 import app.optical_flow as optical_flow
@@ -23,89 +24,79 @@ video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 oflow_len = video.frame_count - 1
 frame_times = np.arange(0, oflow_len/video.fps, 1/video.fps)
 
-magnitudes = np.zeros((oflow_len, video.frame_height, video.frame_width), dtype=np.float64)
-angles = np.zeros((oflow_len, video.frame_height, video.frame_width), dtype=np.float64)
+oflow_measures = [video.get_optical_flow(index)[2] for index in tqdm(range(oflow_len), desc='Oflow computation')]
 
-for index in tqdm(range(oflow_len), desc='Oflow computation'):
-    frame1, frame2 = video.get_frame(index, to_gray=True), video.get_frame(index+1, to_gray=True)
-    oflow = optical_flow.compute_oflow(frame1, frame2, levels=3, winsize=15, iterations=3, poly_n=5, poly_sigma=1.2)
-    magnitude, angle = optical_flow.cartesian_to_polar(oflow, degrees=True)
-    angles[angles>180] -= 360
-    magnitudes[index,:,:] = magnitude
-    angles[index,:,:] = angle
+magnitude_means = np.array([measure["magnitude_mean"] for measure in oflow_measures])
+magnitude_stds = np.array([measure["magnitude_std"] for measure in oflow_measures])
+angle_means = np.array([measure["angle_mean"] for measure in oflow_measures])
+angle_stds = np.array([measure["angle_std"] for measure in oflow_measures])
 
-magnitude_means = np.zeros(oflow_len, dtype=np.float64)
-magnitude_stds = np.zeros(oflow_len, dtype=np.float64)
+# Calcul de l'intégrale du flux i.e. la position
 
-angle_means = np.zeros(oflow_len, dtype=np.float64)
-angle_stds = np.zeros(oflow_len, dtype=np.float64)
+velocity_x, velocity_y = optical_flow.polar_to_cartesian(magnitude_means, -angle_means, degrees=True) # reverse angles because up is - in image space
+velocity_x, velocity_y = np.ravel(velocity_x), np.ravel(velocity_y)
+position_x, position_y = m_utils.integrale3(velocity_x, step=1), m_utils.integrale3(velocity_y, step=1)
 
-for index in range(oflow_len):
-    mag, ang = magnitudes[index,...], angles[index,...]
-    h = optical_flow._get_threshold(mag, 0.95)
-    mag_filtered, ang_filtered = mag[mag>h], ang[mag>h]
-    mag_values, ang_values = np.ravel(mag_filtered), np.ravel(ang_filtered)
-
-    measures = optical_flow.measure_oflow(mag_values, ang_values)
-
-    magnitude_means[index] = measures["magnitude_mean"]
-    magnitude_stds[index] = measures["magnitude_std"]
-
-    angle_means[index] = measures["angle_mean"]
-    angle_stds[index] = measures["angle_std"]
-
-    '''
-    plt.figure()
-    plt.hist(x=values, bins=200)
-    plt.xlim([0, 60])
-    plt.ylim([0, 2000])
-    plt.savefig(data_path+f'/magnitude_histograms/frame_{index}.png')
-    plt.close()
-    '''
-
-start, stop = optical_flow.get_crop(frame_times, magnitude_means)
-start2, stop2 = optical_flow.get_crop(frame_times, magnitude_means, patience=2)
-
-fig = vis.magnitude_angle(
-    frame_times,
-    magnitude_means,    
-    magnitude_stds,
-    angle_means,
-    angle_stds,
-    VIDEO_NAME,
-    data_path
-)
-
-fig.add_vline(x=start, annotation_text="Start, no patience", annotation_position="top right")
-fig.add_vline(x=stop, annotation_text="Stop, no patience", annotation_position="top right")
-
-if start2 != start:
-    fig.add_vline(x=start2, line_dash="dash", annotation_text="Start, patience=2", annotation_position="top right")
-if stop2 != stop:
-    fig.add_vline(x=stop2, line_dash="dash", annotation_text="Stop, patience=2", annotation_position="top right")
-
-fig.write_html(data_path+f"/{VIDEO_NAME}_oflow.html")
-#fig.show()
-
-## Intégrale première : trajectoire
-
-position_y = m_utils.integrale3(magnitude_means*np.sin(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
-position_x = m_utils.integrale3(magnitude_means*np.cos(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
-
-
-fig2 = vis.add_curve(position_y, x=frame_times, color='rgb(100,100,0)', name="Translation along Y axis")
-vis.add_curve(position_x, x=frame_times, color='rgb(255,0,255)', name="Translation along X axis", fig=fig2)
-fig2.write_html(data_path+f"/{VIDEO_NAME}_trajectory.html")
-#fig2.show() 
-
-# TODO Quid d'un portrait de phase ?
+## Création et enregistrement de l'animation avec toutes les courbes
 
 anim = Animation([
     Curve(np.vstack((frame_times, magnitude_means)).T, fullname='Oflow magnitude - mean'),
     Curve(np.vstack((frame_times, magnitude_stds)).T, fullname='Oflow magnitude - std'),
     Curve(np.vstack((frame_times, angle_means)).T, fullname='Oflow angle - mean'),
     Curve(np.vstack((frame_times, angle_stds)).T, fullname='Oflow angle - std'),
+    Curve(np.vstack((frame_times, velocity_x)).T, fullname='Velocity X'),
+    Curve(np.vstack((frame_times, velocity_y)).T, fullname='Velocity Y'),
     Curve(np.vstack((frame_times, position_x)).T, fullname='Location X'),
     Curve(np.vstack((frame_times, position_y)).T, fullname='Location Y'),
 ])
 anim.save(data_path + VIDEO_NAME + '/')
+
+## Estimation des bornes
+
+start, stop = optical_flow.get_crop(frame_times, magnitude_means)
+start2, stop2 = optical_flow.get_crop(frame_times, magnitude_means, patience=2)
+
+## Visualisation globale
+
+fig = make_subplots(rows=2, cols=3, subplot_titles=("Amplitude du flux au cours du temps", "Vitesses au cours du temps" , "Portraits de phase", "Angle du flux au cours du temps", "Positions au cours du temps", "Trajectoire"))
+
+vis.magnitude_angle(frame_times, magnitude_means, magnitude_stds, angle_means, angle_stds, fig=fig, rows=[1,2], cols=[1,1])
+vis.add_curve(y=velocity_y, x=position_y, name="y'=f(y) - Portrait de phase de Y", fig=fig, col=3, row=1)
+vis.add_curve(y=velocity_x, x=position_x, name="x'=f(x) - Portrait de phase de X", fig=fig, col=3, row=1)
+vis.add_curve(velocity_y, x=frame_times, name="y=f(t) - Velocity along X axis", fig=fig, col=2, row=1)
+vis.add_curve(velocity_x, x=frame_times, name="x=f(t) - Velocity along X axis", fig=fig, col=2, row=1)
+vis.add_curve(position_y, x=frame_times, name="y=f(t) - Translation along X axis", fig=fig, col=2, row=2)
+vis.add_curve(position_x, x=frame_times, name="x=f(t) - Translation along X axis", fig=fig, col=2, row=2)
+vis.add_curve(y=position_y, x=position_x, name="y=f(x) - Trajectoire", fig=fig, col=3, row=2)
+
+rows, cols = (1,1,2,2), (1,2,1,2)
+for row, col in zip(rows, cols):
+    fig.add_vline(x=start, row=row, col=col)
+    fig.add_vline(x=stop, row=row, col=col)
+
+if start2 != start:
+    for row, col in zip(rows, cols):
+        fig.add_vline(x=start2, line_dash="dash", row=row, col=col)
+if stop2 != stop:
+    for row, col in zip(rows, cols):
+        fig.add_vline(x=stop2, line_dash="dash", row=row, col=col)
+
+fig.update_layout(title=f'Optical flow  - {VIDEO_NAME}')
+fig.write_html(data_path+f"/{VIDEO_NAME}_diagram.html")
+fig.show()
+
+## Visualisation du flux
+
+fig1 = vis.magnitude_angle(frame_times, magnitude_means, magnitude_stds, angle_means, angle_stds)
+
+fig1.add_vline(x=start, annotation_text="Start, no patience", annotation_position="top right")
+fig1.add_vline(x=stop, annotation_text="Stop, no patience", annotation_position="top right")
+
+if start2 != start:
+    fig1.add_vline(x=start2, line_dash="dash", annotation_text="Start, patience=2", annotation_position="top right")
+if stop2 != stop:
+    fig1.add_vline(x=stop2, line_dash="dash", annotation_text="Stop, patience=2", annotation_position="top right")
+
+fig1.update_layout(title=f'Optical flow  - {VIDEO_NAME}')
+fig1.write_html(data_path+f"/{VIDEO_NAME}_oflow.html")
+fig1.show()

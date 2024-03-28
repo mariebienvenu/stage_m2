@@ -4,7 +4,8 @@ import numpy as np
 from enum import Enum, unique
 
 import plotly.graph_objects as go
-import plotly.express as px
+
+from app.Color import Color
 
 @unique
 class Easing_Mode(Enum):
@@ -62,17 +63,6 @@ class Attributes_Name(Enum): # ordered !
     amplitude = 12
     back = 13
     period = 14
-
-
-class Color:
-    current = -1
-    colors = [tuple(int(hex[i:i+2], 16) for i in (1, 3, 5)) for hex in list(px.colors.qualitative.Plotly)]
-
-    @staticmethod
-    def next():
-        Color.current += 1
-        Color.current = Color.current % len(Color.colors)
-        return Color.colors[Color.current]
 
 
 class Curve:

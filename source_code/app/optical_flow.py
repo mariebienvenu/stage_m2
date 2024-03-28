@@ -19,6 +19,9 @@ def compute_oflow(im1, im2, winsize=15, levels=3, iterations=3, poly_n=5, poly_s
 def cartesian_to_polar(array, degrees=False):
     return cv2.cartToPolar(array[..., 0], array[..., 1], angleInDegrees=degrees)
 
+def polar_to_cartesian(magnitude, angle, degrees=False):
+    return cv2.polarToCart(magnitude, angle, angleInDegrees=degrees)
+
 def _get_threshold(array, proportion):
     flattened = np.ravel(array)
     kth_index = int(np.size(flattened)*proportion)
@@ -26,10 +29,11 @@ def _get_threshold(array, proportion):
     threshold = ordered[kth_index]
     return threshold
 
-def get_mask_oflow(mag, background_proportion=0.97):
+def get_mask(mag, background_proportion=0.97):
     threshold = _get_threshold(mag, background_proportion)
-    mask = np.expand_dims(np.where(mag>threshold, 1, 0),axis=2)
-    mask = np.concatenate((mask,mask),axis=2)
+    mask = np.where(mag>threshold, 1, 0)
+    #mask = np.expand_dims(mask,axis=2)
+    #mask = np.concatenate((mask,mask),axis=2)
     return mask
 
 def make_oflow_image(mag, ang): #magnitude, angle. Used for visualisation purposes
@@ -48,7 +52,7 @@ def measure_oflow(magnitude, angle): # TODO: optical_flow.measure_oflow() renvoi
         "angle_std":np.std(angle) # following formula gives way too big values : np.std(magnitude*angle)/np.std(magnitude)
     }
 
-def get_crop(frame_times, magnitude_mean, threshold=2, padding_out=10, padding_in=3, patience=0):
+def get_crop(frame_times, magnitude_mean, threshold=2, padding_out=10, padding_in=3, patience=0): # TODO move to Curve.py 
     ## TODO -- passer à un input de type curve ? et ajouter un constant=0 pour gérer des courbes qui plateaux à autre chose que 0
     start = padding_out
     stop = magnitude_mean.size-padding_out

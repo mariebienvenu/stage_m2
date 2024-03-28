@@ -1,7 +1,9 @@
 import os
+from time import time
 
-import cv2
 import numpy as np
+import cv2
+from tqdm import tqdm
 
 from app.Video import Video
 import app.optical_flow as optical_flow
@@ -12,20 +14,20 @@ assert os.path.exists(data_path), "Wrong PATH"
 VIDEO_NAME = '03-21 added light and glove/close_startup'
 video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 
-oflow_video_content = np.zeros((video.frame_count, video.frame_height, video.frame_width, 3), dtype=np.uint8)
+oflow_len = video.frame_count-1
 
-for index in range(video.frame_count-1):
-    frame1, frame2 = video.get_frame(index, to_gray=True), video.get_frame(index+1, to_gray=True)
-    oflow = optical_flow.compute_oflow(frame1, frame2, levels=3, winsize=15, iterations=3, poly_n=5, poly_sigma=1.2)
-    magnitude, angle = optical_flow.cartesian_to_polar(oflow)
-    mask = optical_flow.get_mask_oflow(magnitude)
-    oflow *= mask
-    new_mag, new_angle = optical_flow.cartesian_to_polar(oflow)
-    bgr = optical_flow.make_oflow_image(new_mag, new_angle)
+oflow_video_content = np.zeros((oflow_len, video.frame_height, video.frame_width, 3), dtype=np.uint8)
+
+for index in tqdm(range(oflow_len), desc='Oflow computation'):
+    t0 = time()
+    magnitude, angle, measures = video.get_optical_flow(index, background_proportion=0, degrees=False) #no filtering
+    bgr = optical_flow.make_oflow_image(magnitude, angle) # this expects angle in radian
     oflow_video_content[index,:,:,:] = np.copy(bgr)
 
     cv2.imshow("oflow", bgr)
-    key = cv2.waitKey(video.wait_time)
+    t1 = time()
+    delay = max(1, int(video.wait_time-(t1-t0)))
+    key = cv2.waitKey(delay)
     if key == ord('q'):
         break
 

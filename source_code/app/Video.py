@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+import app.optical_flow as oflow
+
 class Video:
    
     def __init__(self, filepath, verbose=0):
@@ -82,6 +84,20 @@ class Video:
         frame = np.copy(self.video_content[index,:,:,:])
         return frame if not to_gray else cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
+
+    def get_optical_flow(self, index, background_proportion=0.97, degrees=True, **kwargs): # TODO test
+        '''if background_proportion is 0 then there willl be no thresholding'''
+        assert index>=0 and index<self.frame_count-1, f"Index out of video's optical flow range: {index} should be between 0 and {self.frame_count-1} but is not."
+        frame1, frame2 = self.get_frame(index, to_gray=True), self.get_frame(index+1, to_gray=True)
+        flow = oflow.compute_oflow(frame1, frame2, **kwargs)
+        magnitude, angle = oflow.cartesian_to_polar(flow, degrees=degrees)
+        mask = oflow.get_mask(magnitude, background_proportion=background_proportion)
+        filtered_mag, filtered_angle = (magnitude[mask>0], angle[mask>0]) if background_proportion>0 else (magnitude, angle)
+        filtered_angle[filtered_angle>180] -= 360
+        measures = oflow.measure_oflow(filtered_mag, filtered_angle)
+        return filtered_mag, filtered_angle, measures
+    
+    
     @staticmethod
     def from_array(array, filepath='/tmp.mp4', fps=30, verbose=0):
         # saves, returns Video object
@@ -106,3 +122,4 @@ class Video:
         vid_writer.release()
 
         return Video(filepath, verbose)
+    
