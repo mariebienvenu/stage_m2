@@ -155,7 +155,7 @@ class Video:
                 frame_idx += 1
             print(f'Displaying frame {frame_idx}') if verbose>0 else None
 
-        return {'x1':x1, 'x2':x2, 'y1':y1, 'y2':y2}
+        return {'x1':min(x1,x2), 'x2':max(x1,x2), 'y1':min(y1,y2), 'y2':max(y1,y2)}
     
     
     @staticmethod # TODO maybe should be a classmethod since it is a named constructor ?
