@@ -1,10 +1,19 @@
+
 import cv2
 import numpy as np
 
 import app.optical_flow as oflow
+from app.ImageProcessing import ImageProcessing
+
+
+def no_crop(height, width):
+    return {'x1':0, 'x2':width, 'y1':0, 'y2':height}
+
+
 
 class Video:
    
+
     def __init__(self, filepath, verbose=0):
         self.filepath = filepath
                 
@@ -25,10 +34,11 @@ class Video:
         if verbose>0:
             print(f'VIDEO DETAILS: \n\t Frame rate: {self.fps} FPS \n\t Frame count: {self.frame_count} \n\t Frame dimension: ({self.frame_height},{self.frame_width}) \n\t Number of color channels: {self.n_channels}')
 
+
     def play(self, close_key='q'):
         vid_capture = cv2.VideoCapture(self.filepath)
         while(vid_capture.isOpened()):
-            ret, frame = vid_capture.read() #bool, numpy array of frame
+            ret, frame = vid_capture.read() # (bool, numpy array of frame)
             if ret == True:
                 cv2.imshow('Video',frame)
                 key = cv2.waitKey(self.wait_time)
@@ -39,6 +49,7 @@ class Video:
         vid_capture.release()
         cv2.destroyAllWindows()
 
+
     def load(self, verbose=0):
         if self.is_loaded:
             if verbose>0:
@@ -48,7 +59,7 @@ class Video:
         vid_capture = cv2.VideoCapture(self.filepath)
         index = 0
         while(vid_capture.isOpened()):
-            ret, frame = vid_capture.read() #bool, numpy array of frame
+            ret, frame = vid_capture.read() # (bool, numpy array of frame)
             if ret == True:
                 self.video_content[index, :, :, :] = np.copy(frame)
             else:
@@ -61,6 +72,7 @@ class Video:
             print('Video now loaded in memory.')
         return self.video_content
     
+
     def play_frame_by_frame(self, close_key='q', next_key='z', previous_key='a', start_frame=None):
         self.load()
         start = start_frame if start_frame is not None else self.frame_count//2
@@ -78,17 +90,22 @@ class Video:
                 diff += 1
             print(f'Displaying frame {start+diff}')
 
-    def get_frame(self, index, to_gray=False):
+
+    def get_frame(self, index, image_processing : ImageProcessing|str = ImageProcessing.none, crop = None):
+        crop = no_crop(self.frame_height, self.frame_width) if crop is None else crop
         self.load()
         assert index>=0 and index<self.frame_count, f"Index {index} out of video range [0, {self.frame_count}]."
-        frame = np.copy(self.video_content[index,:,:,:])
-        return frame if not to_gray else cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame = np.copy(self.video_content[index,crop['y1']:crop['y2'],crop['x1']:crop['x2'],:])
+        try:
+            return image_processing(frame)
+        except TypeError: # typically, "String is not callable"
+            return getattr(ImageProcessing, image_processing)(frame)
     
 
-    def get_optical_flow(self, index, background_proportion=0.97, degrees=True, **kwargs): # TODO test
-        '''if background_proportion is 0 then there willl be no thresholding'''
+    def get_optical_flow(self, index, image_processing=ImageProcessing.gray, crop=None, background_proportion=0.97, degrees=True, **kwargs): # TODO should not be here ?
+        '''if background_proportion is 0 then there will be no thresholding'''
         assert index>=0 and index<self.frame_count-1, f"Index out of video's optical flow range: {index} should be between 0 and {self.frame_count-1} but is not."
-        frame1, frame2 = self.get_frame(index, to_gray=True), self.get_frame(index+1, to_gray=True)
+        frame1, frame2 = self.get_frame(index, image_processing=image_processing, crop=crop), self.get_frame(index+1, image_processing=image_processing, crop=crop)
         flow = oflow.compute_oflow(frame1, frame2, **kwargs)
         magnitude, angle = oflow.cartesian_to_polar(flow, degrees=degrees)
         mask = oflow.get_mask(magnitude, background_proportion=background_proportion)
@@ -97,8 +114,51 @@ class Video:
         measures = oflow.measure_oflow(filtered_mag, filtered_angle)
         return filtered_mag, filtered_angle, measures
     
+
+    def get_spatial_crop_input_from_user(self, verbose=0):
+        global frame_idx, x1, x2, y1, y2, drawing, frame
+        frame_idx = 0
+        close_key, previous_key, next_key = 'q', 'b', 'n' #quit, before, next
+
+        x1, x2, y1, y2 = 0, 0, 0, 0
+        drawing = False
+        frame = self.get_frame(frame_idx)
+
+        def draw_rectangle(event, x, y, flags, param):
+            global frame_idx, x1, x2, y1, y2, drawing, frame
+            frame = self.get_frame(frame_idx)
+            if event == cv2.EVENT_LBUTTONDOWN:
+                drawing = True
+                x1, y1 = x,y
+            elif event == cv2.EVENT_MOUSEMOVE:
+                if drawing == True:
+                    x2, y2 = x,y
+            elif event == cv2.EVENT_LBUTTONUP:
+                drawing = False
+                x2, y2 = x,y
+
+        cv2.namedWindow("Get crop zone from user")
+        cv2.setMouseCallback("Get crop zone from user", draw_rectangle)
+
+        while True:
+            current = max(0, min(frame_idx, self.frame_count))
+            frame = self.get_frame(current)
+            cv2.rectangle(frame, (x1,y1), (x2,y2), (0,255,0), 3)
+            cv2.imshow("Get crop zone from user", frame)
+            key = cv2.waitKey(1)# & 0xFF
+            if key == ord(close_key):
+                cv2.destroyWindow("Get crop zone from user")
+                break
+            elif key == ord(previous_key) and frame_idx >= 1:
+                frame_idx -= 1
+            elif key == ord(next_key) and frame_idx < self.frame_count-1:
+                frame_idx += 1
+            print(f'Displaying frame {frame_idx}') if verbose>0 else None
+
+        return {'x1':x1, 'x2':x2, 'y1':y1, 'y2':y2}
     
-    @staticmethod
+    
+    @staticmethod # TODO maybe should be a classmethod since it is a named constructor ?
     def from_array(array, filepath='/tmp.mp4', fps=30, verbose=0):
         # saves, returns Video object
         frame_count = array.shape[0]

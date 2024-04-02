@@ -17,7 +17,7 @@ from app.Curve import Curve
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
-VIDEO_NAME = '03-11 initial videos/souris' #21 added light and glove/far_startdown'
+VIDEO_NAME = '03-28 used red object/mou' #11 initial videos/souris' #21 added light and glove/far_startdown'
 video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 #video.play_frame_by_frame()
 

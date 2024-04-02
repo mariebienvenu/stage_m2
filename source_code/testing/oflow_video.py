@@ -11,7 +11,7 @@ import app.optical_flow as optical_flow
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
-VIDEO_NAME = '03-21 added light and glove/close_startup'
+VIDEO_NAME = '03-28 used red object/sec' #21 added light and glove/close_startup'
 video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 
 oflow_len = video.frame_count-1
