@@ -102,7 +102,12 @@ class Curve:
 
         additionnal_attributes = [easing_mode, tangent_left_handle_x, tangent_left_handle_y, tangent_left_type, tangent_right_handle_x, tangent_right_handle_y, tangent_right_type, interpolation, key_type, amplitude, back, period]
         for i, (input_arg, is_enum) in enumerate(zip(additionnal_attributes, Curve.ARE_ENUMS[3:])): # try a try enumerate(input_arg) to test ?
-            input_arg = np.array(input_arg) if type(input_arg)!=Curve.ATTRIBUTE_TYPES[i+3] else np.ones_like(ids)*(input_arg.value if is_enum else input_arg)
+            try:
+                enumerate(input_arg)
+                input_arg = np.array(input_arg)
+            except TypeError: # object not iterable
+                input_arg = np.ones_like(ids)*(input_arg.value if is_enum else input_arg)
+            #input_arg = np.array(input_arg) if type(input_arg)!=Curve.ATTRIBUTE_TYPES[i+3] else np.ones_like(ids)*(input_arg.value if is_enum else input_arg)
             to_stack.append(np.copy(input_arg))
         
         self.array = np.hstack(to_stack) # shape (n, N_ATTRIBUTES)

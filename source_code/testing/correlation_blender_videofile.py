@@ -20,20 +20,22 @@ from tqdm import tqdm
 import bpy
 
 from app.Video import Video
+import app.VideoIO as VideoIO
 import app.optical_flow as optical_flow
 import app.visualisation as vis
 import app.blender_utils as b_utils
-import app.maths_utils as m_utils
 
 import importlib
 importlib.reload(b_utils)
-importlib.reload(m_utils)
+importlib.reload(VideoIO)
 
 import app.blender_utils as b_utils
-import app.maths_utils as m_utils
+import app.VideoIO as VideoIO
 
 Curve = b_utils.Curve
 Animation = b_utils.Animation
+m_utils = VideoIO.m_utils
+
 
 blender_filepath = bpy.data.filepath
 scene_path = '/'.join(blender_filepath.split('\\')[:-1])+'/'
@@ -42,61 +44,49 @@ assert os.path.exists(scene_path), "Blender scene directory not found."
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
+subdirectory = '03-11 initial videos'
+VIDEO_NAME = 'souris'
+
+'''
+
 VIDEO_NAME = '03-11 initial videos/souris.mp4' #'03-21 added light and glove/close_startup.mp4'
 video = Video(data_path + f'{VIDEO_NAME}', verbose=1)
 
 oflow_len = video.frame_count - 1
-frame_times = np.array(list(range(oflow_len)))
+frame_times = np.arange(0, oflow_len/video.fps, 1/video.fps)
 
-oflows = np.zeros((oflow_len, video.frame_height, video.frame_width, 2), dtype=np.float64)
-magnitudes = np.zeros((oflow_len, video.frame_height, video.frame_width), dtype=np.float64)
-angles = np.zeros((oflow_len, video.frame_height, video.frame_width), dtype=np.float64)
+oflow_measures = [video.get_optical_flow(index)[2] for index in tqdm(range(oflow_len), desc='Oflow computation')]
 
-for index in tqdm(range(oflow_len), desc='Oflow computation'):
-    frame1 = cv2.cvtColor(video.get_frame(index), cv2.COLOR_BGR2GRAY)
-    frame2 = cv2.cvtColor(video.get_frame(index+1), cv2.COLOR_BGR2GRAY)
+magnitude_means = np.array([measure["magnitude_mean"] for measure in oflow_measures])
+magnitude_stds = np.array([measure["magnitude_std"] for measure in oflow_measures])
+angle_means = np.array([measure["angle_mean"] for measure in oflow_measures])
+angle_stds = np.array([measure["angle_std"] for measure in oflow_measures])
 
-    oflow = optical_flow.compute_oflow(frame1, frame2, levels=3, winsize=15, iterations=3, poly_n=5, poly_sigma=1.2)
-    oflows[index,:,:,:] = oflow
+velocity_x, velocity_y = optical_flow.polar_to_cartesian(magnitude_means, -angle_means, degrees=True) # reverse angles because up is - in image space
+velocity_x, velocity_y = np.ravel(velocity_x), np.ravel(velocity_y)
+position_x, position_y = m_utils.integrale3(velocity_x, step=1), m_utils.integrale3(velocity_y, step=1)
 
-    magnitude, angle = optical_flow.cartesian_to_polar(oflow, degrees=True)
-    angles[angles>180] -= 360
-    magnitudes[index,:,:] = magnitude
-    angles[index,:,:] = angle
-
-magnitude_means = np.zeros(oflow_len, dtype=np.float64)
-magnitude_stds = np.zeros(oflow_len, dtype=np.float64)
-
-angle_means = np.zeros(oflow_len, dtype=np.float64)
-angle_stds = np.zeros(oflow_len, dtype=np.float64)
-
-for index in range(oflow_len):
-    mag, ang = magnitudes[index,...], angles[index,...]
-    h = optical_flow._get_threshold(mag, 0.95)
-    mag_filtered, ang_filtered = mag[mag>h], ang[mag>h]
-    mag_values, ang_values = np.ravel(mag_filtered), np.ravel(ang_filtered)
-
-    measures = optical_flow.measure_oflow(mag_values, ang_values)
-
-    magnitude_means[index] = measures['magnitude_mean']
-    magnitude_stds[index] = measures['magnitude_std']
-
-    angle_means[index] = measures['angle_mean']
-    angle_stds[index] = measures['angle_std']
+video_movement = Animation([
+    Curve(np.vstack((frame_times, magnitude_means)).T, fullname='Oflow magnitude - mean'),
+    Curve(np.vstack((frame_times, magnitude_stds)).T, fullname='Oflow magnitude - std'),
+    Curve(np.vstack((frame_times, angle_means)).T, fullname='Oflow angle - mean'),
+    Curve(np.vstack((frame_times, angle_stds)).T, fullname='Oflow angle - std'),
+    Curve(np.vstack((frame_times, velocity_x)).T, fullname='Velocity X'),
+    Curve(np.vstack((frame_times, velocity_y)).T, fullname='Velocity Y'),
+    Curve(np.vstack((frame_times, position_x)).T, fullname='Location X'),
+    Curve(np.vstack((frame_times, position_y)).T, fullname='Location Y'),
+])
 
 start, stop = optical_flow.get_crop(frame_times, magnitude_means, patience=2)
 
-position_y = m_utils.integrale3(magnitude_means*np.sin(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
-position_x = m_utils.integrale3(magnitude_means*np.cos(-angle_means*np.pi/180), step=1) # reverse angles because up is - in image space
+video_movement.crop(start, stop)
+#video_movement.crop(66, 150)
 
-video_movement = Animation([
-    Curve(np.vstack((frame_times, position_x)).T, fullname='gesture position x'),
-    Curve(np.vstack((frame_times, position_y)).T, fullname='gesture position y'),
-    Curve(np.vstack((frame_times, np.abs(magnitude_means*np.sin(-angle_means*np.pi/180)))).T, fullname='gesture speed x'),
-    Curve(np.vstack((frame_times, np.abs(magnitude_means*np.cos(-angle_means*np.pi/180)))).T, fullname='gesture speed y')
-])
+'''
 
-video_movement.crop(start, stop )
+#video_io = VideoIO.VideoIO(f'{data_path}/{subdirectory}/', VIDEO_NAME, verbose=10)
+#video_movement = video_io.to_animation()
+video_movement = Animation.Animation().load(f'{data_path}/{subdirectory}/{VIDEO_NAME}/')
 
 frame_times = video_movement[0].get_times()
 
@@ -105,24 +95,24 @@ animation = b_utils.get_animation(NAME)
 for curve in animation:
     start, stop = b_utils.get_crop(curve)
     curve.crop(start, stop)
-additionnal_curves = Animation()
+additionnal_curves = Animation.Animation()
 
 for curve in animation:
     sampling_step = (curve.time_range[1]-curve.time_range[0])/(frame_times.size+1)
-    fcurve = curve.pointer
+    fcurve : bpy.types.FCurve = curve.pointer
     sampling_t = [curve.time_range[0] + i*sampling_step for i in range(frame_times.size+1)]
     sampling_v = [fcurve.evaluate(t) for t in sampling_t]
 
     absolute_first_derivative = np.abs(m_utils.derivee(sampling_v, sampling_step))
     if np.max(absolute_first_derivative)-np.min(absolute_first_derivative)  > 1e-2 : # variation in derivative
         coordinates = np.vstack((sampling_t[1:], absolute_first_derivative)).T
-        additionnal_curves.append(Curve(coordinates, fullname=f'absolute first derivative of {curve.fullname}'))
+        additionnal_curves.append(Curve.Curve(coordinates, fullname=f'absolute first derivative of {curve.fullname}'))
 
 #print(additionnal_curves)
-resampled_animation = animation.resample(frame_times.size) + additionnal_curves
+resampled_animation = animation.sample(frame_times.size, start="each", stop="each") + additionnal_curves
 #print(resampled_animation)
 
-def compare_animations(anim1:Animation, anim2:Animation):
+def compare_animations(anim1:Animation.Animation, anim2:Animation.Animation):
     correlation_matrix = np.zeros((len(anim1), len(anim2)), dtype=np.float64)
     for i, curve1 in enumerate(anim1):
         for j, curve2 in enumerate(anim2):
@@ -133,7 +123,6 @@ def compare_animations(anim1:Animation, anim2:Animation):
     return correlation_matrix
 
 matrix = compare_animations(resampled_animation, video_movement)
-#print(matrix)
 
 rows = [curve.fullname for curve in resampled_animation]
 columns = [curve.fullname for curve in video_movement]
@@ -143,3 +132,37 @@ print(dataframe)
 
 resampled_animation.display(style='markers+lines', handles=False, doShow=True)
 video_movement.display(style='markers+lines', handles=False, doShow=True)
+
+# TODO: make a figure with the two animations on different subplots ; make a vis.py function to handle layout ? (name of axis, etc)
+
+from plotly.subplots import make_subplots
+
+fig = make_subplots(rows=2, cols=1, shared_xaxes=True, subplot_titles=['Video curves', 'Blender curves'])
+video_movement.display(style='markers+lines', row=1, col=1, handles=False, fig=fig)
+resampled_animation.display(style='markers+lines', row=2, col=1, handles=False, fig=fig, doShow=True)
+
+
+## Display rescaled translation y (video) on same plot than translation z (blender)
+
+VideoIO.vis.Color.reset()
+
+transl_blender = resampled_animation.find("location Z sampled")
+fig = transl_blender.display(handles=False, style='markers+lines') # is in frame, 24fps
+
+transl_video = video_movement.find("Location Y")
+
+mean_diff = np.mean(transl_blender.get_values()) - np.mean(transl_video.get_values())
+std_diff = np.std(transl_blender.get_values()) / np.std(transl_video.get_values())
+
+def affine_transform(curve : Curve.Curve):
+    curve.value_transl(mean_diff)
+    curve.value_scale(center=np.mean(curve.get_values()), scale=std_diff)
+
+affine_transform(transl_video)
+
+transl_video.time_scale(center=np.min(transl_video.get_times()), scale=24) # fps=30 originally, but we put at 24 to match blender -> turn into frame numbers
+transl_video.time_transl(1-np.min(transl_video.get_times())) # put start at frame 1
+
+transl_video.display(handles=False, style='markers+lines', fig=fig, doShow=True)
+
+print(f'Correlation between retimed/rescaled curves : {m_utils.correlation(transl_video.get_values(), transl_blender.get_values())}') # is same as element of matrix because correlation coefficient is scale & translation independent

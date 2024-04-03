@@ -48,6 +48,7 @@ class VideoIO:
         try:
             self.load_config()
         except OSError:
+            print("Did not find config file ; reverting to default config.") if verbose>0 else None
             self.make_default_config()
 
         assert self.config_loaded, "Error when initializing VideoIO object."
@@ -105,11 +106,6 @@ class VideoIO:
     
     def process(self):
 
-        #if make_oflow_video:
-        #    oflow_video_content = np.zeros((self.oflow_len, self.video.frame_height, self.video.frame_width, 3), dtype=np.uint8)   
-
-        frame_times = self.get_frame_times()
-        
         oflow_result = [self.video.get_optical_flow(
             index,
             image_processing=self.image_processing_method,
@@ -118,13 +114,6 @@ class VideoIO:
         ) for index in tqdm(range(self.oflow_len), desc='Oflow computation')] # takes time
 
         oflow_measures = [res[2] for res in oflow_result]
-
-        #if make_oflow_video:
-        #    for index in range(frame_times.size):
-        #        magnitude, angle = oflow_result[index][:2] #pb : used background!=0 so is not dimensional...
-        #        bgr = oflow.make_oflow_image(magnitude, angle*np.pi/180) # this expects angle in radian
-        #        oflow_video_content[index,:,:,:] = np.copy(bgr)
-        #    Video.from_array(oflow_video_content, self.draw_diagrams()+f'/{self.name}_oflow.mp4', fps=self.video.fps)
 
         self.magnitude_means = np.array([measure["magnitude_mean"] for measure in oflow_measures])
         self.magnitude_stds = np.array([measure["magnitude_std"] for measure in oflow_measures])
