@@ -62,6 +62,12 @@ class Animation(List[Curve]):
         for i, curve in enumerate(self):
             curve.save(directory+f'/{i}.txt')
 
+    
+    def find(self, name):
+        fullnames = [curve.fullname for curve in self]
+        return self[fullnames.index(name)]
+
+
     @staticmethod
     def load(directory):
         res, i = Animation(), 0

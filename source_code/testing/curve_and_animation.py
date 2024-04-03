@@ -108,3 +108,7 @@ for curve in anim:
 anim.save(PATH+'/afac2/')
 loaded_anim = Animation.load(PATH+'/afac2/')
 print(f"Saved animation: {anim}, loaded animation: {loaded_anim}")
+
+
+request = anim.find("original curve")
+print(f"Curve fetched when asking for 'original curve': {request}")
