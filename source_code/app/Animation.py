@@ -1,11 +1,12 @@
-import os, csv
 
-import numpy as np
+import os
 from typing import List
 
-from app.Curve import Curve
+import numpy as np
 
-class Animation(List[Curve]):
+import app.Curve as Curve
+
+class Animation(List[Curve.Curve]):
 
     def __init__(self, curves=[]):
         super().__init__(curves)
@@ -72,7 +73,7 @@ class Animation(List[Curve]):
     def load(directory):
         res, i = Animation(), 0
         while os.path.exists(directory+f'/{i}.txt'):
-            curve = Curve.load(directory+f'/{i}.txt')
+            curve = Curve.Curve.load(directory+f'/{i}.txt')
             res.append(curve)
             i += 1
         return res

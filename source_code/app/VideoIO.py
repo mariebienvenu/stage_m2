@@ -3,16 +3,15 @@ import os, json
 
 import numpy as np
 from tqdm import tqdm
-import cv2
-import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from app.Video import Video
-from app.Animation import Animation
-from app.Curve import Curve
-import app.optical_flow as oflow
+import app.Video as Video
+import app.Animation as Animation
 import app.maths_utils as m_utils
 import app.visualisation as vis
+
+oflow = Video.oflow
+Curve = Animation.Curve
 
 
 def default_config(height, width, frame_count):
@@ -37,7 +36,7 @@ class VideoIO:
 
     def __init__(self, directory, video_name, verbose=0):
 
-        self.video = Video(directory+video_name+'.mp4', verbose=verbose)
+        self.video = Video.Video(f'{directory}/{video_name}'+'.mp4', verbose=verbose)
         self.name = video_name
         self.directory = directory
 
@@ -139,7 +138,7 @@ class VideoIO:
         self.is_processed = True
 
 
-    def draw_diagrams(self, save=True, show=False):
+    def draw_diagrams(self, fig=None, save=True, show=False):
         fig = make_subplots(rows=2, cols=3, subplot_titles=(
             "Amplitude du flux au cours du temps",
             "Vitesses au cours du temps" ,
@@ -147,7 +146,7 @@ class VideoIO:
             "Angle du flux au cours du temps",
             "Positions au cours du temps",
             "Trajectoire",
-        ))
+        )) if fig is None else fig
 
         if not self.is_processed:
             self.process()
@@ -179,15 +178,15 @@ class VideoIO:
         if not self.is_processed:
             self.process()
         frame_times = self.get_frame_times()
-        anim = Animation([
-            Curve(np.vstack((frame_times, self.magnitude_means)).T, fullname='Oflow magnitude - mean'),
-            Curve(np.vstack((frame_times, self.magnitude_stds)).T, fullname='Oflow magnitude - std'),
-            Curve(np.vstack((frame_times, self.angle_means)).T, fullname='Oflow angle - mean'),
-            Curve(np.vstack((frame_times, self.angle_stds)).T, fullname='Oflow angle - std'),
-            Curve(np.vstack((frame_times, self.velocity_x)).T, fullname='Velocity X'),
-            Curve(np.vstack((frame_times, self.velocity_y)).T, fullname='Velocity Y'),
-            Curve(np.vstack((frame_times, self.position_x)).T, fullname='Location X'),
-            Curve(np.vstack((frame_times, self.position_y)).T, fullname='Location Y'),
+        anim = Animation.Animation([
+            Curve.Curve(np.vstack((frame_times, self.magnitude_means)).T, fullname='Oflow magnitude - mean'),
+            Curve.Curve(np.vstack((frame_times, self.magnitude_stds)).T, fullname='Oflow magnitude - std'),
+            Curve.Curve(np.vstack((frame_times, self.angle_means)).T, fullname='Oflow angle - mean'),
+            Curve.Curve(np.vstack((frame_times, self.angle_stds)).T, fullname='Oflow angle - std'),
+            Curve.Curve(np.vstack((frame_times, self.velocity_x)).T, fullname='Velocity X'),
+            Curve.Curve(np.vstack((frame_times, self.velocity_y)).T, fullname='Velocity Y'),
+            Curve.Curve(np.vstack((frame_times, self.position_x)).T, fullname='Location X'),
+            Curve.Curve(np.vstack((frame_times, self.position_y)).T, fullname='Location Y'),
         ])
         anim.crop(start=self.time_crop[0], stop=self.time_crop[1])
         anim.save(self.directory + self.name + '/') if save else None

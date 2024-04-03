@@ -1,10 +1,11 @@
+
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-import numpy as np
-
 from app.Color import Color
+
 
 def add_curve(y, color=None, x = None, name = "", fig = None, row = None, col = None):
     color = color if color is not None else f'rgb{Color.next()}'

@@ -1,8 +1,8 @@
-import os
 
-import numpy as np
+import os
 from enum import Enum, unique
 
+import numpy as np
 import plotly.graph_objects as go
 
 from app.Color import Color
@@ -75,7 +75,7 @@ class Curve:
     def __init__(
             self,
             coordinates=np.zeros((1,2), dtype=np.float64), # shape (N,2)
-            easing_mode=Easing_Mode.AUTO,
+            easing_mode = Easing_Mode.AUTO,
             tangent_left_handle_x = np.float64(0),
             tangent_left_handle_y = np.float64(0),
             tangent_left_type=Handle_Type.AUTO,
@@ -101,7 +101,7 @@ class Curve:
         to_stack = [ids, coordinates]
 
         additionnal_attributes = [easing_mode, tangent_left_handle_x, tangent_left_handle_y, tangent_left_type, tangent_right_handle_x, tangent_right_handle_y, tangent_right_type, interpolation, key_type, amplitude, back, period]
-        for i, (input_arg, is_enum) in enumerate(zip(additionnal_attributes, Curve.ARE_ENUMS[3:])):
+        for i, (input_arg, is_enum) in enumerate(zip(additionnal_attributes, Curve.ARE_ENUMS[3:])): # try a try enumerate(input_arg) to test ?
             input_arg = np.array(input_arg) if type(input_arg)!=Curve.ATTRIBUTE_TYPES[i+3] else np.ones_like(ids)*(input_arg.value if is_enum else input_arg)
             to_stack.append(np.copy(input_arg))
         
