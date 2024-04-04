@@ -25,16 +25,20 @@ class ImageProcessing:
     
     @staticmethod
     def hue(image):
-        return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,:0]
+        return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,0]
     
     @staticmethod
     def saturation(image):
-        return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,:1]
+        return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,1]
     
     @staticmethod
     def value(image):
-        return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,:2]
+        return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,2]
     
     @staticmethod
     def custom(image, r=0.33, g=0.33, b=0.33):
         return r*ImageProcessing.red(image) + g*ImageProcessing.green(image) + b*ImageProcessing.blue(image)
+    
+    @staticmethod
+    def rgb(image):
+        return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
