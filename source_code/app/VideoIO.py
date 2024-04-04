@@ -104,7 +104,9 @@ class VideoIO:
         return np.array(list(range(self.oflow_len)), dtype=np.float64)/self.video.fps
 
     
-    def process(self):
+    def process(self, force=True):
+        if self.is_processed and not force:
+            return
 
         oflow_result = [self.video.get_optical_flow(
             index,
