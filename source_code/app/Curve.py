@@ -233,11 +233,13 @@ class Curve:
         self.array = np.copy(self.array[indexes,:])
         self.update_time_range()
 
-    def get_derivatives(self):
-        ## TODO : c'est FAUX dans le cas d'un handle de type différent !!!
+    def get_derivatives(self): # TODO untested in curve_and_animations.py i think
+        ## TODO : c'est FAUX dans le cas d'un handle de type différent !!! -> update: c'est changé mais toujours pas top
         dx = self.get_attribute(Attributes_Name.handle_right_x) - self.get_attribute(Attributes_Name.handle_left_x)
         dy = self.get_attribute(Attributes_Name.handle_right_y) - self.get_attribute(Attributes_Name.handle_left_y)
-        return dy/dx
+        left_unbroken_handles = np.array([ht not in [Handle_Type.FREE.value, Handle_Type.VECTOR.value] for ht in self.get_attribute(Attributes_Name.handle_left_type)])
+        right_unbroken_handles = np.array([ht not in [Handle_Type.FREE.value, Handle_Type.VECTOR.value] for ht in self.get_attribute(Attributes_Name.handle_right_type)])
+        return dy/dx*left_unbroken_handles*right_unbroken_handles # broken handles are automatically assigned a derivative of 0
     
     def sample(self, times):
         assert "pointer" in dir(self), "Cannot sample a curve with no associated fcurve."
