@@ -14,7 +14,7 @@ oflow = Video.oflow
 Curve = Animation.Curve
 
 
-def default_config(height, width, frame_count):
+def default_config(height, width, frame_count, fps):
     return {
         "spatial crop":{
             "x1":0,
@@ -28,6 +28,7 @@ def default_config(height, width, frame_count):
         },
         "image processing method":"gray",
         "background proportion":0.97,
+        "frame rate":fps,
     }
 
 
@@ -47,19 +48,23 @@ class VideoIO:
 
         try:
             self.load_config()
+            self.complete_config()
         except OSError:
             print("Did not find config file ; reverting to default config.") if verbose>0 else None
             self.make_default_config()
 
         assert self.config_loaded, "Error when initializing VideoIO object."
 
-    
-    def make_default_config(self):
-        self.config = default_config(
+    def get_default_config(self):
+        return default_config(
             self.video.frame_height,
             self.video.frame_width,
             self.video.frame_count,
+            self.video.fps,
         )
+    
+    def make_default_config(self):
+        self.config = self.get_default_config()
         self.config_loaded = True
 
 
@@ -77,6 +82,13 @@ class VideoIO:
         assert self.config_loaded, "Cannot save config if no config is loaded."
         with open(self.directory+self.name+"_config.json", "w") as outfile:
             json.dump(self.config, outfile)
+
+    
+    def complete_config(self):
+        default = self.get_default_config()
+        for key, value in enumerate(default):
+            if key not in self.config:
+                self.config[key] = value
 
 
     @property # reminder : properties are read-only. The config file should be directly modified ; there is no reason to do it programmatically.
