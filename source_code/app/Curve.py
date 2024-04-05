@@ -128,22 +128,41 @@ class Curve:
         assert kf[0] == id, "Error in getting keyframe."
         return kf[1,:]
     
+    def set_keyframe(self, id, array): # array SHOULD start with id
+        assert id==array[0], "Wrong ID !"
+        kf = self._get_row(id)
+        assert kf[0] == id, "Error in finding keyframe."
+        self._set_row(id, array)
+    
     def get_attribute(self, attribute_name:Attributes_Name|str):
-        column = attribute_name.value if type(attribute_name) is Attributes_Name else Attributes_Name[attribute_name].value
+        try :
+            column = attribute_name.value
+        except AttributeError:
+            column = Attributes_Name[attribute_name].value
         return self._get_column(column)
     
+    def set_attribute(self, attribute_name:Attributes_Name|str, array):
+        try :
+            column = attribute_name.value
+        except AttributeError:
+            column = Attributes_Name[attribute_name].value
+        self._set_column(column, array)
     
     def time_scale(self, center=0, scale=1):
-        self.array[:,1] = (self.array[:,1]-center)*scale + center
+        for attr in [Attributes_Name.time, Attributes_Name.handle_left_x, Attributes_Name.handle_right_x]:
+            self.set_attribute(attr, (self.get_attribute(attr)-center)*scale + center)
 
     def value_scale(self, center=0, scale=1):
-        self.array[:,2] = (self.array[:,2]-center)*scale + center
+        for attr in [Attributes_Name.value, Attributes_Name.handle_left_y, Attributes_Name.handle_right_y]:
+            self.set_attribute(attr, (self.get_attribute(attr)-center)*scale + center)
 
     def time_transl(self, translation):
-        self.array[:,1] += translation
+        for attr in [Attributes_Name.time, Attributes_Name.handle_left_x, Attributes_Name.handle_right_x]:
+            self.set_attribute(attr, self.get_attribute(attr)+translation)
 
     def value_transl(self, translation):
-        self.array[:,2] += translation
+        for attr in [Attributes_Name.value, Attributes_Name.handle_left_y, Attributes_Name.handle_right_y]:
+            self.set_attribute(attr, self.get_attribute(attr)+translation)
 
 
     def add_keyframe(self, time, value):
@@ -200,6 +219,12 @@ class Curve:
     
     def _get_column(self, column):
         return np.copy(self.array[:,column])
+    
+    def _set_row(self, row, array):
+        self.array[row,:] = np.copy(array)
+
+    def _set_column(self, column, array):
+        self.array[:,column] = np.copy(array)
 
     @staticmethod
     def from_array(array, **kwargs):

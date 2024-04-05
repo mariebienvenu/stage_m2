@@ -54,6 +54,8 @@ curve.time_scale(scale=0.3)
 curve.rename('time scale')
 curve.display(fig=fig, handles=False)
 
+curve.get_attribute("value")
+
 curve.check()
 
 values = curve.get_values()
