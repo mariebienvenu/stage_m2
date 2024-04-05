@@ -40,6 +40,7 @@ for directory in directories:
                 video_io.auto_time_crop()
 
             Color.reset()
+            video_io.process(force=True)
             video_io.draw_diagrams()
             video_io.to_animation()
 
