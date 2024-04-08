@@ -47,43 +47,6 @@ assert os.path.exists(data_path), "Wrong PATH"
 subdirectory = '03-11 initial videos'
 VIDEO_NAME = 'souris'
 
-'''
-
-VIDEO_NAME = '03-11 initial videos/souris.mp4' #'03-21 added light and glove/close_startup.mp4'
-video = Video(data_path + f'{VIDEO_NAME}', verbose=1)
-
-oflow_len = video.frame_count - 1
-frame_times = np.arange(0, oflow_len/video.fps, 1/video.fps)
-
-oflow_measures = [video.get_optical_flow(index)[2] for index in tqdm(range(oflow_len), desc='Oflow computation')]
-
-magnitude_means = np.array([measure["magnitude_mean"] for measure in oflow_measures])
-magnitude_stds = np.array([measure["magnitude_std"] for measure in oflow_measures])
-angle_means = np.array([measure["angle_mean"] for measure in oflow_measures])
-angle_stds = np.array([measure["angle_std"] for measure in oflow_measures])
-
-velocity_x, velocity_y = optical_flow.polar_to_cartesian(magnitude_means, -angle_means, degrees=True) # reverse angles because up is - in image space
-velocity_x, velocity_y = np.ravel(velocity_x), np.ravel(velocity_y)
-position_x, position_y = m_utils.integrale3(velocity_x, step=1), m_utils.integrale3(velocity_y, step=1)
-
-video_movement = Animation([
-    Curve(np.vstack((frame_times, magnitude_means)).T, fullname='Oflow magnitude - mean'),
-    Curve(np.vstack((frame_times, magnitude_stds)).T, fullname='Oflow magnitude - std'),
-    Curve(np.vstack((frame_times, angle_means)).T, fullname='Oflow angle - mean'),
-    Curve(np.vstack((frame_times, angle_stds)).T, fullname='Oflow angle - std'),
-    Curve(np.vstack((frame_times, velocity_x)).T, fullname='Velocity X'),
-    Curve(np.vstack((frame_times, velocity_y)).T, fullname='Velocity Y'),
-    Curve(np.vstack((frame_times, position_x)).T, fullname='Location X'),
-    Curve(np.vstack((frame_times, position_y)).T, fullname='Location Y'),
-])
-
-start, stop = optical_flow.get_crop(frame_times, magnitude_means, patience=2)
-
-video_movement.crop(start, stop)
-#video_movement.crop(66, 150)
-
-'''
-
 #video_io = VideoIO.VideoIO(f'{data_path}/{subdirectory}/', VIDEO_NAME, verbose=10)
 #video_movement = video_io.to_animation()
 video_movement = Animation.Animation().load(f'{data_path}/{subdirectory}/{VIDEO_NAME}/')
@@ -144,8 +107,6 @@ resampled_animation.display(style='markers+lines', row=2, col=1, handles=False, 
 
 ## Display rescaled translation y (video) on same plot than translation z (blender)
 
-VideoIO.vis.Color.reset()
-
 transl_blender = resampled_animation.find("location Z sampled")
 fig = transl_blender.display(handles=False, style='markers+lines') # is in frame, 24fps
 
@@ -160,9 +121,40 @@ def affine_transform(curve : Curve.Curve):
 
 affine_transform(transl_video)
 
-transl_video.time_scale(center=np.min(transl_video.get_times()), scale=24) # fps=30 originally, but we put at 24 to match blender -> turn into frame numbers
 transl_video.time_transl(1-np.min(transl_video.get_times())) # put start at frame 1
 
 transl_video.display(handles=False, style='markers+lines', fig=fig, doShow=True)
 
 print(f'Correlation between retimed/rescaled curves : {m_utils.correlation(transl_video.get_values(), transl_blender.get_values())}') # is same as element of matrix because correlation coefficient is scale & translation independent
+
+
+
+# Visualisation of oflow magnitude&angle and blender anim translation Z on top of each other: 
+
+magnitude = video_movement.find('Oflow magnitude - mean')
+angle = video_movement.find('Oflow angle - mean')
+transl_z = animation.find('location Z')
+sampled_transl_z = resampled_animation.find('location Z sampled')
+
+# on remet le début à frame 1
+magnitude.time_transl(1-np.min(magnitude.get_times()))
+angle.time_transl(1-np.min(angle.get_times()))
+
+anim_start = np.min(transl_z.get_times())
+transl_z.time_transl(1-anim_start)
+sampled_transl_z.time_transl(1-anim_start)
+
+# affichage
+fig = make_subplots(rows=3, cols=1, shared_xaxes=True, subplot_titles=["Angle of video's optical flow", "Magnitude of video's optical flow", "Blender animations's translation curve"])
+angle.display(fig=fig, handles=False, style="lines + markers", row=1, col=1)
+magnitude.display(fig=fig, handles=False, style="lines + markers", row=2, col=1)
+transl_z.display(fig=fig, handles=True, row=3, col=1)
+sampled_transl_z.display(fig=fig, handles=False, style='lines', row=3, col=1)
+fig.update_yaxes(title_text="angle (degree)", row=1, col=1)
+fig.update_yaxes(title_text="magnitude (pixel)", row=2, col=1)
+fig.update_yaxes(title_text="magnitude (blender unit)", row=3, col=1)
+fig.update_xaxes(title_text="time (frame)", row=3, col=1)
+
+fig.write_html(f'{data_path}/{subdirectory}/{VIDEO_NAME}_comparison.html')
+
+fig.show()
