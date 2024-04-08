@@ -8,7 +8,7 @@
             "name": "Python Debugger: Module",
             "type": "debugpy",
             "request": "launch",
-            "module": "source_code.testing.fake_blender",
+            "module": "source_code.io_for_all_videos",
             "env": {"PYTHONPATH": "${workspaceFolder}/source_code/"}
         }
     ]
