@@ -165,3 +165,7 @@ afac/
 *.blend1
 fails/
 _*.mp4
+
+
+#TOO BIG
+*.MP4
