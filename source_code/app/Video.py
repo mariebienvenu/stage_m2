@@ -16,7 +16,7 @@ class Video:
 
     def __init__(self, filepath, verbose=0):
         self.filepath = filepath
-                
+        
         vid_capture = cv2.VideoCapture(filepath)
         assert vid_capture.isOpened(), "Error opening the video file"
         ret, frame = vid_capture.read()
@@ -91,7 +91,7 @@ class Video:
             print(f'Displaying frame {start+diff}')
 
 
-    def get_frame(self, index, image_processing : ImageProcessing|str = ImageProcessing.none, crop = None):
+    def get_frame(self, index, image_processing : ImageProcessing|str = ImageProcessing.none, crop=None):
         crop = no_crop(self.frame_height, self.frame_width) if crop is None else crop
         self.load()
         assert index>=0 and index<self.frame_count, f"Index {index} out of video range [0, {self.frame_count}]."
@@ -120,9 +120,10 @@ class Video:
         frame_idx = 0
         close_key, previous_key, next_key = 'q', 'b', 'n' #quit, before, next
 
-        x1, x2, y1, y2 = 0, 0, 0, 0
-        drawing = False
+
         frame = self.get_frame(frame_idx)
+        x1, x2, y1, y2 = 0, frame.shape[0], 0, frame.shape[1]
+        drawing = False
 
         def draw_rectangle(event, x, y, flags, param):
             global frame_idx, x1, x2, y1, y2, drawing, frame
@@ -137,7 +138,7 @@ class Video:
                 drawing = False
                 x2, y2 = x,y
 
-        cv2.namedWindow("Get crop zone from user")
+        cv2.namedWindow("Get crop zone from user", flags = cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO | cv2.WINDOW_GUI_EXPANDED)
         cv2.setMouseCallback("Get crop zone from user", draw_rectangle)
 
         while True:
@@ -159,25 +160,31 @@ class Video:
     
     
     @staticmethod # TODO maybe should be a classmethod since it is a named constructor ?
-    def from_array(array, filepath='/tmp.mp4', fps=30, verbose=0):
+    def from_array(array : np.ndarray, filepath='/tmp.mp4', fps=30, verbose=0):
         # saves, returns Video object
         frame_count = array.shape[0]
         frame_height, frame_width = array.shape[1], array.shape[2]
         if len(array.shape)<4:
-            array = np.expand_dims(array)
+            array = np.expand_dims(array, axis=3)
         n_channels = array.shape[3]
         is_color = n_channels != 1
-        fourcc = 'mp4v' if 'mp4' in filepath[len(filepath)-3:] else 'XVID' # MP4 or AVI codec
+        fourcc = None
+        if '.mp4' in filepath:
+            fourcc = 'mp4v'
+        elif '.avi' in filepath:
+            fourcc = 'XVID'
+        assert fourcc is not None, f'Failed to initialize proper video codec for "{filepath}" file.'
         vid_writer = cv2.VideoWriter(
             filepath,
             fourcc=cv2.VideoWriter_fourcc(*fourcc),
             fps=fps,
             frameSize=(frame_width, frame_height),
-            isColor=is_color
         )
         
         for i in range(frame_count):
-            frame = array[i,:,:,:]
+            frame = array[i,:,:,:].astype(np.uint8)
+            if not is_color:
+                frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
             vid_writer.write(frame)
         vid_writer.release()
 
