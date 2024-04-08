@@ -74,6 +74,8 @@ def get_crop(frame_times, magnitude_mean, threshold=2, padding_out=10, padding_i
             elif abs(opp_mag)<threshold:
                 stop -= 1
                 used_patience_right = 0
+    if start==frame_times.size or stop==0:
+        return (frame_times[0], frame_times[0]) # found nothing good to keep...
     start -= padding_in + used_patience_left
     stop += padding_in + used_patience_right
     start = max(0, start)
