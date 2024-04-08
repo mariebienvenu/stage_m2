@@ -55,11 +55,12 @@ def magnitude_angle(
         angle_means,
         angle_stds,
         colors = None,
-        fig=make_subplots(rows=2, cols=1),
+        fig=None,
         doShow=False,
         rows=[1,2],
         cols=[1,1]
 ):
+    fig = fig if fig is not None else make_subplots(rows=2, cols=1) # cannot put it as default arg because it is evaluated at launch time then used for everyone... since is pointer -> bad
     
     colors = colors if colors is not None else (Color.next(), Color.next())
     add_curve(magnitude_means, f'rgb{colors[0]}', x=frame_times, name='amplitude=f(t) - Amplitude du flux', fig=fig, row=rows[0], col=cols[0])
