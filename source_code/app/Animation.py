@@ -17,7 +17,7 @@ class Animation(List[Curve.Curve]):
         if doShow: fig.show()
         return fig
     
-    def sample(self, n_samples, start="all", stop="all"):
+    def sample(self, n_samples, start="all", stop="all"): # including stop
         '''pas "en place"'''
 
         if type(start) in [int, float]:
@@ -42,7 +42,7 @@ class Animation(List[Curve.Curve]):
         ## TODO: -- un peu ugly d'utiliser la fonction evaluate()... mais bon c'est validé par Damien
         resampled_anim = Animation()
         for curve, strt, stp in zip(self, start, stop):
-            times = np.arange(strt, stp, step=(stp-strt)/n_samples) if strt!=stp else np.array([strt])
+            times = np.concatenate((np.arange(strt, stp, step=(stp-strt)/(n_samples-1)), [stp])) if strt!=stp else np.array([strt])
             new_curve = curve.sample(times)
             resampled_anim.append(new_curve)
             ## TODO: -- recover other informations ? if possible & useful... (probably not useful since they will be incomplete)
