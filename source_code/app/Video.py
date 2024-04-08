@@ -122,7 +122,7 @@ class Video:
 
 
         frame = self.get_frame(frame_idx)
-        x1, x2, y1, y2 = 0, frame.shape[0], 0, frame.shape[1]
+        x1, x2, y1, y2 = 0, frame.shape[1], 0, frame.shape[0]
         drawing = False
 
         def draw_rectangle(event, x, y, flags, param):
@@ -138,7 +138,8 @@ class Video:
                 drawing = False
                 x2, y2 = x,y
 
-        cv2.namedWindow("Get crop zone from user", flags = cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO | cv2.WINDOW_GUI_EXPANDED)
+        cv2.namedWindow("Get crop zone from user", flags = cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO | cv2.WINDOW_GUI_EXPANDED) # does not work as intended
+        cv2.resizeWindow("Get crop zone from user", 100, 100)
         cv2.setMouseCallback("Get crop zone from user", draw_rectangle)
 
         while True:
