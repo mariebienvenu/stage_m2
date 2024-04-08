@@ -45,7 +45,7 @@ def make_oflow_image(mag, ang): #magnitude, angle. Used for visualisation purpos
     bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
     return bgr
 
-def measure_oflow(magnitude, angle): # TODO: optical_flow.measure_oflow() renvoie un truc peu lisible pour l'autocomplete ; créer un énum ?
+def measure_oflow(magnitude, angle): # TODO optical_flow.measure_oflow() -- renvoie un truc peu lisible pour l'autocomplete ; créer un énum ?
     return {
         "magnitude_mean":np.mean(magnitude),
         "magnitude_std":np.std(magnitude), 
@@ -53,7 +53,8 @@ def measure_oflow(magnitude, angle): # TODO: optical_flow.measure_oflow() renvoi
         "angle_std":np.std(angle) # following formula gives way too big values : np.std(magnitude*angle)/np.std(magnitude)
     }
 
-def get_crop(frame_times, magnitude_mean, threshold=2, padding_out=10, padding_in=3, patience=0): # TODO move to Curve.py 
+def get_crop(frame_times, magnitude_mean, threshold=0.1, padding_out=10, padding_in=3, patience=0): # oflow.get_crop() -- TODO move to Curve.py 
+    ## oflow.get_crop() --  TODO magnitude_means should actually be normalized (right now its scale depends heavily on background proportion) so that this threshold can stay the same.
     ## TODO -- passer à un input de type curve ? et ajouter un constant=0 pour gérer des courbes qui plateaux à autre chose que 0
     start = padding_out
     stop = magnitude_mean.size-padding_out
