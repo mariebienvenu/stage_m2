@@ -43,8 +43,8 @@ assert os.path.exists(scene_path), "Blender scene directory not found."
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
-subdirectory = '03-11 initial videos'
-VIDEO_NAME = 'souris'
+subdirectory = '04-08 appareil de Damien' #'03-11 initial videos'
+VIDEO_NAME = 'P1010231'
 
 video_movement = Animation.Animation().load(f'{data_path}/{subdirectory}/{VIDEO_NAME}/')
 
@@ -56,9 +56,27 @@ for curve in animation:
     start, stop = b_utils.get_crop(curve)
     curve.crop(start, stop)
 
-resampled_animation = animation.sample(frame_times.size, start="each", stop="each")
+additionnal_curves = Animation.Animation()
 
-target_curve = resampled_animation.find('location Z sampled')
+for curve in animation:
+    sampling_step = (curve.time_range[1]-curve.time_range[0])/(frame_times.size+1)
+    if sampling_step == 0:
+        continue
+    fcurve : bpy.types.FCurve = curve.pointer
+    sampling_t = [curve.time_range[0] + i*sampling_step for i in range(frame_times.size+1)]
+    sampling_v = [fcurve.evaluate(t) for t in sampling_t]
+
+    absolute_first_derivative = m_utils.derivee(sampling_v, sampling_step)
+    if np.max(absolute_first_derivative)-np.min(absolute_first_derivative)  > 1e-2 : # variation in derivative
+        coordinates = np.vstack((sampling_t[1:], absolute_first_derivative)).T
+        additionnal_curves.append(Curve.Curve(coordinates, fullname=f'first derivative of {curve.fullname}'))
+
+resampled_animation = Animation.Animation()
+for curve in animation.sample(frame_times.size, start="each", stop="each") + additionnal_curves:
+    if len(curve)>1:
+        resampled_animation.append(curve)
+
+target_curve = resampled_animation.find('first derivative of location Z')
 
 user_features = np.array([curve.get_values() for curve in video_movement]).T
 target = np.expand_dims(target_curve.get_values(), axis=0).T
@@ -92,7 +110,7 @@ print(f"SCORE : {cca.score(user_features, target)}")
 
 ## Now with only the Y translation
 
-user_curve = video_movement.find('Location Y')
+user_curve = video_movement.find('Velocity Y')
 
 user_features = np.expand_dims(user_curve.get_values(), axis=1)
 target = np.expand_dims(target_curve.get_values(), axis=1)
