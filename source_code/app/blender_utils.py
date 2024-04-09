@@ -81,7 +81,8 @@ def get_crop(curve:Curve.Curve):
             start += 1
         if stop == len(curve)-1-i and opp_derivative==0 and opp_value==values[-i]:
             stop -= 1
-    
+    if start==times.size or stop==0:
+        return (times[0], times[0]) # all keyframes have same value and tangents -> only one keyframe is enough
     start -= 1
     stop += 1
     assert start <= stop, "Problem encountered when autocropping."
