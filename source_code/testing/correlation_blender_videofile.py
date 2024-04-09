@@ -44,35 +44,58 @@ assert os.path.exists(scene_path), "Blender scene directory not found."
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
-subdirectory = '03-11 initial videos'
-VIDEO_NAME = 'souris'
+subdirectory = '04-08 appareil de Damien' #'03-11 initial videos'
+VIDEO_NAME = 'P1010231'
 
 #video_io = VideoIO.VideoIO(f'{data_path}/{subdirectory}/', VIDEO_NAME, verbose=10)
 #video_movement = video_io.to_animation()
 video_movement = Animation.Animation().load(f'{data_path}/{subdirectory}/{VIDEO_NAME}/')
-
 frame_times = video_movement[0].get_times()
+
+additionnal_curves_video = Animation.Animation()
+for curve in video_movement:
+    sampling_step = (curve.time_range[1]-curve.time_range[0])/frame_times.size
+    if sampling_step == 0:
+        continue
+    
+    first_derivative = m_utils.derivee(curve.get_values(), sampling_step)
+    if np.max(first_derivative)-np.min(first_derivative)  > 1e-2 : # variation in derivative
+        coordinates = np.vstack((curve.get_times()[1:], first_derivative)).T
+        additionnal_curves_video.append(Curve.Curve(coordinates, fullname=f'First derivative of {curve.fullname}'))
+
+additionnal_curves_video.display(handles=False, style='markers+lines', doShow=True)
+
 
 NAME = 'Ball'
 animation = b_utils.get_animation(NAME)
 for curve in animation:
     start, stop = b_utils.get_crop(curve)
-    curve.crop(start, stop)
+    #curve.crop(start, stop)
 additionnal_curves = Animation.Animation()
 
 for curve in animation:
-    sampling_step = (curve.time_range[1]-curve.time_range[0])/(frame_times.size+1)
+    sampling_step = (curve.time_range[1]-curve.time_range[0])/(frame_times.size-1)
+    if sampling_step == 0:
+        continue
+    delta_t = sampling_step/20
     fcurve : bpy.types.FCurve = curve.pointer
-    sampling_t = [curve.time_range[0] + i*sampling_step for i in range(frame_times.size+1)]
-    sampling_v = [fcurve.evaluate(t) for t in sampling_t]
+    sampling_t = [curve.time_range[0] + i*sampling_step for i in range(frame_times.size)]
+    sampling_v = [fcurve.evaluate(t) if i%2==0 else fcurve.evaluate(t+delta_t)  for (i,t) in enumerate([sampling_t[j//2] for j in range(2*(frame_times.size))])]
 
-    absolute_first_derivative = np.abs(m_utils.derivee(sampling_v, sampling_step))
+    first_derivative = m_utils.derivee(sampling_v, delta_t)[::2]
+    absolute_first_derivative = np.abs(first_derivative)
     if np.max(absolute_first_derivative)-np.min(absolute_first_derivative)  > 1e-2 : # variation in derivative
-        coordinates = np.vstack((sampling_t[1:], absolute_first_derivative)).T
+        coordinates = np.vstack((sampling_t, absolute_first_derivative)).T
         additionnal_curves.append(Curve.Curve(coordinates, fullname=f'absolute first derivative of {curve.fullname}'))
 
+        coordinates = np.vstack((sampling_t, first_derivative)).T
+        additionnal_curves.append(Curve.Curve(coordinates, fullname=f'first derivative of {curve.fullname}'))
+
 #print(additionnal_curves)
-resampled_animation = animation.sample(frame_times.size, start="each", stop="each") + additionnal_curves
+resampled_animation = Animation.Animation()
+for curve in animation.sample(frame_times.size, start="each", stop="each") + additionnal_curves:
+    if len(curve)>1:
+        resampled_animation.append(curve)
 #print(resampled_animation)
 
 def compare_animations(anim1:Animation.Animation, anim2:Animation.Animation):
@@ -156,5 +179,28 @@ fig.update_yaxes(title_text="magnitude (blender unit)", row=3, col=1)
 fig.update_xaxes(title_text="time (frame)", row=3, col=1)
 
 fig.write_html(f'{data_path}/{subdirectory}/{VIDEO_NAME}_comparison.html')
+
+fig.show()
+
+# Visualisation of velocity y and blender anim derivative of translation Z on top of each other: 
+
+velo_y = video_movement.find('Velocity Y')
+transl_z_prime = additionnal_curves.find('first derivative of location Z')
+
+# on remet le début à frame 1
+velo_y.time_transl(1-np.min(velo_y.get_times()))
+
+anim_start = np.min(transl_z_prime.get_times())
+transl_z_prime.time_transl(1-anim_start)
+
+# affichage
+fig = make_subplots(rows=2, cols=1, shared_xaxes=True, subplot_titles=["Y Velocity of video", "First derivative of Blender animation's translation curve"])
+velo_y.display(fig=fig, handles=False, style="lines + markers", row=1, col=1)
+transl_z_prime.display(fig=fig, handles=False, style="lines + markers", row=2, col=1)
+fig.update_yaxes(title_text="magnitude (pixels/second)", row=1, col=1)
+fig.update_yaxes(title_text="magnitude (blender unit)", row=2, col=1)
+fig.update_xaxes(title_text="time (frame)", row=2, col=1)
+
+fig.write_html(f'{data_path}/{subdirectory}/{VIDEO_NAME}_comparison_velocity.html')
 
 fig.show()
