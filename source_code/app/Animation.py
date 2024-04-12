@@ -39,13 +39,13 @@ class Animation(List[Curve.Curve]):
         assert type(stop) is list, f"Wrong type for 'stop' parameter. Expected a list, got {type(stop)}"
         assert len(stop)==len(self), f"Wrong size for 'stop' parameter. Expected {len(self)}, got {len(stop)}"
 
-        ## TODO: -- un peu ugly d'utiliser la fonction evaluate()... mais bon c'est validé par Damien
+        ## TODO Animation.sample() -- un peu ugly d'utiliser la fonction evaluate()... mais bon c'est validé par Damien
         resampled_anim = Animation()
         for curve, strt, stp in zip(self, start, stop):
             times = np.concatenate((np.arange(strt, stp, step=(stp-strt)/(n_samples-1)), [stp])) if strt!=stp else np.array([strt])
             new_curve = curve.sample(times)
             resampled_anim.append(new_curve)
-            ## TODO: -- recover other informations ? if possible & useful... (probably not useful since they will be incomplete)
+            ## TODO Animation.sample() -- recover other informations ? if possible & useful... (probably not useful since they will be incomplete)
         
         return resampled_anim
     

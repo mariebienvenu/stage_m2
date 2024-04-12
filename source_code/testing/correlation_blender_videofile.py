@@ -45,7 +45,7 @@ data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
 subdirectory = '04-08 appareil de Damien' #'03-11 initial videos'
-VIDEO_NAME = 'P1010231'
+VIDEO_NAME = 'P1010236'
 
 #video_io = VideoIO.VideoIO(f'{data_path}/{subdirectory}/', VIDEO_NAME, verbose=10)
 #video_movement = video_io.to_animation()
