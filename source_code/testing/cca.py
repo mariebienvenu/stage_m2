@@ -44,7 +44,7 @@ data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
 
 subdirectory = '04-08 appareil de Damien' #'03-11 initial videos'
-VIDEO_NAME = 'P1010231'
+VIDEO_NAME = 'P1010236'
 
 video_movement = Animation.Animation().load(f'{data_path}/{subdirectory}/{VIDEO_NAME}/')
 
@@ -54,21 +54,26 @@ NAME = 'Ball'
 animation = b_utils.get_animation(NAME)
 for curve in animation:
     start, stop = b_utils.get_crop(curve)
-    curve.crop(start, stop)
+    #curve.crop(start, stop)
 
 additionnal_curves = Animation.Animation()
 
 for curve in animation:
-    sampling_step = (curve.time_range[1]-curve.time_range[0])/(frame_times.size+1)
+    sampling_step = (curve.time_range[1]-curve.time_range[0])/(frame_times.size-1)
     if sampling_step == 0:
         continue
+    delta_t = sampling_step/20
     fcurve : bpy.types.FCurve = curve.pointer
-    sampling_t = [curve.time_range[0] + i*sampling_step for i in range(frame_times.size+1)]
-    sampling_v = [fcurve.evaluate(t) for t in sampling_t]
+    sampling_t = [curve.time_range[0] + i*sampling_step for i in range(frame_times.size)]
+    sampling_v = [fcurve.evaluate(t) if i%2==0 else fcurve.evaluate(t+delta_t)  for (i,t) in enumerate([sampling_t[j//2] for j in range(2*(frame_times.size))])]
 
-    absolute_first_derivative = m_utils.derivee(sampling_v, sampling_step)
+    first_derivative = m_utils.derivee(sampling_v, delta_t)[::2]
+    absolute_first_derivative = np.abs(first_derivative)
     if np.max(absolute_first_derivative)-np.min(absolute_first_derivative)  > 1e-2 : # variation in derivative
-        coordinates = np.vstack((sampling_t[1:], absolute_first_derivative)).T
+        coordinates = np.vstack((sampling_t, absolute_first_derivative)).T
+        additionnal_curves.append(Curve.Curve(coordinates, fullname=f'absolute first derivative of {curve.fullname}'))
+
+        coordinates = np.vstack((sampling_t, first_derivative)).T
         additionnal_curves.append(Curve.Curve(coordinates, fullname=f'first derivative of {curve.fullname}'))
 
 resampled_animation = Animation.Animation()
