@@ -11,7 +11,7 @@ import app.Animation as Animation
 import app.maths_utils as m_utils
 import app.visualisation as vis
 
-oflow = Video.oflow
+oflow = Video.OpticalFlow
 Curve = Animation.Curve
 
 

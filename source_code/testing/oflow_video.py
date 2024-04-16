@@ -6,7 +6,7 @@ import cv2
 from tqdm import tqdm
 
 from app.Video import Video
-import app.optical_flow as optical_flow
+import app.OpticalFlow as OpticalFlow
 
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"

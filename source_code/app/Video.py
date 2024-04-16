@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 
-import app.optical_flow as oflow
+import app.OpticalFlow as OpticalFlow
 from app.ImageProcessing import ImageProcessing
 
 
@@ -106,7 +106,7 @@ class Video:
         '''if background_proportion is 0 then there will be no thresholding'''
         assert index>=0 and index<self.frame_count-1, f"Index out of video's optical flow range: {index} should be between 0 and {self.frame_count-1} but is not."
         frame1, frame2 = self.get_frame(index, image_processing=image_processing, crop=crop), self.get_frame(index+1, image_processing=image_processing, crop=crop)
-        flow = oflow.OpticalFlow.compute_oflow(frame1, frame2, use_degrees=degrees, **kwargs)
+        flow = OpticalFlow.OpticalFlow.compute_oflow(frame1, frame2, use_degrees=degrees, **kwargs)
         return flow
     
 

@@ -21,7 +21,7 @@ import bpy
 
 from app.Video import Video
 import app.VideoIO as VideoIO
-import app.optical_flow as optical_flow
+import app.OpticalFlow as OpticalFlow
 import app.visualisation as vis
 import app.blender_utils as b_utils
 
