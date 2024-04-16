@@ -157,8 +157,8 @@ class Video:
         return {'x1':min(x1,x2), 'x2':max(x1,x2), 'y1':min(y1,y2), 'y2':max(y1,y2)}
     
     
-    @staticmethod # TODO Video.from_array() -- maybe should be a classmethod since it is a named constructor ? -> classmethods are better if there is inheritance & overload
-    def from_array(array : np.ndarray, filepath='/tmp.mp4', fps=30, verbose=0):
+    @classmethod # -> classmethods are better if there is inheritance & overload
+    def from_array(cls, array : np.ndarray, filepath='/tmp.mp4', fps=30, verbose=0):
         # saves, returns Video object
         frame_count = array.shape[0]
         frame_height, frame_width = array.shape[1], array.shape[2]
@@ -186,5 +186,5 @@ class Video:
             vid_writer.write(frame)
         vid_writer.release()
 
-        return Video(filepath, verbose)
+        return cls(filepath, verbose)
     

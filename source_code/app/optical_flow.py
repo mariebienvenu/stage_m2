@@ -26,8 +26,8 @@ class OpticalFlow(np.ndarray):
         self.polar = getattr(obj, 'polar', None)
 
 
-    @staticmethod
-    def compute_oflow(im1, im2, winsize=15, levels=3, iterations=3, poly_n=5, poly_sigma=1.3, use_degrees=False):
+    @classmethod
+    def compute_oflow(cls, im1, im2, winsize=15, levels=3, iterations=3, poly_n=5, poly_sigma=1.3, use_degrees=False):
         assert OpticalFlow.is_grayscale(im1) and OpticalFlow.is_grayscale(im2), "Provided images are not in grayscale."
         oflow = cv2.calcOpticalFlowFarneback(
             im1,
@@ -41,7 +41,7 @@ class OpticalFlow(np.ndarray):
             poly_sigma=poly_sigma,
             flags=0
             )
-        return OpticalFlow(oflow, use_degrees=use_degrees)
+        return cls(oflow, use_degrees=use_degrees)
     
 
     @property
@@ -97,8 +97,8 @@ class OpticalFlow(np.ndarray):
             return np.mean(self.magnitude[mask>0]*self.angle[mask>0])/np.mean(self.magnitude[mask>0])
         elif measure == Measure.ANGLE_STD:
             return np.std(self.angle[mask>0])
-     
-        
+
+
     @staticmethod
     def is_grayscale(image:np.ndarray):
         return len(image.shape)==2 or (len(image.shape)==3 and image.shape[2]==1)
