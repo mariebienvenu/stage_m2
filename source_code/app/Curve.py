@@ -195,7 +195,7 @@ class Curve:
     
     def check(self):
         assert len(self.array.shape)==2 and self.array.shape[1] == Curve.N_ATTRIBUTES, f"Self checking failed ! Current shape is {self.array.shape} instead of (N, {self.N_ATTRIBUTES+1})"
-        # TODO: Curve.check() should also check types of columns
+        # TODO Curve.check() -- should also check types of columns
 
     def __len__(self):
         return self.array.shape[0]
