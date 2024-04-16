@@ -139,12 +139,12 @@ class VideoIO:
                 degrees=True,
             )
             mask = flow.get_mask(background_proportion=self.background_proportion)
-            self.magnitude_means[index] = flow.get_measure(oflow.Measure.MAGNITUDE_MEAN)
-            self.magnitude_stds[index] = flow.get_measure(oflow.Measure.MAGNITUDE_STD)
-            self.angle_means[index] = flow.get_measure(oflow.Measure.ANGLE_MEAN)
-            self.angle_stds[index] = flow.get_measure(oflow.Measure.ANGLE_STD)
+            self.magnitude_means[index] = flow.get_measure(oflow.Measure.MAGNITUDE_MEAN, mask)
+            self.magnitude_stds[index] = flow.get_measure(oflow.Measure.MAGNITUDE_STD, mask)
+            self.angle_means[index] = flow.get_measure(oflow.Measure.ANGLE_MEAN, mask)
+            self.angle_stds[index] = flow.get_measure(oflow.Measure.ANGLE_STD, mask)
 
-        velocity_x, velocity_y = oflow.OpticalFlow.polar_to_cartesian(self.magnitude_means, -self.angle_means, degrees=True) # reverse angles because up is - in image space
+        velocity_x, velocity_y = oflow.polar_to_cartesian(self.magnitude_means, -self.angle_means, degrees=True) # reverse angles because up is - in image space
         self.velocity_x, self.velocity_y = np.ravel(velocity_x), np.ravel(velocity_y)
         self.position_x, self.position_y = m_utils.integrale3(self.velocity_x, step=1), m_utils.integrale3(self.velocity_y, step=1)
 

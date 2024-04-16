@@ -16,7 +16,7 @@ class OpticalFlow(np.ndarray):
     def __new__(cls, array:np.ndarray, use_degrees=False):
         obj = np.asarray(array).view(cls)
         obj.use_degrees = use_degrees
-        obj.polar = OpticalFlow.cartesian_to_polar(obj.x, obj.y, degrees=use_degrees)
+        obj.polar = cartesian_to_polar(obj.x, obj.y, degrees=use_degrees)
         return obj
     
 
@@ -102,14 +102,13 @@ class OpticalFlow(np.ndarray):
     def is_grayscale(image:np.ndarray):
         return len(image.shape)==2 or (len(image.shape)==3 and image.shape[2]==1)
     
-    @staticmethod
-    def cartesian_to_polar(x, y, degrees=False):
-        return cv2.cartToPolar(x, y, angleInDegrees=degrees)
 
-    @staticmethod
-    def polar_to_cartesian(magnitude, angle, degrees=False):
-        return cv2.polarToCart(magnitude, angle, angleInDegrees=degrees)
-    
+
+def cartesian_to_polar(x, y, degrees=False):
+    return cv2.cartToPolar(x, y, angleInDegrees=degrees)
+
+def polar_to_cartesian(magnitude, angle, degrees=False):
+    return cv2.polarToCart(magnitude, angle, angleInDegrees=degrees)
 
 
 def get_crop(frame_times, magnitude_mean, threshold=0.1, padding_out=10, padding_in=3, patience=0): ## TODO oflow.get_crop() -- move to Curve.py 
