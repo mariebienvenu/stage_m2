@@ -36,6 +36,7 @@ Curve = b_utils.Curve
 Animation = b_utils.Animation
 m_utils = VideoIO.m_utils
 
+importlib.reload(Curve)
 
 blender_filepath = bpy.data.filepath
 scene_path = '/'.join(blender_filepath.split('\\')[:-1])+'/'
@@ -54,15 +55,15 @@ frame_times = video_movement[0].get_times()
 
 additionnal_curves_video = Animation.Animation()
 for curve in video_movement:
-    sampling_step = (curve.time_range[1]-curve.time_range[0])/frame_times.size
-    if sampling_step == 0:
-        continue
-    
-    first_derivative = m_utils.derivee(curve.get_values(), sampling_step)
-    if np.max(first_derivative)-np.min(first_derivative)  > 1e-2 : # variation in derivative
-        coordinates = np.vstack((curve.get_times()[1:], first_derivative)).T
-        additionnal_curves_video.append(Curve.Curve(coordinates, fullname=f'First derivative of {curve.fullname}'))
+    first_derivative = curve.first_derivative()
+    bottom, top = first_derivative.get_value_range()
+    if top-bottom > 1e-2:
+        additionnal_curves_video.append(first_derivative)
 
+    second_derivative = curve.second_derivative()
+    bottom, top = second_derivative.get_value_range()
+    if top-bottom > 1e-2:
+        additionnal_curves_video.append(second_derivative)
 additionnal_curves_video.display(handles=False, style='markers+lines', doShow=True)
 
 
@@ -74,22 +75,15 @@ for curve in animation:
 additionnal_curves = Animation.Animation()
 
 for curve in animation:
-    sampling_step = (curve.time_range[1]-curve.time_range[0])/(frame_times.size-1)
-    if sampling_step == 0:
-        continue
-    delta_t = sampling_step/20
-    fcurve : bpy.types.FCurve = curve.pointer
-    sampling_t = [curve.time_range[0] + i*sampling_step for i in range(frame_times.size)]
-    sampling_v = [fcurve.evaluate(t) if i%2==0 else fcurve.evaluate(t+delta_t)  for (i,t) in enumerate([sampling_t[j//2] for j in range(2*(frame_times.size))])]
+    first_derivative = curve.first_derivative(n_samples=frame_times.size-2)
+    bottom, top = first_derivative.get_value_range()
+    if top-bottom > 1e-2:
+        additionnal_curves.append(first_derivative)
 
-    first_derivative = m_utils.derivee(sampling_v, delta_t)[::2]
-    absolute_first_derivative = np.abs(first_derivative)
-    if np.max(absolute_first_derivative)-np.min(absolute_first_derivative)  > 1e-2 : # variation in derivative
-        coordinates = np.vstack((sampling_t, absolute_first_derivative)).T
-        additionnal_curves.append(Curve.Curve(coordinates, fullname=f'absolute first derivative of {curve.fullname}'))
-
-        coordinates = np.vstack((sampling_t, first_derivative)).T
-        additionnal_curves.append(Curve.Curve(coordinates, fullname=f'first derivative of {curve.fullname}'))
+    second_derivative = curve.second_derivative(n_samples=frame_times.size-2)
+    bottom, top = second_derivative.get_value_range()
+    if top-bottom > 1e-2:
+        additionnal_curves.append(second_derivative)
 
 #print(additionnal_curves)
 resampled_animation = Animation.Animation()
@@ -108,10 +102,20 @@ def compare_animations(anim1:Animation.Animation, anim2:Animation.Animation):
             correlation_matrix[i,j] = m_utils.correlation(values1, values2)
     return correlation_matrix
 
-matrix = compare_animations(resampled_animation, video_movement)
 
-rows = [curve.fullname for curve in resampled_animation]
+matrix = compare_animations(animation.sample(frame_times.size, start="each", stop="each"), video_movement)
+
+rows = [curve.fullname for curve in animation.sample(frame_times.size, start="each", stop="each")]
 columns = [curve.fullname for curve in video_movement]
+
+dataframe = pd.DataFrame(matrix, columns=columns, index=rows)
+print(dataframe)
+
+
+matrix = compare_animations(additionnal_curves, additionnal_curves_video)
+
+rows = [curve.fullname for curve in additionnal_curves]
+columns = [curve.fullname for curve in additionnal_curves_video]
 
 dataframe = pd.DataFrame(matrix, columns=columns, index=rows)
 print(dataframe)
@@ -185,7 +189,7 @@ fig.show()
 # Visualisation of velocity y and blender anim derivative of translation Z on top of each other: 
 
 velo_y = video_movement.find('Velocity Y')
-transl_z_prime = additionnal_curves.find('first derivative of location Z')
+transl_z_prime = additionnal_curves.find('First derivative of location Z')
 
 # on remet le début à frame 1
 velo_y.time_transl(1-np.min(velo_y.get_times()))
@@ -204,3 +208,31 @@ fig.update_xaxes(title_text="time (frame)", row=2, col=1)
 fig.write_html(f'{data_path}/{subdirectory}/{VIDEO_NAME}_comparison_velocity.html')
 
 fig.show()
+
+# Viualisation of Acceleration y and blender anim second derivative of translation Z on top of each other
+# with blender translation below
+
+acc_y = additionnal_curves_video.find('First derivative of Velocity Y')
+transl_z_seconde = additionnal_curves.find('Second derivative of location Z')
+
+# on remet le début à frame 1
+acc_y.time_transl(1-np.min(acc_y.get_times()))
+
+anim_start = np.min(transl_z_seconde.get_times())
+transl_z_seconde.time_transl(1-anim_start)
+
+fig2 = make_subplots(rows=2, cols=1, shared_xaxes=True, subplot_titles=["Blender animation's translation curve", "Accelerations"])
+
+transl_z.display(fig=fig2, handles=True, style="markers", row=1, col=1)
+sampled_transl_z.display(fig=fig2, handles=False, style='lines', row=1, col=1)
+
+acc_y.display(fig=fig2, handles=False, style='lines+markers', row=2, col=1)
+transl_z_seconde.display(fig=fig2, handles=False, style='lines+markers', row=2, col=1)
+
+fig2.update_yaxes(title_text="magnitude (blender unit)", row=1, col=1)
+fig2.update_yaxes(title_text="magnitude (/second²)", row=2, col=1)
+fig2.update_xaxes(title_text="time (frame)", row=2, col=1)
+
+fig2.write_html(f'{data_path}/{subdirectory}/{VIDEO_NAME}_comparison_acceleration.html')
+
+fig2.show()

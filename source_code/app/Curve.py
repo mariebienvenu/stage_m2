@@ -251,6 +251,10 @@ class Curve:
         times = self.get_times()
         self.time_range = (np.min(times), np.max(times))
 
+    def get_value_range(self):
+        values = self.get_values()
+        return (np.min(values), np.max(values))
+
     def crop(self, start=None, stop=None):
         start = start if start is not None else self.time_range[0]
         stop = stop if stop is not None else self.time_range[1]
@@ -296,9 +300,9 @@ class Curve:
         return curve
     
 
-    def _derivative(self, finite_scheme=None, name=''):
-
+    def _derivative(self, finite_scheme=None, name='', n_samples=None):
         # Assumes that either self has an associated blender pointer, or is uniformally sampled
+        
         try:
             fcurve : bpy.types.FCurve = self.pointer
         except AttributeError:
@@ -307,20 +311,23 @@ class Curve:
             co = np.vstack((self.get_times()[1:-1], derivative)).T
             return Curve(coordinates=co, fullname=f'{name} of {self.fullname}')
         
-        step = (self.time_range[1]-self.time_range[0])/(len(self)-1)
+        n_samples = n_samples if n_samples is not None else len(self)
+        step = (self.time_range[1]-self.time_range[0])/(n_samples-1)
         delta_t = step/20
         
-        sampling_t = [self.time_range[0] + i*step for i in range(len(self))]
-        sampling_v = [fcurve.evaluate(t-delta_t) if i%3==0 else (fcurve.evaluate(t) if i%3==1 else fcurve.evaluate(t+delta_t))  for (i,t) in enumerate([sampling_t[j//3] for j in range(3*len(self))])]
-        derivative = finite_scheme(sampling_v, delta_t)[::3]
-        co = np.hstack(self.get_times()[1:-1], derivative)
+        sampling_t = [self.time_range[0] + i*step for i in range(n_samples)]
+        sampling_v = [fcurve.evaluate(t-delta_t) if i%3==0 else (fcurve.evaluate(t) if i%3==1 else fcurve.evaluate(t+delta_t))  for (i,t) in enumerate([sampling_t[j//3] for j in range(3*n_samples)])]
+        derivative = finite_scheme(sampling_v, delta_t)
+        derivative = derivative[::3]
+        co = np.vstack((sampling_t, derivative)).T
         return Curve(coordinates=co, fullname=f'{name} of {self.fullname}')
     
 
-    def first_derivative(self):
-        return self._derivative(m_utils.derivee, name='First derivative')
+    def first_derivative(self, n_samples=None):
+        # n_samples is only used if the curve can be sampled i.e. if we have some FCurve pointer
+        return self._derivative(m_utils.derivee, name='First derivative', n_samples=n_samples)
     
-    def second_derivative(self):
-        return self._derivative(m_utils.derivee_seconde, name='Second derivative')
+    def second_derivative(self, n_samples=None):
+        return self._derivative(m_utils.derivee_seconde, name='Second derivative', n_samples=n_samples)
         
         
