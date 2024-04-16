@@ -16,7 +16,7 @@ class FakeCurvePointer:
             if t>=time:
                 return v
             
-DO_SHOW = False
+DO_SHOW = True
             
 # COLOR
             
@@ -61,7 +61,17 @@ curve.check()
 values = curve.get_values()
 print(f"Shape of curve values: {values.shape}")
 
-if DO_SHOW : fig.show()
+if DO_SHOW: fig.show()
+
+original_curve = Curve(coordinates, fullname='original curve')
+
+first_derivative = original_curve.first_derivative() # test of derivative when we do not have a pointer
+second_derivative = original_curve.second_derivative()
+
+fig2 = first_derivative.display(handles=False)
+second_derivative.display(handles=False, fig=fig2)
+
+if DO_SHOW: fig2.show()
 
 ## ANIMATION
 
@@ -91,6 +101,10 @@ print(f"Sampled animation: {resampled_anim}") # every curve should be of length 
 
 figure = resampled_anim.display(handles=False) # FakeCurveEvaluator does not handle interpolation -> plateaux
 anim.display(handles=False, fig=figure, doShow=DO_SHOW)
+
+derivative = resampled_anim.find("original curve sampled").first_derivative() # test of derivative when we have a pointer
+derivative.display(handles=False, style='lines', doShow=DO_SHOW)
+
 
 addition = empty_anim + anim + resampled_anim
 print(f"Addition of all animations: {addition}")

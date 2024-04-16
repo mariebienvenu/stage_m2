@@ -4,8 +4,11 @@ from enum import Enum, unique
 
 import numpy as np
 import plotly.graph_objects as go
+import bpy
 
 from app.Color import Color
+import app.maths_utils as m_utils
+
 
 @unique
 class Easing_Mode(Enum):
@@ -258,7 +261,7 @@ class Curve:
         self.array = np.copy(self.array[indexes,:])
         self.update_time_range()
 
-    def get_derivatives(self): # TODO Curve.get_derivatives() -- untested in curve_and_animations.py i think
+    def get_keyframe_derivatives(self): # TODO Curve.get_derivatives() -- untested in curve_and_animations.py i think
         ## TODO Curve.get_derivatives() -- c'est FAUX dans le cas d'un handle de type différent !!! -> update: c'est changé mais toujours pas top
         dx = self.get_attribute(Attributes_Name.handle_right_x) - self.get_attribute(Attributes_Name.handle_left_x)
         dy = self.get_attribute(Attributes_Name.handle_right_y) - self.get_attribute(Attributes_Name.handle_left_y)
@@ -291,5 +294,33 @@ class Curve:
         curve.update_time_range()
         file.close()
         return curve
+    
+
+    def _derivative(self, finite_scheme=None, name=''):
+
+        # Assumes that either self has an associated blender pointer, or is uniformally sampled
+        try:
+            fcurve : bpy.types.FCurve = self.pointer
+        except AttributeError:
+            step = (self.time_range[1]-self.time_range[0])/(len(self))
+            derivative = finite_scheme(self.get_values(), step)
+            co = np.vstack((self.get_times()[1:-1], derivative)).T
+            return Curve(coordinates=co, fullname=f'{name} of {self.fullname}')
+        
+        step = (self.time_range[1]-self.time_range[0])/(len(self)-1)
+        delta_t = step/20
+        
+        sampling_t = [self.time_range[0] + i*step for i in range(len(self))]
+        sampling_v = [fcurve.evaluate(t-delta_t) if i%3==0 else (fcurve.evaluate(t) if i%3==1 else fcurve.evaluate(t+delta_t))  for (i,t) in enumerate([sampling_t[j//3] for j in range(3*len(self))])]
+        derivative = finite_scheme(sampling_v, delta_t)[::3]
+        co = np.hstack(self.get_times()[1:-1], derivative)
+        return Curve(coordinates=co, fullname=f'{name} of {self.fullname}')
+    
+
+    def first_derivative(self):
+        return self._derivative(m_utils.derivee, name='First derivative')
+    
+    def second_derivative(self):
+        return self._derivative(m_utils.derivee_seconde, name='Second derivative')
         
         

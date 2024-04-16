@@ -6,13 +6,20 @@ import scipy.integrate as integrate
 
 def derivee(array, step):
     ar = np.array(array)
-    res = (ar[1:]-ar[:-1])/step # différences finies
-    left = res[:-1]
-    right = res[1:]
-    for i in range(left.size):
-        if left[i]!=0 and right[i]!=0 and int(left[i]/abs(left[i])) != int(right[i]/abs(right[i])):
-            res[i]=0 # sign change means an actual derivative of 0
+    res = (ar[2:]-ar[:-2])/(2*step) # différences finies
+    #left = res[:-1]
+    #right = res[1:]
+    #for i in range(left.size):
+    #    if left[i]!=0 and right[i]!=0 and int(left[i]/abs(left[i])) != int(right[i]/abs(right[i])):
+    #        res[i]=0 # sign change means an actual derivative of 0
     return res
+
+
+def derivee_seconde(array, step): # TODO m_utils.derivee_seconde() -- à tester dans maths.py
+    ar = np.array(array)
+    res = (-2*ar[1:-1] + ar[:-2] + ar[2:])/step**2  # différences finies
+    return res
+
 
 def integrale1(array, step):
     arr = np.array(array)
