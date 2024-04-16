@@ -24,16 +24,16 @@ video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 oflow_len = video.frame_count - 1
 frame_times = np.arange(0, oflow_len/video.fps, 1/video.fps)
 
-oflow_measures = [video.get_optical_flow(index)[2] for index in tqdm(range(oflow_len), desc='Oflow computation')]
+flows = [video.get_optical_flow(index) for index in tqdm(range(oflow_len), desc='Oflow computation')]
 
-magnitude_means = np.array([measure["magnitude_mean"] for measure in oflow_measures])
-magnitude_stds = np.array([measure["magnitude_std"] for measure in oflow_measures])
-angle_means = np.array([measure["angle_mean"] for measure in oflow_measures])
-angle_stds = np.array([measure["angle_std"] for measure in oflow_measures])
+magnitude_means = np.array([flow.get_measure(optical_flow.Measure.MAGNITUDE_MEAN) for flow in flows])
+magnitude_stds = np.array([flow.get_measure(optical_flow.Measure.MAGNITUDE_STD) for flow in flows])
+angle_means = np.array([flow.get_measure(optical_flow.Measure.ANGLE_MEAN) for flow in flows])
+angle_stds = np.array([flow.get_measure(optical_flow.Measure.ANGLE_STD) for flow in flows])
 
 # Calcul de l'intégrale du flux i.e. la position
 
-velocity_x, velocity_y = optical_flow.polar_to_cartesian(magnitude_means, -angle_means, degrees=True) # reverse angles because up is - in image space
+velocity_x, velocity_y = optical_flow.OpticalFlow.polar_to_cartesian(magnitude_means, -angle_means, degrees=True) # reverse angles because up is - in image space
 velocity_x, velocity_y = np.ravel(velocity_x), np.ravel(velocity_y)
 position_x, position_y = m_utils.integrale3(velocity_x, step=1), m_utils.integrale3(velocity_y, step=1)
 

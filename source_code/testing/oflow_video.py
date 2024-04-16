@@ -20,8 +20,8 @@ oflow_video_content = np.zeros((oflow_len, video.frame_height, video.frame_width
 
 for index in tqdm(range(oflow_len), desc='Oflow computation'):
     t0 = time()
-    magnitude, angle, measures = video.get_optical_flow(index, background_proportion=0, degrees=False) #no filtering
-    bgr = optical_flow.make_oflow_image(magnitude, angle) # this expects angle in radian
+    flow = video.get_optical_flow(index, degrees=False) #no filtering
+    bgr = flow.make_oflow_image()
     oflow_video_content[index,:,:,:] = np.copy(bgr)
 
     cv2.imshow("oflow", bgr)

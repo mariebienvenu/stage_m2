@@ -117,11 +117,42 @@ class VideoIO:
         return self.video.frame_count - 1
     
 
-    def get_frame_times(self): # TODO move to Video ?
+    def get_frame_times(self): # TODO VideoIO.get_frame_times() -- move to Video ?
         return np.array(list(range(self.oflow_len)), dtype=np.float64)/self.frame_rate
     
-    
+
     def process(self, force=True):
+        if self.is_processed and not force:
+            return
+        
+        N = self.oflow_len
+        self.magnitude_means = np.zeros((N))
+        self.magnitude_stds = np.zeros((N))
+        self.angle_means = np.zeros((N))
+        self.angle_stds = np.zeros((N))
+
+        for index in tqdm(range(self.oflow_len), desc='Oflow computation'):
+            flow = self.video.get_optical_flow(
+                index,
+                image_processing=self.image_processing_method,
+                crop=self.spatial_crop,
+                degrees=True,
+            )
+            mask = flow.get_mask(background_proportion=self.background_proportion)
+            self.magnitude_means[index] = flow.get_measure(oflow.Measure.MAGNITUDE_MEAN)
+            self.magnitude_stds[index] = flow.get_measure(oflow.Measure.MAGNITUDE_STD)
+            self.angle_means[index] = flow.get_measure(oflow.Measure.ANGLE_MEAN)
+            self.angle_stds[index] = flow.get_measure(oflow.Measure.ANGLE_STD)
+
+        velocity_x, velocity_y = oflow.OpticalFlow.polar_to_cartesian(self.magnitude_means, -self.angle_means, degrees=True) # reverse angles because up is - in image space
+        self.velocity_x, self.velocity_y = np.ravel(velocity_x), np.ravel(velocity_y)
+        self.position_x, self.position_y = m_utils.integrale3(self.velocity_x, step=1), m_utils.integrale3(self.velocity_y, step=1)
+
+        self.is_processed = True
+
+
+    ## LEGACY
+    def _process(self, force=True):
         if self.is_processed and not force:
             return
 
@@ -215,8 +246,8 @@ class VideoIO:
         return anim
 
 
-    def get_spatial_crop_input_from_user(self, save=True): # TODO maybe should be here instead of in video ?
-        crop = self.video.get_spatial_crop_input_from_user()
+    def get_spatial_crop_input_from_user(self, save=True): # TODO VideoIO.get_spatial_crop_input_from_user() -- maybe should be here instead of in video ?
+        crop = self.video.get_spatial_crop_input_from_user(self.spatial_crop)
         self.config['spatial crop'] = crop
         self.save_config() if save else None
         return crop
