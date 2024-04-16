@@ -71,7 +71,7 @@ def get_crop(curve:Curve.Curve):
     order = np.argsort(curve.get_times())
     times = curve.get_times()[order]
     values = curve.get_values()[order]
-    derivatives = curve.get_derivatives()[order]
+    derivatives = curve.get_keyframe_derivatives()[order]
     zipped = zip(values, values[::-1], derivatives, derivatives[::-1])
 
     start = 1
