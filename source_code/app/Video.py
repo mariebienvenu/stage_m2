@@ -110,20 +110,6 @@ class Video:
         return flow
     
 
-    ## LEGACY
-    def _get_optical_flow(self, index, image_processing=ImageProcessing.gray, crop=None, background_proportion=0.97, degrees=True, **kwargs): # TODO Video.get_optical_flow() -- should not be here ?
-        '''if background_proportion is 0 then there will be no thresholding'''
-        assert index>=0 and index<self.frame_count-1, f"Index out of video's optical flow range: {index} should be between 0 and {self.frame_count-1} but is not."
-        frame1, frame2 = self.get_frame(index, image_processing=image_processing, crop=crop), self.get_frame(index+1, image_processing=image_processing, crop=crop)
-        flow = oflow.compute_oflow(frame1, frame2, **kwargs)
-        magnitude, angle = oflow.cartesian_to_polar(flow, degrees=degrees)
-        mask = oflow.get_mask(magnitude, background_proportion=background_proportion)
-        filtered_mag, filtered_angle = (magnitude[mask>0], angle[mask>0]) if background_proportion>0 else (magnitude, angle)
-        filtered_angle[filtered_angle>180] -= 360
-        measures = oflow.measure_oflow(filtered_mag, filtered_angle)
-        return filtered_mag, filtered_angle, measures
-    
-
     def get_spatial_crop_input_from_user(self, initial_box : dict = None, verbose=0):
         global frame_idx, x1, x2, y1, y2, drawing, frame
         frame_idx = 0

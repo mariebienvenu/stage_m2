@@ -151,32 +151,6 @@ class VideoIO:
         self.is_processed = True
 
 
-    ## LEGACY
-    def _process(self, force=True):
-        if self.is_processed and not force:
-            return
-
-        oflow_result = [self.video.get_optical_flow(
-            index,
-            image_processing=self.image_processing_method,
-            crop=self.spatial_crop,
-            background_proportion=self.background_proportion
-        ) for index in tqdm(range(self.oflow_len), desc='Oflow computation')] # takes time
-
-        oflow_measures = [res[2] for res in oflow_result]
-
-        self.magnitude_means = np.array([measure["magnitude_mean"] for measure in oflow_measures])
-        self.magnitude_stds = np.array([measure["magnitude_std"] for measure in oflow_measures])
-        self.angle_means = np.array([measure["angle_mean"] for measure in oflow_measures])
-        self.angle_stds = np.array([measure["angle_std"] for measure in oflow_measures])
-
-        velocity_x, velocity_y = oflow.polar_to_cartesian(self.magnitude_means, -self.angle_means, degrees=True) # reverse angles because up is - in image space
-        self.velocity_x, self.velocity_y = np.ravel(velocity_x), np.ravel(velocity_y)
-        self.position_x, self.position_y = m_utils.integrale3(self.velocity_x, step=1), m_utils.integrale3(self.velocity_y, step=1)
-
-        self.is_processed = True
-
-
     def draw_diagrams(self, fig=None, save=True, show=False, time_in_seconds=False): # can be drawn either in frame scale or seconds scale
         fig = make_subplots(rows=2, cols=3, subplot_titles=(
             "Amplitude du flux au cours du temps",

@@ -18,14 +18,7 @@ class OpticalFlow(np.ndarray):
         obj.use_degrees = use_degrees
         obj.polar = OpticalFlow.cartesian_to_polar(obj.x, obj.y, degrees=use_degrees)
         return obj
-
-    '''
-    def __init__(self, array:np.ndarray, use_degrees=False):
-        assert len(array.shape)==3 and array.shape[2]==2, f"Provided array is of shape {array.shape} instead of (h,w,2)."
-        super(OpticalFlow, self).__init__(array)
-        self.use_degrees = use_degrees
-        self.polar = OpticalFlow.cartesian_to_polar(self.x, self.y, angleInDegrees=self.use_degrees)
-    '''
+    
 
     def __array_finalize__(self, obj):
         if obj is None : return
@@ -50,6 +43,7 @@ class OpticalFlow(np.ndarray):
             )
         return OpticalFlow(oflow, use_degrees=use_degrees)
     
+
     @property
     def x(self):
         return self[...,0]
@@ -69,6 +63,7 @@ class OpticalFlow(np.ndarray):
         res[res>max_angle] -= 2*max_angle
         return res
 
+
     def _get_threshold(self, proportion):
         flattened = np.ravel(self)
         kth_index = int(np.size(flattened)*proportion)
@@ -76,10 +71,12 @@ class OpticalFlow(np.ndarray):
         threshold = ordered[kth_index]
         return threshold
 
+
     def get_mask(self, background_proportion=0.0):
         threshold = OpticalFlow._get_threshold(self.magnitude, background_proportion)
         mask = np.where(self.magnitude>threshold, 1, 0)
         return mask
+
 
     def make_oflow_image(self): # Used for visualisation purposes ; encodes polar into hsv
         hsv = np.zeros((self.magnitude.shape[0], self.magnitude.shape[1], 3), dtype=np.uint8)
@@ -89,6 +86,7 @@ class OpticalFlow(np.ndarray):
         bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
         return bgr
     
+
     def get_measure(self, measure:Measure, mask=None):
         mask = np.ones_like(self.magnitude) if mask is None else mask
         if measure == Measure.MAGNITUDE_MEAN:
@@ -99,6 +97,7 @@ class OpticalFlow(np.ndarray):
             return np.mean(self.magnitude[mask>0]*self.angle[mask>0])/np.mean(self.magnitude[mask>0])
         elif measure == Measure.ANGLE_STD:
             return np.std(self.angle[mask>0])
+     
         
     @staticmethod
     def is_grayscale(image:np.ndarray):
