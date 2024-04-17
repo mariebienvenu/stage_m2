@@ -71,3 +71,14 @@ def magnitude_angle(
 
     if doShow: fig.show()
     return fig
+
+
+def add_pairings(y1, y2, pairs, x1=None, x2=None, color=None, fig=None, row=None, col=None, doShow=False):
+    fig = fig if fig is not None else go.Figure()
+    color = color if color is not None else Color.next()
+    x1 = np.array(x1) if x1 is not None else np.array(list(range(y1.size)))
+    x2 = np.array(x2) if x2 is not None else np.array(list(range(y2.size)))
+    for pair in pairs:
+        i,j = pair
+        fig.add_trace(go.Scatter(x=[x1[i], x2[j]], y=[y1[i], y2[j]], showlegend=False, line_color=color), row=row, col=col)
+    return fig

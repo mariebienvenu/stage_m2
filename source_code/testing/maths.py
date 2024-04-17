@@ -4,7 +4,7 @@ from random import random
 import pandas as pd
 import plotly.graph_objects as go
 
-DO_SHOW=False
+DO_SHOW = True
 
 ## Test of correlation
 
@@ -41,9 +41,7 @@ print(f"Computed table: \n{pd.DataFrame(DTW)}")
 fig = go.Figure()
 vis.add_curve(y=y1, fig=fig)
 vis.add_curve(y=y2+4, fig=fig)
-for pair in pairings:
-    i,j = pair
-    fig.add_trace(go.Scatter(x=[i,j], y=[y1[i],y2[j]+4], line_color='rgba(150,150,150,0.5)', showlegend=False))
+vis.add_pairings(y1=y1, y2=y2+4, pairs=pairings, color='rgba(150,150,150,0.5)', fig=fig)
 if DO_SHOW: fig.show()
 
 # MORE REALISTIC CASE
@@ -61,7 +59,5 @@ print(f"DTW score in realistic case: {score:.2f}")
 fig2 = go.Figure()
 vis.add_curve(x=x1, y=y1, fig=fig2, name="Cosine")
 vis.add_curve(x=x2, y=y2+4, fig=fig2, name="Noisy, shifted and undersampled cosine")
-for pair in p:
-    i,j = pair
-    fig2.add_trace(go.Scatter(x=[x1[i],x2[j]], y=[y1[i],y2[j]+4], line_color='rgba(150,150,150,0.5)', showlegend=False))
+vis.add_pairings(x1=x1, y1=y1, x2=x2, y2=y2+4, pairs=p, color='rgba(150,150,150,0.5)', fig=fig2)
 if DO_SHOW: fig2.show()
