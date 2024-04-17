@@ -188,3 +188,9 @@ class Video:
 
         return cls(filepath, verbose)
     
+
+    def subsample(self, rate=2, filepath=None, verbose=0): # Not in place
+        self.load()
+        array = np.copy(self.video_content[::rate, ...])
+        filepath = filepath if filepath is not None else self.filepath[:-4]+f'_x{rate}.mp4'
+        return Video.from_array(array, filepath, fps=self.fps, verbose=verbose)
