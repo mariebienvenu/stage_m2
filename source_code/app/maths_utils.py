@@ -48,3 +48,26 @@ def correlation(array1, array2):
     return correlation_object.correlation
 
 
+def dynamic_time_warping(array1, array2, debug=False):
+    arr1, arr2 = np.ravel(np.array(array1)), np.ravel(np.array(array2))
+    n,m = arr1.size, arr2.size
+    DTW = np.ones((n+1,m+1))*np.inf
+    DTW[0,0] = 0
+    for i in range(n):
+        for j in range(m):
+            cost = abs(arr1[i]-arr2[j]) # distance
+            additionnal_cost = min(DTW[i+1,j], DTW[i,j+1], DTW[i, j])
+            DTW[i+1,j+1] = cost + additionnal_cost
+    pairings = [[n-1,m-1]]
+    i,j = n,m
+    while i>1 or j>1:
+        current = DTW[i,j]
+        if DTW[i-1, j-1] <= current:
+            i -= 1
+            j -= 1
+        elif DTW[i, j-1] <= current:
+            j -= 1
+        elif DTW[i-1, j] <= current:
+            i -= 1
+        pairings.append([i-1,j-1])
+    return (DTW[n,m], pairings) if not debug else (DTW[n,m], pairings, DTW)
