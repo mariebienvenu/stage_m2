@@ -15,4 +15,5 @@ video = Video.Video(f'{data_path}/{subdirectory}/{VIDEO_NAME}.mp4', verbose=1)
 video.load(verbose=1)
 
 subsampled = video.subsample(rate=3, verbose=1)
+same_appearance = video.subsample(rate=6, fps="KEEP", verbose=1)
 

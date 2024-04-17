@@ -1,6 +1,7 @@
 
 import cv2
 import numpy as np
+from enum import Enum
 
 import app.OpticalFlow as OpticalFlow
 from app.ImageProcessing import ImageProcessing
@@ -9,6 +10,10 @@ from app.ImageProcessing import ImageProcessing
 def no_crop(height, width):
     return {'x1':0, 'x2':width, 'y1':0, 'y2':height}
 
+
+class Subsampling_FPS(Enum):
+    KEEP = 0
+    SAME = 1
 
 
 class Video:
@@ -189,8 +194,19 @@ class Video:
         return cls(filepath, verbose)
     
 
-    def subsample(self, rate=2, filepath=None, verbose=0): # Not in place
+    def subsample(self, rate=2, filepath=None, fps=Subsampling_FPS.SAME, verbose=0): # Not in place ; only samples in time
         self.load()
         array = np.copy(self.video_content[::rate, ...])
         filepath = filepath if filepath is not None else self.filepath[:-4]+f'_x{rate}.mp4'
-        return Video.from_array(array, filepath, fps=self.fps, verbose=verbose)
+        new_fps = 0
+        try :
+            if fps.value==Subsampling_FPS.SAME.value:
+                new_fps = self.fps
+            elif fps.value==Subsampling_FPS.KEEP.value:
+                new_fps = self.fps/rate
+        except AttributeError: # typically, string has no value attribute
+            if Subsampling_FPS[fps] is Subsampling_FPS.SAME:
+                new_fps = self.fps
+            elif Subsampling_FPS[fps] is Subsampling_FPS.KEEP:
+                new_fps = self.fps/rate
+        return Video.from_array(array, filepath, fps=new_fps, verbose=verbose)
