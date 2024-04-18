@@ -3,6 +3,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import pandas as pd
 
 from app.Color import Color
 
@@ -80,5 +81,14 @@ def add_pairings(y1, y2, pairs, x1=None, x2=None, color=None, fig=None, row=None
     x2 = np.array(x2) if x2 is not None else np.array(list(range(y2.size)))
     for pair in pairs:
         i,j = pair
-        fig.add_trace(go.Scatter(x=[x1[i], x2[j]], y=[y1[i], y2[j]], showlegend=False, line_color=color), row=row, col=col)
+        fig.add_trace(go.Scatter(x=[x1[i], x2[j]], y=[y1[i], y2[j]], showlegend=False, line_color=color, mode="lines"), row=row, col=col)
+    if doShow: fig.show()
+    return fig
+
+
+def add_heatmap(df:pd.DataFrame, min=None, max=None, is_correlation=False, fig=None, row=None, col=None, doShow=False):
+    fig = fig if fig is not None else go.Figure()
+    colorscale = 'RdBu' if is_correlation else 'Plasma'
+    fig.add_trace(go.Heatmap(z=df, x=df.columns, y=df.index, colorscale=colorscale, zmax=max, zmin=min), row=row, col=col)
+    if doShow: fig.show()
     return fig
