@@ -234,6 +234,7 @@ class Curve:
         curve = Curve(**kwargs)
         curve.array = np.copy(array)
         curve.check()
+        curve.update_time_range()
         return curve
     
     def __repr__(self):
