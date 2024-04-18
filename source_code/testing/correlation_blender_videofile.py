@@ -92,18 +92,7 @@ for curve in animation.sample(frame_times.size, start="each", stop="each") + add
         resampled_animation.append(curve)
 #print(resampled_animation)
 
-def compare_animations(anim1:Animation.Animation, anim2:Animation.Animation):
-    correlation_matrix = np.zeros((len(anim1), len(anim2)), dtype=np.float64)
-    for i, curve1 in enumerate(anim1):
-        for j, curve2 in enumerate(anim2):
-            assert len(curve1) == len(curve2), f"Cannot compare animation curves of different length: {len(curve1)} != {len(curve2)}"
-            values1 = curve1.get_values()
-            values2 = curve2.get_values()
-            correlation_matrix[i,j] = m_utils.correlation(values1, values2)
-    return correlation_matrix
-
-
-matrix = compare_animations(animation.sample(frame_times.size, start="each", stop="each"), video_movement)
+matrix = Animation.Animation.correlate(animation.sample(frame_times.size, start="each", stop="each"), video_movement)
 
 rows = [curve.fullname for curve in animation.sample(frame_times.size, start="each", stop="each")]
 columns = [curve.fullname for curve in video_movement]
@@ -112,7 +101,7 @@ dataframe = pd.DataFrame(matrix, columns=columns, index=rows)
 print(dataframe)
 
 
-matrix = compare_animations(additionnal_curves, additionnal_curves_video)
+matrix = Animation.Animation.correlate(additionnal_curves, additionnal_curves_video)
 
 rows = [curve.fullname for curve in additionnal_curves]
 columns = [curve.fullname for curve in additionnal_curves_video]

@@ -1,10 +1,13 @@
+from __future__ import annotations # otherwise using Animation type hints inside Animation does not work
 
 import os
 from typing import List
 
 import numpy as np
+import pandas as pd
 
 import app.Curve as Curve
+import app.maths_utils as m_utils
 
 class Animation(List[Curve.Curve]):
 
@@ -77,4 +80,18 @@ class Animation(List[Curve.Curve]):
             res.append(curve)
             i += 1
         return res
-        
+    
+
+    @staticmethod
+    def correlate(anim1:Animation, anim2:Animation):
+        correlation_matrix = np.zeros((len(anim1), len(anim2)), dtype=np.float64)
+        for i, curve1 in enumerate(anim1):
+            for j, curve2 in enumerate(anim2):
+                assert len(curve1) == len(curve2), f"Cannot compare animation curves of different length: {len(curve1)} != {len(curve2)}"
+                values1 = curve1.get_values()
+                values2 = curve2.get_values()
+                correlation_matrix[i,j] = m_utils.correlation(values1, values2)
+        rows = [curve.fullname for curve in anim1]
+        columns = [curve.fullname for curve in anim2]
+        dataframe = pd.DataFrame(correlation_matrix, columns=columns, index=rows)
+        return dataframe
