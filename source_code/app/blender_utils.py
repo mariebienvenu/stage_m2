@@ -62,10 +62,47 @@ def get_animation(obj_name):
             pointer=curve,
             color=tuple(curve.color)
         ))
-
-        a=1
     
     return animation
+
+    
+def set_animation(obj_name:str, animation:Animation.Animation):
+    obj = None
+    for o in bpy.data.objects:
+        if o.name == obj_name:
+            obj = o
+    if obj is None:
+        return animation
+    
+    are_enums = Curve.Curve.ARE_ENUMS
+    
+    for curve in obj.animation_data.action.fcurves:
+
+        fullname = f"{curve.data_path} {['X','Y','Z'][curve.array_index]}"
+        target_curve = animation.find(fullname)
+
+        a = list(curve.keyframe_points)
+
+        assert len(target_curve)==len(list(curve.keyframe_points)), "Problem ! Number of keyframes changed."
+
+        attr_names = Curve.Attributes_Name
+        
+        for i, kf in enumerate(curve.keyframe_points):
+            
+            getter = lambda x : target_curve.get_keyframe_attribute(i, x) if not are_enums[x.value] else target_curve.get_keyframe_attribute(i, x).name
+
+            kf.co = (getter(attr_names.time), getter(attr_names.value))
+            kf.easing = getter(attr_names.easing_mode)
+            kf.handle_left = (getter(attr_names.handle_left_x), getter(attr_names.handle_left_y))
+            kf.handle_left_type = getter(attr_names.handle_left_type)
+            kf.handle_right = (getter(attr_names.handle_right_x), getter(attr_names.handle_right_y))
+            kf.handle_right_type = getter(attr_names.handle_right_type)
+            kf.interpolation = getter(attr_names.interpolation)
+            kf.type = getter(attr_names.key_type)
+            kf.amplitude = getter(attr_names.amplitude)
+            kf.back = getter(attr_names.back)
+            kf.period = getter(attr_names.period)
+
 
 def get_crop(curve:Curve.Curve):
     order = np.argsort(curve.get_times())

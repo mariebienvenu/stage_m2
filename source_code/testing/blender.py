@@ -25,6 +25,8 @@ import app.maths_utils as m_utils
 import importlib
 importlib.reload(b_utils)
 
+Animation = b_utils.Animation
+
 blender_filepath = bpy.data.filepath
 scene_path = '/'.join(blender_filepath.split('\\')[:-1])+'/'
 assert os.path.exists(scene_path), "Blender scene directory not found."
@@ -86,3 +88,8 @@ fig2.add_vline(x=stop, annotation_text="Stop", annotation_position="top right")
 
 fig2.write_html(scene_path+f'{NAME}_height_crop.html')
 fig2.show()
+
+
+## Test of b_utils.set_animation()
+
+b_utils.set_animation("Ball2", animation)
