@@ -83,14 +83,17 @@ class Animation(List[Curve.Curve]):
     
 
     @staticmethod
-    def correlate(anim1:Animation, anim2:Animation):
-        correlation_matrix = np.zeros((len(anim1), len(anim2)), dtype=np.float64)
+    def correlate(anim1:Animation, anim2:Animation, verbose=0):
+        correlation_matrix = np.ones((len(anim1), len(anim2)), dtype=np.float64)*np.nan
         for i, curve1 in enumerate(anim1):
             for j, curve2 in enumerate(anim2):
-                assert len(curve1) == len(curve2), f"Cannot compare animation curves of different length: {len(curve1)} != {len(curve2)}"
+                #assert len(curve1) == len(curve2), f"Cannot compare animation curves of different length: {len(curve1)} != {len(curve2)}"
                 values1 = curve1.get_values()
                 values2 = curve2.get_values()
-                correlation_matrix[i,j] = m_utils.correlation(values1, values2)
+                try:
+                    correlation_matrix[i,j] = m_utils.correlation(values1, values2)
+                except AssertionError as msg:
+                    if verbose>0: print(f"Impossible to compute correlation between {curve1} and {curve2}. \n\t{msg}")
         rows = [curve.fullname for curve in anim1]
         columns = [curve.fullname for curve in anim2]
         dataframe = pd.DataFrame(correlation_matrix, columns=columns, index=rows)
