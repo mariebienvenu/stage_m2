@@ -98,3 +98,7 @@ class Animation(List[Curve.Curve]):
         columns = [curve.fullname for curve in anim2]
         dataframe = pd.DataFrame(correlation_matrix, columns=columns, index=rows)
         return dataframe
+
+
+    def __mod__(self, other:Animation):
+        return Animation.correlate(self, other)
