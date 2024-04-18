@@ -34,16 +34,15 @@ additionnal_curves_target = Animation.Animation(
 )
 additionnal_curves_target.display(handles=False, style='markers+lines', doShow=True)
 
-# Let's take a look at some correlation coefficients - caution: the correlation computation requires the same amount of samples on both curves
+# Let's take a look at some correlation coefficients - caution: the correlation computation requires the same amount of samples on both curves, so we need to downsample the reference.
 subsampled_ref = Animation.Animation([Curve.Curve.from_array(curve.array[::2,...], fullname=curve.fullname+' - subsampled') for curve in ref_movement])
 subsampled_additionnal_ref = Animation.Animation([Curve.Curve.from_array(curve.array[1::2,...], fullname=curve.fullname+' - subsampled') for curve in additionnal_curves_ref])
 fig = make_subplots(rows=1, cols=2, subplot_titles=['Heatmap of basic channels correlations','Heatmap of additionnal channels correlation'])
 for i,(r, t) in enumerate(zip([subsampled_ref, subsampled_additionnal_ref], [target_movement, additionnal_curves_target])):
     df = r % t # correlation matrix
     vis.add_heatmap(df, is_correlation=True, max=1, min=-1, fig=fig, row=1, col=i+1)
+    fig.update_xaxes(title_text=f'Curves of {video_target}', row=1, col=i+1)
 fig.update_layout(title_text=f"Correlation between {video_reference} and {video_target}", yaxis_title=f'Curves of {video_reference}')
-fig.update_xaxes(title_text=f'Curves of {video_target}', row=1, col=1)
-fig.update_xaxes(title_text=f'Curves of {video_target}', row=1, col=2)
 fig.write_html(f'{data_path}/{subdirectory}/{video_reference}_and_{video_target}_correlation.html')
 fig.show()
 
