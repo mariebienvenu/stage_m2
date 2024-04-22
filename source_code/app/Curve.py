@@ -1,6 +1,7 @@
 
 import os
 from enum import Enum, unique
+from copy import deepcopy
 
 import numpy as np
 import plotly.graph_objects as go
@@ -166,6 +167,19 @@ class Curve:
     def value_transl(self, translation):
         for attr in [Attributes_Name.value, Attributes_Name.handle_left_y, Attributes_Name.handle_right_y]:
             self.set_attribute(attr, self.get_attribute(attr)+translation)
+
+    
+    def apply_spatio_temporal_warp(self, warp, in_place=True):
+        # warp is a function that takes 2 arguments (t,value) and returns two values (t', value'). Handles arrays of same size.
+        obj = self if in_place else deepcopy(self)
+        firsts = [Attributes_Name.time, Attributes_Name.handle_left_x, Attributes_Name.handle_right_x]
+        seconds = [Attributes_Name.value, Attributes_Name.handle_left_y, Attributes_Name.handle_right_y]
+        for first, second in zip(firsts, seconds):
+            t, x = obj.get_attribute(first), obj.get_attribute(second)
+            t_prime, x_prime = warp(t,x)
+            obj.set_attribute(first, t_prime)
+            obj.set_attribute(second, x_prime)
+        return obj
 
 
     def add_keyframe(self, time, value):

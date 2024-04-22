@@ -16,7 +16,7 @@ class FakeCurvePointer:
             if t>=time:
                 return v
             
-DO_SHOW = True
+DO_SHOW = False
             
 # COLOR
             
@@ -30,6 +30,7 @@ times = np.arange(0, 100, 0.2)
 values = np.cos(times)*(1+times) + times
 coordinates = np.vstack((times, values)).T
 
+# test of basic Curve operations
 curve = Curve(coordinates, fullname='original curve', time_range=(0,100))
 curve.check()
 assert len(curve) == times.size
@@ -63,15 +64,45 @@ print(f"Shape of curve values: {values.shape}")
 
 if DO_SHOW: fig.show()
 
+# test of derivative when we do not have a pointer
 original_curve = Curve(coordinates, fullname='original curve')
 
-first_derivative = original_curve.first_derivative() # test of derivative when we do not have a pointer
+first_derivative = original_curve.first_derivative()
 second_derivative = original_curve.second_derivative()
 
 fig2 = first_derivative.display(handles=False)
 second_derivative.display(handles=False, fig=fig2)
 
 if DO_SHOW: fig2.show()
+
+# test of apply_warp
+def temporal_warp(t,x):
+    return 1.5*t, x
+
+def spatial_warp(t,x):
+    return t, 1.5*x
+
+def complex_warp(t,x):
+    return np.sqrt(abs(x+t))*7, (x/(t+1))*60
+
+original_curve = Curve(coordinates, fullname='original curve')
+
+warped_curve1 = original_curve.apply_spatio_temporal_warp(temporal_warp, in_place=False)
+warped_curve1.rename("Temporal warp")
+
+warped_curve2 = original_curve.apply_spatio_temporal_warp(spatial_warp, in_place=False)
+warped_curve2.rename("Spatial warp")
+
+warped_curve3 = original_curve.apply_spatio_temporal_warp(complex_warp, in_place=False)
+warped_curve3.rename("Complex warp")
+
+fig3 = original_curve.display(handles=False)
+warped_curve1.display(fig=fig3, handles=False)
+warped_curve2.display(fig=fig3, handles=False)
+warped_curve3.display(fig=fig3, handles=False)
+
+if DO_SHOW: fig3.show()
+
 
 ## ANIMATION
 
