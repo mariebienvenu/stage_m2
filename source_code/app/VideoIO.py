@@ -80,7 +80,7 @@ class VideoIO:
 
 
     def save_config(self):
-        assert self.config_loaded, "Cannot save config if no config is loaded."
+        assert self.config_loaded, "Cannot save config when no config is loaded."
         with open(self.directory+self.name+"_config.json", "w") as outfile:
             json.dump(self.config, outfile)
 
@@ -90,6 +90,17 @@ class VideoIO:
         for key, value in default.items():
             if key not in self.config:
                 self.config[key] = value
+
+
+    def has_already_been_processed(self):
+        if not os.path.exists(self.anim_directory+'params.json'): return False
+        with open(self.anim_directory+'params.json', 'r') as openfile:
+            processed_config = json.load(openfile)
+        for (key, value) in processed_config.items():
+            if key not in self.config or value != self.config[key]: return False
+        for (key, value) in self.config.items():
+            if key not in processed_config or value != processed_config[key]: return False
+        return True    
 
 
     @property # reminder : properties are read-only. The config file should be directly modified ; there is no reason to do it programmatically.
@@ -116,15 +127,36 @@ class VideoIO:
     def oflow_len(self):
         return self.video.frame_count - 1
     
+    @property
+    def anim_directory(self):
+        return self.directory + self.name + '/'
+    
 
     def get_frame_times(self): # TODO VideoIO.get_frame_times() -- move to Video ?
         return np.array(list(range(self.oflow_len)), dtype=np.float64)/self.frame_rate
     
 
-    def process(self, force=True):
+    def process(self, force=False, verbose=0):
         if self.is_processed and not force:
+            if verbose>0: print("Video already processed (VideoIO.process already called).")
             return
         
+        elif self.has_already_been_processed() and not force:
+            if verbose>0: print("Video already processed (found data with matching config on disk).")
+            anim = Animation.Animation.load(self.anim_directory)
+            self.magnitude_means = anim.find('Oflow magnitude - mean').get_values()
+            self.magnitude_stds = anim.find('Oflow magnitude - std').get_values()
+            self.angle_means = anim.find('Oflow angle - mean').get_values()
+            self.angle_stds = anim.find('Oflow angle - std').get_values()
+            self.velocity_x = anim.find('Velocity X').get_values()
+            self.velocity_y = anim.find('Velocity Y').get_values()
+            self.position_x = anim.find('Location X').get_values()
+            self.position_y = anim.find('Location Y').get_values()
+            self.is_processed = True
+            return
+        
+        if verbose>0: print("Video currently processing (optical flow computation).")
+
         N = self.oflow_len
         self.magnitude_means = np.zeros((N))
         self.magnitude_stds = np.zeros((N))
@@ -146,12 +178,12 @@ class VideoIO:
 
         velocity_x, velocity_y = oflow.polar_to_cartesian(self.magnitude_means, -self.angle_means, degrees=True) # reverse angles because up is - in image space
         self.velocity_x, self.velocity_y = np.ravel(velocity_x), np.ravel(velocity_y)
-        self.position_x, self.position_y = m_utils.integrale3(self.velocity_x, step=1), m_utils.integrale3(self.velocity_y, step=1)
+        self.position_x, self.position_y = m_utils.integrale3(self.velocity_x, step=1), m_utils.integrale3(self.velocity_y, step=1) # TODO delete this -> integrals accumulate error, bad feature
 
         self.is_processed = True
 
 
-    def draw_diagrams(self, fig=None, save=True, show=False, time_in_seconds=False): # can be drawn either in frame scale or seconds scale
+    def draw_diagrams(self, fig=None, save=True, show=False, time_in_seconds=False, verbose=0): # can be drawn either in frame scale or seconds scale
         fig = make_subplots(rows=2, cols=3, subplot_titles=(
             "Amplitude du flux au cours du temps",
             "Vitesses au cours du temps" ,
@@ -161,8 +193,7 @@ class VideoIO:
             "Trajectoire",
         )) if fig is None else fig
 
-        if not self.is_processed:
-            self.process()
+        self.process(verbose=verbose-1)
 
         frame_times = self.get_frame_times() if time_in_seconds else np.array(list(range(self.oflow_len)))
 
@@ -201,10 +232,9 @@ class VideoIO:
         return [fig, fig2, fig3]
 
 
-    def to_animation(self, save=True): # always in frame scale
-        if not self.is_processed:
-            self.process()
-        times = np.array(list(range(self.oflow_len)))
+    def to_animation(self, save=True, verbose=0): # always in frame scale
+        self.process(verbose=verbose-1)
+        times = np.array(list(range(self.oflow_len))) if self.magnitude_means.size==self.oflow_len else np.array(list(range(self.time_crop[0], self.time_crop[1]+1)))
         anim = Animation.Animation([
             Curve.Curve(np.vstack((times, self.magnitude_means)).T, fullname='Oflow magnitude - mean'),
             Curve.Curve(np.vstack((times, self.magnitude_stds)).T, fullname='Oflow magnitude - std'),
@@ -216,7 +246,10 @@ class VideoIO:
             Curve.Curve(np.vstack((times, self.position_y)).T, fullname='Location Y'),
         ])
         anim.crop(start=self.time_crop[0], stop=self.time_crop[1])
-        anim.save(self.directory + self.name + '/') if save else None
+        if save: 
+            anim.save(self.anim_directory)
+            with open(self.anim_directory+"params.json", "w") as outfile:
+                json.dump(self.config, outfile)
         return anim
 
 
@@ -227,9 +260,8 @@ class VideoIO:
         return crop
     
 
-    def auto_time_crop(self, patience=2, save=True):
-        if not self.is_processed:
-            self.process()
+    def auto_time_crop(self, patience=2, save=True, verbose=0):
+        self.process(verbose=verbose-1)
         times = np.array(list(range(self.oflow_len)))
         start, stop = oflow.get_crop(times, self.magnitude_means)
         self.config['time crop'] = {'start':int(start), 'stop':int(stop)} # int32 -> int because int32 not json serialisable

@@ -41,7 +41,7 @@ for directory in directories:
             ):
                 video_io.get_spatial_crop_input_from_user()
 
-            video_io.process(force=True)
+            video_io.process(verbose=1)
             if video_io.time_crop[0]==0 and video_io.time_crop[1]==video_io.oflow_len:
                 video_io.auto_time_crop()      
 
@@ -49,7 +49,7 @@ for directory in directories:
             video_io.draw_diagrams(time_in_seconds=time_in_seconds)
             video_io.to_animation()
 
-            vid = video_io.record_video()
+            #vid = video_io.record_video() # a bit long + requires loading the entire video in memory...
 
 tf = time()
 print(f'Computation took {int(tf-t0)} seconds.') # less than two minutes for 10 videos # way longer if longer videos or higher fps -> up to 10 minutes per video
