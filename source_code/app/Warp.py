@@ -11,10 +11,17 @@ class WarpInterpolation:
         x_before, x_after = kwargs.get("x0"), kwargs.get("x1")
         y_before, y_after = kwargs.get("y0"), kwargs.get("y1")
         return y_before + (x_after-x)*(y_after-y_before)/(x_after-x_before)
+    
+
+class AbstractWarp:
+    def __init__(self):
+        raise NotImplementedError
+    def __call__(self, x):
+        raise NotImplementedError
 
 
 
-class LinearWarp1D:
+class LinearWarp1D(AbstractWarp):
 
     def __init__(self, X_in, X_out):
         order = np.array(X_in).argsort()
@@ -25,7 +32,7 @@ class LinearWarp1D:
         return np.interp(x, self.X, self.Y)
     
 
-class LinearWarp2D:
+class LinearWarp2D(AbstractWarp):
 
     def __init__(self, X_in, Y_in, X_out, Y_out):
         self.points = np.vstack((np.array(X_in), np.array(Y_in))).T
@@ -36,6 +43,12 @@ class LinearWarp2D:
     def __call__(self, x, y):
         results = self.interpolator(np.array(x), np.array(y))
         return results[:,0], results[:,1]
+    
+    @classmethod
+    def from_1D(cls, wrp:LinearWarp1D, min=-1e3, max=1e3):
+        X_in, X_out = wrp.X, wrp.Y
+        Y_in, Y_out = np.arange(min, max, (max-min)/X_in.size), np.arange(min, max, (max-min)/X_in.size)
+        return cls(X_in, Y_in, X_out, Y_out)
 
 
 class Warp:
