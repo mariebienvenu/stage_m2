@@ -36,7 +36,7 @@ class Main: ## TODO Main -- untested
             self.load_config()
             self.complete_config()
         except OSError:
-            print("Did not find config file ; reverting to default config.") if verbose>0 else None
+            if verbose>0: print("Did not find config file ; reverting to default config.")
             self.make_default_config()
 
         assert self.config_loaded, "Error when initializing Main object."

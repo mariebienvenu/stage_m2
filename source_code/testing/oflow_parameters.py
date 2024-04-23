@@ -6,7 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from app.Video import Video
-import app.OpticalFlow as OpticalFlow
+from app.OpticalFlow import OpticalFlow
 
 data_path = 'C:/Users/Marie Bienvenu/Dropbox/#TRANSMISSION/stage 4a/'
 assert os.path.exists(data_path), "Wrong PATH"

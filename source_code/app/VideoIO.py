@@ -4,7 +4,7 @@ import os, json
 import numpy as np
 from tqdm import tqdm
 from plotly.subplots import make_subplots
-import cv2
+import plotly.graph_objects as go
 
 import app.Video as Video
 import app.Animation as Animation
@@ -51,7 +51,7 @@ class VideoIO:
             self.load_config()
             self.complete_config()
         except OSError:
-            print("Did not find config file ; reverting to default config.") if verbose>0 else None
+            if verbose>0: print("Did not find config file ; reverting to default config.")
             self.make_default_config()
 
         assert self.config_loaded, "Error when initializing VideoIO object."
@@ -183,7 +183,7 @@ class VideoIO:
         self.is_processed = True
 
 
-    def draw_diagrams(self, fig=None, save=True, show=False, time_in_seconds=False, verbose=0): # can be drawn either in frame scale or seconds scale
+    def draw_diagrams(self, fig:go.Figure=None, save=True, show=False, time_in_seconds=False, verbose=0): # can be drawn either in frame scale or seconds scale
         fig = make_subplots(rows=2, cols=3, subplot_titles=(
             "Amplitude du flux au cours du temps",
             "Vitesses au cours du temps" ,
@@ -214,20 +214,20 @@ class VideoIO:
             fig.add_vline(x=stop, row=row, col=col)
 
         fig.update_layout(title=f'Optical flow  - {self.name}')
-        fig.write_html(self.directory+f"/{self.name}_diagram.html") if save else None
-        fig.show() if show else None
+        if save: fig.write_html(self.directory+f"/{self.name}_diagram.html")
+        if show: fig.show()
 
         fig2 = vis.magnitude_angle(frame_times, self.magnitude_means, self.magnitude_stds, self.angle_means, self.angle_stds)
         rows2, cols2 = (1,2), (1,1)
         for row, col in zip(rows2, cols2):
             fig2.add_vline(x=start, row=row, col=col)
             fig2.add_vline(x=stop, row=row, col=col)
-        fig2.write_html(self.directory+f"/{self.name}_oflow.html") if save else None
-        fig2.show() if show else None
+        if save: fig2.write_html(self.directory+f"/{self.name}_oflow.html")
+        if show: fig2.show()
 
         fig3 = vis.add_curve(y=self.position_y, x=self.position_x, name="y=f(x) - Trajectoire")
-        fig3.write_html(self.directory+f"/{self.name}_trajectory.html") if save else None
-        fig3.show() if show else None
+        if save: fig3.write_html(self.directory+f"/{self.name}_trajectory.html")
+        if show: fig3.show()
 
         return [fig, fig2, fig3]
 
@@ -256,7 +256,7 @@ class VideoIO:
     def get_spatial_crop_input_from_user(self, save=True): # TODO VideoIO.get_spatial_crop_input_from_user() -- maybe should be here instead of in video ?
         crop = self.video.get_spatial_crop_input_from_user(self.spatial_crop)
         self.config['spatial crop'] = crop
-        self.save_config() if save else None
+        if save: self.save_config()
         return crop
     
 
@@ -265,7 +265,7 @@ class VideoIO:
         times = np.array(list(range(self.oflow_len)))
         start, stop = oflow.get_crop(times, self.magnitude_means)
         self.config['time crop'] = {'start':int(start), 'stop':int(stop)} # int32 -> int because int32 not json serialisable
-        self.save_config() if save else None
+        if save: self.save_config()
         return start, stop
     
     def record_video(self):

@@ -157,7 +157,7 @@ class Video:
                 frame_idx -= 1
             elif key == ord(next_key) and frame_idx < self.frame_count-1:
                 frame_idx += 1
-            print(f'Displaying frame {frame_idx}') if verbose>0 else None
+            if verbose>0: print(f'Displaying frame {frame_idx}')
 
         return {'x1':min(x1,x2), 'x2':max(x1,x2), 'y1':min(y1,y2), 'y2':max(y1,y2)}
     

@@ -33,7 +33,7 @@ angle_stds = np.array([flow.get_measure(OpticalFlow.Measure.ANGLE_STD) for flow 
 
 # Calcul de l'intégrale du flux i.e. la position
 
-velocity_x, velocity_y = OpticalFlow.OpticalFlow.polar_to_cartesian(magnitude_means, -angle_means, degrees=True) # reverse angles because up is - in image space
+velocity_x, velocity_y = OpticalFlow.polar_to_cartesian(magnitude_means, -angle_means, degrees=True) # reverse angles because up is - in image space
 velocity_x, velocity_y = np.ravel(velocity_x), np.ravel(velocity_y)
 position_x, position_y = m_utils.integrale3(velocity_x, step=1), m_utils.integrale3(velocity_y, step=1)
 
