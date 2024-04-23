@@ -1,7 +1,9 @@
 import numpy as np
+from plotly.subplots import make_subplots
 
 from app.Curve import Curve, Color
 from app.Animation import Animation
+import app.visualisation as vis
 
 class FakeCurvePointer:
 
@@ -64,7 +66,37 @@ print(f"Shape of curve values: {values.shape}")
 
 if DO_SHOW: fig.show()
 
-# test of derivative when we do not have a pointer
+# test of derivative on keyframes (using tangent handles)
+times = np.zeros((10))
+values = np.zeros((10))
+co = np.vstack((times, values)).T
+
+left_x = times - np.array([0.1, 0.2, 0.05, 0.2, 0.05, 0.05, 0.3, 0.25, 0.15, 0.15])
+right_x = times + np.array([0.1, 0.05, 0.2, 0.2, 0.1, 0.05, 0.3, 0.25, 0.15, 0.05])
+
+left_y = np.array([-0.1, -0.2, -0.05, 0.05, 0.05, -0.15, -0.15, 0.15, 0.35, 0.2])
+right_y = np.array([0.1, 0.05, 0.2, -0.05, -0.1, 0.15, 0.15, -0.15, -0.35, 0.25])
+
+# expected derivatives : [ 1, 1, 1,  -0.25, -1, 3, 0.5, -0.6 , -2.33, broken->0]
+
+curve_with_handles = Curve(
+    co,
+    tangent_left_handle_x=left_x,
+    tangent_left_handle_y=left_y,
+    tangent_right_handle_x=right_x,
+    tangent_right_handle_y=right_y,
+    fullname='original curve',
+)
+curve_with_handles.set_keyframe_attribute(9, "handle_left_type", "FREE")
+curve_with_handles.set_keyframe_attribute(9, "handle_right_type", "FREE")
+derivatives = curve_with_handles.get_keyframe_derivatives()
+
+fig1 = curve_with_handles.display()
+print(f"Keyframe derivatives: {list(derivatives)}")
+
+if DO_SHOW: fig1.show()
+
+# test of derivative when we do not have a pointer (using finite schemes)
 original_curve = Curve(coordinates, fullname='original curve')
 
 first_derivative = original_curve.first_derivative()

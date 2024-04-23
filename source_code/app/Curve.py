@@ -55,7 +55,7 @@ class Attributes_Name(Enum): # ordered !
     id = 0
     time = 1
     value = 2
-    easing_mode = 3
+    easing_mode = 3 # TODO Curve.Attributes_Name has ugly formatting...
     handle_left_x = 4
     handle_left_y = 5
     handle_left_type = 6
@@ -109,6 +109,8 @@ class Curve:
             try:
                 enumerate(input_arg)
                 input_arg = np.array(input_arg)
+                if len(input_arg.shape)==1:
+                    input_arg = np.expand_dims(input_arg, axis=1)
             except TypeError: # object not iterable
                 input_arg = np.ones_like(ids)*(input_arg.value if is_enum else input_arg)
             #input_arg = np.array(input_arg) if type(input_arg)!=Curve.ATTRIBUTE_TYPES[i+3] else np.ones_like(ids)*(input_arg.value if is_enum else input_arg)
@@ -225,8 +227,14 @@ class Curve:
     def set_keyframe_attribute(self, id, attribute_name:Attributes_Name|str, value):
         column = attribute_name.value if type(attribute_name) is Attributes_Name else Attributes_Name[attribute_name].value
         expected_type = Curve.ATTRIBUTE_TYPES[column]
-        assert type(value) == expected_type, f"Wrong Type. Expected {expected_type}, got {type(value)}."
-        self.array[id, column] = value.value if Curve.ARE_ENUMS[column] else value
+        if not Curve.ARE_ENUMS[column]:
+            assert type(value) == expected_type, f"Wrong Type. Expected {expected_type}, got {type(value)}."
+            self.array[id, column] = value
+            return
+        try:
+            self.array[id, column] = value.value
+        except AttributeError: #typically, "string has no value attribute"
+            self.array[id, column] = expected_type[value].value
 
     def rename(self, new_name=""):
         self.fullname = new_name
@@ -280,13 +288,13 @@ class Curve:
         self.array = np.copy(self.array[indexes,:])
         self.update_time_range()
 
-    def get_keyframe_derivatives(self): # TODO Curve.get_derivatives() -- untested in curve_and_animations.py i think
-        ## TODO Curve.get_derivatives() -- c'est FAUX dans le cas d'un handle de type différent !!! -> update: c'est changé mais toujours pas top
+    def get_keyframe_derivatives(self):
+        ## computes derivatives at keyframes. Broken handles are automatically assigned a derivative of 0.
         dx = self.get_attribute(Attributes_Name.handle_right_x) - self.get_attribute(Attributes_Name.handle_left_x)
         dy = self.get_attribute(Attributes_Name.handle_right_y) - self.get_attribute(Attributes_Name.handle_left_y)
         left_unbroken_handles = np.array([ht not in [Handle_Type.FREE.value, Handle_Type.VECTOR.value] for ht in self.get_attribute(Attributes_Name.handle_left_type)])
         right_unbroken_handles = np.array([ht not in [Handle_Type.FREE.value, Handle_Type.VECTOR.value] for ht in self.get_attribute(Attributes_Name.handle_right_type)])
-        return dy/dx*left_unbroken_handles*right_unbroken_handles # broken handles are automatically assigned a derivative of 0
+        return dy/dx*left_unbroken_handles*right_unbroken_handles 
     
     def sample(self, times):
         assert "pointer" in dir(self), "Cannot sample a curve with no associated fcurve."
