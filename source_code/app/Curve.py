@@ -360,7 +360,7 @@ class Curve:
         return self._derivative(m_utils.derivee_seconde, name='Second derivative', n_samples=n_samples)
         
         
-    def get_auto_crop(self, use_handles=True, default_value=0, threshold=0.1, padding_out=10, padding_in=3, patience=0): ## TODO oflow.get_crop() -- move to Curve.py 
+    def get_auto_crop(self, use_handles=True, default_value=0, threshold=0.1, padding_out=10, padding_in=3, patience=0):
         # arguments after "use_handles" only need to be specified when "use_handles" is set to False
         # argument "threshold" is a percentage of the value range, between 0 and 1
         times, values = self.get_times(), self.get_values()
