@@ -138,7 +138,6 @@ class Curve:
                         expected_type(int(element))
                     except ValueError as msg:
                         raise AssertionError(f"Curve self checking failed: found wrong element in column {column}, {msg}")
-        # TODO Curve.check() -- should also check types of columns
 
     def __len__(self):
         return self.array.shape[0]
