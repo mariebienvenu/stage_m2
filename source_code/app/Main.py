@@ -17,7 +17,7 @@ def default_config():
     }
 
 
-class Main:
+class Main: ## TODO Main -- untested
 
     def __init__(self, directory, blender_object_name, reference_video_filename, target_video_filename, extension='.mp4',  verbose=0):
 
