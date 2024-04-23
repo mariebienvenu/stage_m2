@@ -8,10 +8,10 @@ import plotly.graph_objects as go
 
 import app.Video as Video
 import app.Animation as Animation
+import app.OpticalFlow as oflow
 import app.maths_utils as m_utils
 import app.visualisation as vis
 
-oflow = Video.OpticalFlow
 Curve = Animation.Curve
 
 
@@ -29,7 +29,7 @@ def default_config(height, width, frame_count, fps):
         },
         "image processing method":"gray",
         "background proportion":0.0,
-        "frame rate":fps, #unused
+        "frame rate":fps, #basically unused
     }
 
 

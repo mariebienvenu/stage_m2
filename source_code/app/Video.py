@@ -116,7 +116,7 @@ class Video:
         frame = self.get_frame(frame_idx)
         x1, x2, y1, y2 = 0, frame.shape[1], 0, frame.shape[0]
         if initial_box is not None:
-            x1, x2, y1, y2 = initial_box.values() # TODO not working
+            x1, x2, y1, y2 = initial_box.values()
         drawing = False
 
         def draw_rectangle(event, x, y, flags, param):

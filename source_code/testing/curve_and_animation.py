@@ -255,7 +255,7 @@ resampled_anim[0].rename("cropped curve")
 resampled_anim.display(handles=False, doShow=DO_SHOW)
 print("New time range: ", [curve.time_range for curve in resampled_anim])
 
-'''
+
 PATH = 'C:/Users/Marie Bienvenu/stage_m2/afac/'
 
 for curve in anim:
@@ -270,5 +270,3 @@ print(f"Saved animation: {anim}, loaded animation: {loaded_anim}")
 
 request = anim.find("original curve")
 print(f"Curve fetched when asking for 'original curve': {request}")
-
-'''
