@@ -4,9 +4,9 @@ checker la version de python en regardant la console dans l'onglet Scripting
 -> Install Miniconda
 Open Anaconda Prompt
 Il faut le même python que celui de blender ! (-> 3.10 pour moi)
-"conda create --name blender2 python=3.10 plotly matplotlib pandas
+"conda create --name blender2 python=3.10 plotly matplotlib pandas scipy
 "conda activate blender2
-"pip install fake-bpy-module opencv-python
+"pip install fake-bpy-module opencv-python scikit-learn tqdm
 
 -> Install VSCode
 extension VSCode: Python (+Pylance +Debugger), Blender Dev (de Jacques Lucke)
