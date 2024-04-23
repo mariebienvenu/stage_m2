@@ -150,9 +150,32 @@ warped_curve3.display(fig=fig3, handles=False)
 
 if DO_SHOW: fig3.show()
 
-# test of autocropping
+# test of autocropping with handles
+times = np.arange(0,10,1)
+values = np.array([5, 5, 5, 10, 5, -10, -5, 0, 0, 0])
+coordinates = np.vstack((times, values)).T
 
-# with handles
+left_handle_x = np.expand_dims(np.arange(-0.3, 9.3, 1), axis=1)
+right_handle_x = np.expand_dims(np.arange(0.3, 10.3, 1), axis=1)
+left_handle_y = np.expand_dims(np.array([5, 5, 5, 10, 8, -10, -7, 0, 0, 0]), axis=1)
+right_handle_y = np.expand_dims(np.array([5, 5, 5, 10, 2, -10, -3, 0, 0, 0]), axis=1)
+
+fake_blender_curve = Curve(
+    coordinates,
+    tangent_left_handle_x=left_handle_x,
+    tangent_left_handle_y=left_handle_y,
+    tangent_right_handle_x=right_handle_x,
+    tangent_right_handle_y=right_handle_y
+)
+
+start, stop = fake_blender_curve.get_auto_crop()
+
+fig = fake_blender_curve.display(style='markers+lines')
+fig.add_vline(x=start, annotation_text="Start", annotation_position="top right")
+fig.add_vline(x=stop, annotation_text="Stop", annotation_position="top right")
+
+if DO_SHOW: fig.show()
+
 times = np.array(list(range(15)))
 values = np.array([0, 0, 6, 3, 0, 2, 4, 2, 0, 1, 3, 1, 0, 0, 0])
 handles_left_x = times - 0.25
@@ -169,7 +192,22 @@ curve_with_handles = Curve(
 start, stop = curve_with_handles.get_auto_crop()
 print(f"Found autocrop of {(start,stop)} when using handles")
 
-# without handles
+# test of autocropping without handles
+mag_means = np.zeros((100))
+mag_means[30:60] = 12
+mag_means[15:18] = 10
+mag_means[5] = 6
+mag_means[80:85] = 10
+mag_means[92] = 6
+frame_times = np.arange(0,10,0.1)
+curve = Curve(np.vstack((frame_times, mag_means)).T)
+
+for patience in [0, 1, 5]:
+    crop = curve.get_auto_crop(use_handles=False, threshold=5./12, padding_in=0, padding_out=0, patience=patience)
+    print(f'Cropping found for patience={patience} and threshold=5: {crop}')
+crop_other = curve.get_auto_crop(use_handles=False, threshold=0.9, padding_in=0, padding_out=0, patience=0)
+print(f'Cropping found for patience=0 and threshold=11: {crop_other}')
+
 curve_no_handles = Curve(
     np.vstack((times, values+np.array([random()*0.3 for _ in range(times.size)]))).T,
 )
