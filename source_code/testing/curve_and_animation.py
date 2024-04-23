@@ -1,4 +1,5 @@
 import numpy as np
+from random import random
 from plotly.subplots import make_subplots
 
 from app.Curve import Curve, Color
@@ -149,6 +150,31 @@ warped_curve3.display(fig=fig3, handles=False)
 
 if DO_SHOW: fig3.show()
 
+# test of autocropping
+
+# with handles
+times = np.array(list(range(15)))
+values = np.array([0, 0, 6, 3, 0, 2, 4, 2, 0, 1, 3, 1, 0, 0, 0])
+handles_left_x = times - 0.25
+handles_right_x = times + 0.25
+handles_left_y = np.array([0, 0, 6, 6, 0, 0, 4, 4, 0, 0, 3, 3, 0, 0, 0])
+handles_right_y = np.array([0, 0, 6, 0, 0, 4, 4, 0, 0, 3, 3, 0, 0, 0, 0])
+curve_with_handles = Curve(
+    np.vstack((times, values)).T,
+    tangent_left_handle_x=handles_left_x,
+    tangent_left_handle_y=handles_left_y,
+    tangent_right_handle_x=handles_right_x,
+    tangent_right_handle_y=handles_right_y,
+)
+start, stop = curve_with_handles.get_auto_crop()
+print(f"Found autocrop of {(start,stop)} when using handles")
+
+# without handles
+curve_no_handles = Curve(
+    np.vstack((times, values+np.array([random()*0.3 for _ in range(times.size)]))).T,
+)
+start, stop = curve_no_handles.get_auto_crop(use_handles=False, padding_out=0, padding_in=0)
+print(f"Found autocrop of {(start,stop)} whithout using handles")
 
 ## ANIMATION
 
@@ -191,6 +217,7 @@ resampled_anim[0].rename("cropped curve")
 resampled_anim.display(handles=False, doShow=DO_SHOW)
 print("New time range: ", [curve.time_range for curve in resampled_anim])
 
+'''
 PATH = 'C:/Users/Marie Bienvenu/stage_m2/afac/'
 
 for curve in anim:
@@ -205,3 +232,5 @@ print(f"Saved animation: {anim}, loaded animation: {loaded_anim}")
 
 request = anim.find("original curve")
 print(f"Curve fetched when asking for 'original curve': {request}")
+
+'''
