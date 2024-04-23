@@ -70,7 +70,7 @@ additionnal_curves_video.display(handles=False, style='markers+lines', doShow=Tr
 NAME = 'Ball'
 animation = b_utils.get_animation(NAME)
 for curve in animation:
-    start, stop = b_utils.get_crop(curve)
+    start, stop = curve.get_auto_crop()
     #curve.crop(start, stop)
 additionnal_curves = Animation.Animation()
 

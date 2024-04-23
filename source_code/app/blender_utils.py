@@ -103,8 +103,8 @@ def set_animation(obj_name:str, animation:Animation.Animation):
             kf.back = getter(attr_names.back)
             kf.period = getter(attr_names.period)
 
-
-def get_crop(curve:Curve.Curve):
+'''
+def get_crop(curve:Curve.Curve): # LEGACY, moved to Curve class
     order = np.argsort(curve.get_times())
     times = curve.get_times()[order]
     values = curve.get_values()[order]
@@ -124,3 +124,4 @@ def get_crop(curve:Curve.Curve):
     stop += 1
     assert start <= stop, "Problem encountered when autocropping."
     return (times[start], times[stop])
+'''

@@ -103,17 +103,15 @@ class OpticalFlow(np.ndarray):
         return len(image.shape)==2 or (len(image.shape)==3 and image.shape[2]==1)
     
 
-
 def cartesian_to_polar(x, y, degrees=False):
     return cv2.cartToPolar(x, y, angleInDegrees=degrees)
 
 def polar_to_cartesian(magnitude, angle, degrees=False):
     return cv2.polarToCart(magnitude, angle, angleInDegrees=degrees)
 
-
-def get_crop(frame_times, magnitude_mean, threshold=0.1, padding_out=10, padding_in=3, patience=0): ## TODO oflow.get_crop() -- move to Curve.py 
-    ## TODO oflow.get_crop() --  magnitude_means should actually be normalized (right now its scale depends heavily on background proportion) so that this threshold can stay the same.
-    ## TODO oflow.get_crop() -- passer à un input de type curve ? et ajouter un constant=0 pour gérer des courbes qui plateaux à autre chose que 0
+'''
+LEGACY - moved to Curve class
+def get_crop(frame_times, magnitude_mean, threshold=0.1, padding_out=10, padding_in=3, patience=0): 
     start = padding_out
     stop = magnitude_mean.size-padding_out
     used_patience_left = 0
@@ -141,3 +139,4 @@ def get_crop(frame_times, magnitude_mean, threshold=0.1, padding_out=10, padding
     stop = min(stop, magnitude_mean.size)
     assert start <= stop, "Problem encountered when autocropping."
     return (frame_times[start], frame_times[stop])
+'''

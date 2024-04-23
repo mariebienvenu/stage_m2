@@ -263,7 +263,8 @@ class VideoIO:
     def auto_time_crop(self, patience=2, save=True, verbose=0):
         self.process(verbose=verbose-1)
         times = np.array(list(range(self.oflow_len)))
-        start, stop = oflow.get_crop(times, self.magnitude_means)
+        curve = Curve.Curve(np.vstack((times, self.magnitude_means)).T)
+        start, stop = curve.get_auto_crop(use_handles=False, patience=patience)
         self.config['time crop'] = {'start':int(start), 'stop':int(stop)} # int32 -> int because int32 not json serialisable
         if save: self.save_config()
         return start, stop

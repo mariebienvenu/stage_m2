@@ -53,8 +53,8 @@ anim.save(data_path + VIDEO_NAME + '/')
 
 ## Estimation des bornes
 
-start, stop = OpticalFlow.get_crop(frame_times, magnitude_means)
-start2, stop2 = OpticalFlow.get_crop(frame_times, magnitude_means, patience=2)
+start, stop = Animation.find('Oflow magnitude - mean').get_auto_crop(use_handles=False)
+start2, stop2 = Animation.find('Oflow magnitude - mean').get_auto_crop(use_handles=False, patience=2)
 
 ## Visualisation globale
 
