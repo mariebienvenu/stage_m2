@@ -113,12 +113,10 @@ class Curve:
                     input_arg = np.expand_dims(input_arg, axis=1)
             except TypeError: # object not iterable
                 input_arg = np.ones_like(ids)*(input_arg.value if is_enum else input_arg)
-            #input_arg = np.array(input_arg) if type(input_arg)!=Curve.ATTRIBUTE_TYPES[i+3] else np.ones_like(ids)*(input_arg.value if is_enum else input_arg)
             to_stack.append(np.copy(input_arg))
         
         self.array = np.hstack(to_stack) # shape (n, N_ATTRIBUTES)
-        assert len(self.array.shape)==2, f"Wrong shape. Array is {len(self.array.shape)} dimensional instead of 2."
-        assert self.array.shape[1] == Curve.N_ATTRIBUTES, f"Wrong size in initialization: {self.array.shape[1]} instead of {Curve.N_ATTRIBUTES}"
+        self.check()
 
         self.fullname, self.time_range = fullname, time_range
         if time_range is None:
@@ -127,7 +125,23 @@ class Curve:
         for (key, value) in kwargs.items():
             assert key not in dir(self), f"Invalid name: {key} is already taken."
             self.__setattr__(key, value) # no autocomplete for these
-        
+
+    def check(self):
+        assert len(self.array.shape)==2 and self.array.shape[1] == Curve.N_ATTRIBUTES, f"Curve self checking failed: array shape is {self.array.shape} instead of (N, {Curve.N_ATTRIBUTES})"
+        assert self.array.dtype == np.float64, f"Curve self checking failed: array type is {self.array.dtype} instead of np.float64."
+        for column, (expected_type, is_enum) in enumerate(zip(Curve.ATTRIBUTE_TYPES, Curve.ARE_ENUMS)):
+            if is_enum:
+                column_content = self._get_column(column)
+                assert np.sum(np.abs(column_content-column_content.astype(np.int32))) < 1e-3, f"Curve self checking failed: found non-integers in column {column} ('{expected_type.__name__}')."
+                for element in column_content:
+                    try:
+                        expected_type(int(element))
+                    except ValueError as msg:
+                        raise AssertionError(f"Curve self checking failed: found wrong element in column {column}, {msg}")
+        # TODO Curve.check() -- should also check types of columns
+
+    def __len__(self):
+        return self.array.shape[0]
 
     def get_keyframe(self, id):
         kf = self._get_row(id)
@@ -211,13 +225,6 @@ class Curve:
 
         if doShow: fig.show()
         return fig
-    
-    def check(self):
-        assert len(self.array.shape)==2 and self.array.shape[1] == Curve.N_ATTRIBUTES, f"Self checking failed ! Current shape is {self.array.shape} instead of (N, {self.N_ATTRIBUTES+1})"
-        # TODO Curve.check() -- should also check types of columns
-
-    def __len__(self):
-        return self.array.shape[0]
     
     def get_keyframe_attribute(self, id, attribute_name:Attributes_Name|str):
         column = attribute_name.value if type(attribute_name) is Attributes_Name else Attributes_Name[attribute_name].value

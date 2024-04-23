@@ -13,7 +13,7 @@ class FakeCurvePointer:
         # assuming ordered times
 
     def evaluate(self, time):
-        if self.times is None or self.values is None: return None
+        if self.times is None or self.values is None: return np.nan # None avant -> peut-être cassé quelque chose... 
         for t,v in zip(self.times, self.values):
             if t>=time:
                 return v
@@ -65,6 +65,20 @@ values = curve.get_values()
 print(f"Shape of curve values: {values.shape}")
 
 if DO_SHOW: fig.show()
+
+# test of curve self checking
+wrong_curve1, wrong_curve2 = Curve(), Curve()
+wrong_curve1.array[0, 3] = 2.5 # out of api modification -> bypasses checks
+wrong_curve2.array[0, 3] = 6 # out of api modification -> bypasses checks
+print("Expect two assertion errors...")
+try:
+    wrong_curve1.check() # should raise AssertionError
+except AssertionError as e:
+    print(f"As expected, got assertion error: {e}")
+try:
+    wrong_curve2.check() # should raise AssertionError
+except AssertionError as e:
+    print(f"As expected, got assertion error: {e}")
 
 # test of derivative on keyframes (using tangent handles)
 times = np.zeros((10))
