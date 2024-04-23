@@ -24,7 +24,11 @@ video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 oflow_len = video.frame_count - 1
 frame_times = np.arange(0, oflow_len/video.fps, 1/video.fps)
 
-flows = [video.get_optical_flow(index) for index in tqdm(range(oflow_len), desc='Oflow computation')]
+flows = []
+for index in tqdm(range(oflow_len), desc='Oflow computation'):
+    frame1, frame2 = video.get_frame(index), video.get_frame(index+1)
+    flow = OpticalFlow.OpticalFlow.compute_oflow(frame1, frame2)
+    flows.append(flow)
 
 magnitude_means = np.array([flow.get_measure(OpticalFlow.Measure.MAGNITUDE_MEAN) for flow in flows])
 magnitude_stds = np.array([flow.get_measure(OpticalFlow.Measure.MAGNITUDE_STD) for flow in flows])

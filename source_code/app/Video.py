@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 from enum import Enum
 
-import app.OpticalFlow as OpticalFlow
 from app.ImageProcessing import ImageProcessing
 
 
@@ -14,6 +13,7 @@ def no_crop(height, width):
 class Subsampling_FPS(Enum):
     KEEP = 0
     SAME = 1
+
 
 
 class Video:
@@ -105,14 +105,6 @@ class Video:
             return image_processing(frame)
         except TypeError: # typically, "String is not callable"
             return getattr(ImageProcessing, image_processing)(frame)
-
-
-    def get_optical_flow(self, index, image_processing=ImageProcessing.gray, crop=None, degrees=True, **kwargs): # TODO Video.get_optical_flow() -- should not be here ?
-        '''if background_proportion is 0 then there will be no thresholding'''
-        assert index>=0 and index<self.frame_count-1, f"Index out of video's optical flow range: {index} should be between 0 and {self.frame_count-1} but is not."
-        frame1, frame2 = self.get_frame(index, image_processing=image_processing, crop=crop), self.get_frame(index+1, image_processing=image_processing, crop=crop)
-        flow = OpticalFlow.OpticalFlow.compute_oflow(frame1, frame2, use_degrees=degrees, **kwargs)
-        return flow
     
 
     def get_spatial_crop_input_from_user(self, initial_box : dict = None, verbose=0):

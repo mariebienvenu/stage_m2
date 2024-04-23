@@ -164,12 +164,10 @@ class VideoIO:
         self.angle_stds = np.zeros((N))
 
         for index in tqdm(range(self.oflow_len), desc='Oflow computation'):
-            flow = self.video.get_optical_flow(
-                index,
-                image_processing=self.image_processing_method,
-                crop=self.spatial_crop,
-                degrees=True,
-            )
+            frame_before = self.video.get_frame(index, image_processing=self.image_processing_method, crop=self.spatial_crop)
+            frame_after = self.video.get_frame(index+1, image_processing=self.image_processing_method, crop=self.spatial_crop)
+            flow = oflow.OpticalFlow.compute_oflow(frame_before, frame_after, use_degrees=True)
+        
             mask = flow.get_mask(background_proportion=self.background_proportion)
             self.magnitude_means[index] = flow.get_measure(oflow.Measure.MAGNITUDE_MEAN, mask)
             self.magnitude_stds[index] = flow.get_measure(oflow.Measure.MAGNITUDE_STD, mask)
