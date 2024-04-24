@@ -24,7 +24,7 @@ softIO = sio.SoftIO(directory, verbose=2)
 softIO.process() # will fetch the animation from the software
 
 fig = go.Figure()
-anims = softIO.animations
+anims = softIO.get_animations()
 for anim in anims:
     anim.display(fig=fig)
     anim.sample(100).display(handles=False, style="lines", fig=fig)
@@ -35,7 +35,7 @@ anims[0].find("location X").set_keyframe_attribute(1, "value", np.float64(5.)) #
 
 
 fig2 = go.Figure()
-anims = softIO.animations
+anims = softIO.get_animations()
 for anim in anims:
     anim.display(fig=fig2)
     anim.sample(100).display(handles=False, style="lines", fig=fig2)
@@ -45,7 +45,7 @@ softIO.set_animations(anims) # will affect blender, which handles the sampling, 
 # could have also used the softIO.to_software() method which mirror the softIO.from_software() used in softIO.process()
 
 fig2 = go.Figure()
-anims = softIO.animations
+anims = softIO.get_animations()
 for anim in anims:
     anim.display(fig=fig2)
     anim.sample(100).display(handles=False, style="lines", fig=fig2)

@@ -25,6 +25,7 @@ class SoftIO(AbstractIO.AbstractIO):
         super(SoftIO, self).__init__(directory, verbose)
         self.finalize_init(default_config)
 
+
     def __repr__(self):
         return super(SoftIO, self).__repr__().replace("AbstractIO","SoftIO")
 
@@ -32,6 +33,10 @@ class SoftIO(AbstractIO.AbstractIO):
     @property
     def config_filename(self):
         return self.directory + "scene_config.json"
+    
+    @property
+    def scene_filename(self) -> str:
+        return b_utils.get_filename()
     
     @property
     def time_range(self) -> dict:
@@ -49,14 +54,17 @@ class SoftIO(AbstractIO.AbstractIO):
     def object_names(self) -> List[str]:
         return self.config["object names"]
 
+
     def process(self, force=False):
         if self.is_processed and not force : return
         self.from_software()
         self.is_processed = True
 
-    @property
-    def animations(self):
+
+    def get_animations(self):
+        self.process()
         return self._animations
+
 
     def set_animations(self, animations:List[Animation.Animation]):
         self._animations = animations
@@ -67,10 +75,16 @@ class SoftIO(AbstractIO.AbstractIO):
         for anim in self._animations:
             anim.check()
 
+    
+    def check_file(self, filename):
+        b_utils.check_filename(filename)
+
+
     def to_software(self):
         for (obj_name, animation) in zip(self.object_names, self._animations):
             b_utils.set_animation(obj_name, animation)
         self.process(force=True)
+
 
     def from_software(self):
         self._animations = [
