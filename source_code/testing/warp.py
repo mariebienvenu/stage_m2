@@ -15,7 +15,7 @@ X_out = np.cos(X_in/5)
 Warp1D = Warp.LinearWarp1D(X_in, X_out)
 
 inputs = [-20, 30, 0.3, 7.32]
-outputs = Warp1D(inputs)
+outputs,_ = Warp1D(inputs, None)
 
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=X_in, y=X_out, mode='markers+lines'))

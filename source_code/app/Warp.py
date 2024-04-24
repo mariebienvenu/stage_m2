@@ -28,8 +28,8 @@ class LinearWarp1D(AbstractWarp):
         self.X = np.array(X_in)#[order]
         self.Y = np.array(X_out)#[order]
 
-    def __call__(self, x):
-        return np.interp(x, self.X, self.Y)
+    def __call__(self, t, x):
+        return np.interp(t, self.X, self.Y),x
     
 
 class LinearWarp2D(AbstractWarp):
@@ -43,12 +43,6 @@ class LinearWarp2D(AbstractWarp):
     def __call__(self, x, y):
         results = self.interpolator(np.array(x), np.array(y))
         return results[:,0], results[:,1]
-    
-    @classmethod
-    def from_1D(cls, wrp:LinearWarp1D, min=-1e3, max=1e3):
-        X_in, X_out = wrp.X, wrp.Y
-        Y_in, Y_out = np.arange(min, max, (max-min)/X_in.size), np.arange(min, max, (max-min)/X_in.size)
-        return cls(X_in, Y_in, X_out, Y_out)
 
 
 class Warp:
