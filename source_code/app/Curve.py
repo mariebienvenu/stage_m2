@@ -212,7 +212,7 @@ class Curve:
             fig = go.Figure()
         times = self.get_times()
         values = self.get_values()
-        color = self.color if 'color' in dir(self) else (color if color is not None else Color.next())
+        color = self.color if ('color' in dir(self) and self.color is not None) else (color if color is not None else Color.next())
         fig.add_trace(go.Scatter(x=times, y=values, name=self.fullname, mode=style, marker_color=f'rgb{color}'), row=row, col=col) # drawing the keyframes
         if handles:
             handle_times = np.concatenate((self.get_attribute('handle_left_x'), self.get_attribute('handle_right_x')))
@@ -304,9 +304,10 @@ class Curve:
     
     def sample(self, times):
         assert "pointer" in dir(self), "Cannot sample a curve with no associated fcurve."
-        values = np.array([self.pointer.evaluate(time) for time in times])
+        values = np.array([self.pointer.evaluate(time) for time in times]) # un peu ugly d'utiliser la fonction evaluate() mais c'est validé par Damien
         coordinates = np.vstack((times, values)).T
-        new_curve = Curve(coordinates, fullname=self.fullname+" sampled" if len(self.fullname)>0 else "sampled")
+        color = getattr(self, "color", None) # here we recover additionnal info on the curve that we would like to forward to the new, sampled curve
+        new_curve = Curve(coordinates, fullname=self.fullname+" sampled" if len(self.fullname)>0 else "sampled", color=color)
         new_curve.update_time_range()
         return new_curve
     
