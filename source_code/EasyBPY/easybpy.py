@@ -2603,17 +2603,17 @@ def fluid_effector_thickness_value(value):
 
 # Use effector, 1 = on 0 = off
 def fluid_effector_use_toggle(fbool):
-    if value.upper() == 'FALSE':
+    if fbool.upper() == 'FALSE':
         h =bool(False)
-    elif value.upper() == 'TRUE':
+    elif fbool.upper() == 'TRUE':
         h =bool(True)
     bpy.context.object.modifiers["Fluid"].effector_settings.use_effector = h
 
 # Is Planar, 1 = on 0 = off
 def fluid_effector_is_planar(fbool):
-    if value.upper() == 'FALSE':
+    if fbool.upper() == 'FALSE':
         h =bool(False)
-    elif value.upper() == 'TRUE':
+    elif fbool.upper() == 'TRUE':
         h =bool(True)
     bpy.context.object.modifiers["Fluid"].effector_settings.use_plane_init = h
 

@@ -20,7 +20,8 @@ oflow_video_content = np.zeros((oflow_len, video.frame_height, video.frame_width
 
 for index in tqdm(range(oflow_len), desc='Oflow computation'):
     t0 = time()
-    flow = video.get_optical_flow(index, degrees=False) #no filtering
+    frame1, frame2 = video.get_frame(index), video.get_frame(index+1)
+    flow:OpticalFlow.OpticalFlow = OpticalFlow.OpticalFlow.compute_oflow(frame1, frame2, degrees=False) #no filtering
     bgr = flow.make_oflow_image()
     oflow_video_content[index,:,:,:] = np.copy(bgr)
 

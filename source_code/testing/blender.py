@@ -65,10 +65,10 @@ for curve in animation:
 fig.write_html(scene_path+f'{NAME}_animation.html')
 fig.show()
 
-## Test of b_utils.get_crop()
+## Test of Curve.get_auto_crop() on actual curve
 
 y = animation[1]
-start, stop = b_utils.get_crop(y)
+start, stop = y.get_auto_crop()
 
 fig2 = y.display()
 

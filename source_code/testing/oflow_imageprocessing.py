@@ -36,7 +36,7 @@ for improcess_method in methods:
     video_io.config["image processing method"] = improcess_method
     #print(f"Config : {video_io.config}")
     video_io.process(force=True)
-    fig = video_io.draw_diagrams(save=False)
+    fig = video_io.draw_diagrams(save=False)[0]
     fig.update_layout(title=improcess_method)
     fig.show()
 

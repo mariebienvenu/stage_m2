@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 from enum import Enum
 
-import app.OpticalFlow as OpticalFlow
 from app.ImageProcessing import ImageProcessing
 
 
@@ -14,6 +13,7 @@ def no_crop(height, width):
 class Subsampling_FPS(Enum):
     KEEP = 0
     SAME = 1
+
 
 
 class Video:
@@ -105,14 +105,6 @@ class Video:
             return image_processing(frame)
         except TypeError: # typically, "String is not callable"
             return getattr(ImageProcessing, image_processing)(frame)
-
-
-    def get_optical_flow(self, index, image_processing=ImageProcessing.gray, crop=None, degrees=True, **kwargs): # TODO Video.get_optical_flow() -- should not be here ?
-        '''if background_proportion is 0 then there will be no thresholding'''
-        assert index>=0 and index<self.frame_count-1, f"Index out of video's optical flow range: {index} should be between 0 and {self.frame_count-1} but is not."
-        frame1, frame2 = self.get_frame(index, image_processing=image_processing, crop=crop), self.get_frame(index+1, image_processing=image_processing, crop=crop)
-        flow = OpticalFlow.OpticalFlow.compute_oflow(frame1, frame2, use_degrees=degrees, **kwargs)
-        return flow
     
 
     def get_spatial_crop_input_from_user(self, initial_box : dict = None, verbose=0):
@@ -124,7 +116,7 @@ class Video:
         frame = self.get_frame(frame_idx)
         x1, x2, y1, y2 = 0, frame.shape[1], 0, frame.shape[0]
         if initial_box is not None:
-            x1, x2, y1, y2 = initial_box.values() # TODO not working
+            x1, x2, y1, y2 = initial_box.values()
         drawing = False
 
         def draw_rectangle(event, x, y, flags, param):
@@ -157,7 +149,7 @@ class Video:
                 frame_idx -= 1
             elif key == ord(next_key) and frame_idx < self.frame_count-1:
                 frame_idx += 1
-            print(f'Displaying frame {frame_idx}') if verbose>0 else None
+            if verbose>0: print(f'Displaying frame {frame_idx}')
 
         return {'x1':min(x1,x2), 'x2':max(x1,x2), 'y1':min(y1,y2), 'y2':max(y1,y2)}
     
@@ -194,7 +186,7 @@ class Video:
         return cls(filepath, verbose)
     
 
-    def subsample(self, rate=2, filepath=None, fps=Subsampling_FPS.SAME, verbose=0): # Not in place ; only samples in time
+    def downsample(self, rate=2, filepath=None, fps=Subsampling_FPS.SAME, verbose=0): # Not in place ; only samples in time
         self.load()
         array = np.copy(self.video_content[::rate, ...])
         filepath = filepath if filepath is not None else self.filepath[:-4]+f'_x{rate}.mp4'

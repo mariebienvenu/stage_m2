@@ -16,7 +16,7 @@ class InternalProcess: ## TODO InternalProcess -- untested
         self.feature = feature
         curve1 = self.vanim1.find(feature)
         curve2 = self.vanim2.find(feature)
-        ## TODO : allow to rescale curve1 and curve2 to have same mean and std
+        ## TODO : allow to rescale curve1 and curve2 to have same mean and std -> only smart if we want a temporal warp
         if only_temporal:
             score, pairings = m_utils.dynamic_time_warping(curve1.get_values(), curve2.get_values())
             if verbose>0: print(f"DTW achieved a score of {score}.")

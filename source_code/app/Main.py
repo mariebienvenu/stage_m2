@@ -17,7 +17,7 @@ def default_config():
     }
 
 
-class Main:
+class Main: ## TODO Main -- untested
 
     def __init__(self, directory, blender_object_name, reference_video_filename, target_video_filename, extension='.mp4',  verbose=0):
 
@@ -36,7 +36,7 @@ class Main:
             self.load_config()
             self.complete_config()
         except OSError:
-            print("Did not find config file ; reverting to default config.") if verbose>0 else None
+            if verbose>0: print("Did not find config file ; reverting to default config.")
             self.make_default_config()
 
         assert self.config_loaded, "Error when initializing Main object."

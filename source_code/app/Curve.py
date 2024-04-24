@@ -360,3 +360,54 @@ class Curve:
         return self._derivative(m_utils.derivee_seconde, name='Second derivative', n_samples=n_samples)
         
         
+    def get_auto_crop(self, use_handles=True, default_value=0, threshold=0.1, padding_out=10, padding_in=3, patience=0):
+        # arguments after "use_handles" only need to be specified when "use_handles" is set to False
+        # argument "threshold" is a percentage of the value range, between 0 and 1
+        times, values = self.get_times(), self.get_values()
+        if use_handles:
+            order = np.argsort(self.get_times())
+            times = times[order]
+            values = values[order]
+            derivatives = self.get_keyframe_derivatives()[order]
+            zipped = zip(values, values[::-1], derivatives, derivatives[::-1])
+            start = 1
+            stop = len(self)-2
+            for i, (value, opp_value, derivative, opp_derivative) in enumerate(zipped):
+                if start == i and derivative==0 and value==values[i-1]:
+                    start += 1
+                if stop == len(self)-1-i and opp_derivative==0 and opp_value==values[-i]:
+                    stop -= 1
+            if start==len(self) or stop==0:
+                return (times[0], times[0]) # all keyframes have same value and tangents -> only one keyframe is enough
+            start -= 1
+            stop += 1
+        else:
+            start = padding_out
+            stop = len(self)-padding_out
+            used_patience_left = 0
+            used_patience_right = 0
+            value_range = self.get_value_range()[1]-self.get_value_range()[0]
+            for i, (value, opp_value) in enumerate(zip(values, values[::-1])):
+                if start == i:
+                    if not abs(value-default_value)<threshold*value_range and used_patience_left<patience:
+                        start += 1
+                        used_patience_left += 1
+                    elif abs(value-default_value)<threshold*value_range:
+                        start += 1
+                        used_patience_left = 0
+                if stop == len(self)-i:
+                    if not abs(opp_value-default_value)<threshold*value_range and used_patience_right<patience:
+                        stop -= 1
+                        used_patience_right += 1
+                    elif abs(opp_value-default_value)<threshold*value_range:
+                        stop -= 1
+                        used_patience_right = 0
+            if start==len(self) or stop==0:
+                return (times[0], times[0]) # found nothing good to keep...
+            start -= padding_in + used_patience_left
+            stop += padding_in + used_patience_right
+            start = max(0, start)
+            stop = min(stop, len(self))
+        assert start <= stop, "Problem encountered when autocropping."
+        return (times[start], times[stop])
+        

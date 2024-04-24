@@ -24,7 +24,11 @@ video = Video(data_path + VIDEO_NAME +'.mp4', verbose=1)
 oflow_len = video.frame_count - 1
 frame_times = np.arange(0, oflow_len/video.fps, 1/video.fps)
 
-flows = [video.get_optical_flow(index) for index in tqdm(range(oflow_len), desc='Oflow computation')]
+flows = []
+for index in tqdm(range(oflow_len), desc='Oflow computation'):
+    frame1, frame2 = video.get_frame(index), video.get_frame(index+1)
+    flow = OpticalFlow.OpticalFlow.compute_oflow(frame1, frame2)
+    flows.append(flow)
 
 magnitude_means = np.array([flow.get_measure(OpticalFlow.Measure.MAGNITUDE_MEAN) for flow in flows])
 magnitude_stds = np.array([flow.get_measure(OpticalFlow.Measure.MAGNITUDE_STD) for flow in flows])
@@ -33,7 +37,7 @@ angle_stds = np.array([flow.get_measure(OpticalFlow.Measure.ANGLE_STD) for flow 
 
 # Calcul de l'intégrale du flux i.e. la position
 
-velocity_x, velocity_y = OpticalFlow.OpticalFlow.polar_to_cartesian(magnitude_means, -angle_means, degrees=True) # reverse angles because up is - in image space
+velocity_x, velocity_y = OpticalFlow.polar_to_cartesian(magnitude_means, -angle_means, degrees=True) # reverse angles because up is - in image space
 velocity_x, velocity_y = np.ravel(velocity_x), np.ravel(velocity_y)
 position_x, position_y = m_utils.integrale3(velocity_x, step=1), m_utils.integrale3(velocity_y, step=1)
 
@@ -53,8 +57,8 @@ anim.save(data_path + VIDEO_NAME + '/')
 
 ## Estimation des bornes
 
-start, stop = OpticalFlow.get_crop(frame_times, magnitude_means)
-start2, stop2 = OpticalFlow.get_crop(frame_times, magnitude_means, patience=2)
+start, stop = Animation.find('Oflow magnitude - mean').get_auto_crop(use_handles=False)
+start2, stop2 = Animation.find('Oflow magnitude - mean').get_auto_crop(use_handles=False, patience=2)
 
 ## Visualisation globale
 

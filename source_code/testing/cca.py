@@ -53,7 +53,7 @@ frame_times = video_movement[0].get_times()
 NAME = 'Ball'
 animation = b_utils.get_animation(NAME)
 for curve in animation:
-    start, stop = b_utils.get_crop(curve)
+    start, stop = curve.get_auto_crop()
     #curve.crop(start, stop)
 
 additionnal_curves = Animation.Animation()
