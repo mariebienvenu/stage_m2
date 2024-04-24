@@ -4,7 +4,27 @@ from random import random
 import pandas as pd
 import plotly.graph_objects as go
 
+import app.visualisation as vis
+
 DO_SHOW = True
+
+## Test of derivatives
+
+from app.maths_utils import derivee, derivee_seconde
+
+step = 0.02
+x = np.arange(0,5,step)
+y = np.cos(x)
+
+dy = derivee(y, step)
+ddy = derivee_seconde(y, step)
+
+fig = go.Figure()
+vis.add_curve(y=y, x=x, fig=fig, name="y = cos(x)")
+vis.add_curve(y=dy, x=x, fig=fig, name="y'(x) -> -sin(x)")
+vis.add_curve(y=ddy, x=x, fig=fig, name="y''(x) -> -cos(x)")
+
+if DO_SHOW: fig.show()
 
 ## Test of correlation
 
@@ -28,7 +48,6 @@ print(correlation(arr1, arr5)) # expect 1
 ## Test of Dynamic Time Warping
 
 from app.maths_utils import dynamic_time_warping
-import app.visualisation as vis
 
 # SIMPLE CASE
 y1 = np.array([1, 2, 3, 2, 3, 2, 1, 1])
