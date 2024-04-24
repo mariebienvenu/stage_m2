@@ -104,3 +104,11 @@ class Animation(List[Curve.Curve]):
     def check(self):
         for curve in self:
             curve.check()
+
+
+    def enrich(self):
+        additionnal_curves = Animation()
+        for curve in self:
+            features = curve.compute_features()
+            additionnal_curves += Animation(features)
+        self += additionnal_curves

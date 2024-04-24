@@ -412,3 +412,6 @@ class Curve:
         assert start <= stop, "Problem encountered when autocropping."
         return (times[start], times[stop])
         
+
+    def compute_features(self):
+        return [self.first_derivative(), self.second_derivative()]
