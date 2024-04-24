@@ -90,4 +90,6 @@ class SoftIO(AbstractIO.AbstractIO):
         self._animations = [
             b_utils.get_animation(obj_name) for obj_name in self.object_names
         ]
+        for anim in self._animations:
+            anim.crop(self.start, self.stop)
         self.check()

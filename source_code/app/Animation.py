@@ -139,3 +139,7 @@ class Animation(List[Curve.Curve]):
     def value_transl(self, translation):
         for curve in self:
             curve.value_transl(translation)
+
+    def update_time_range(self):
+        for curve in self:
+            curve.update_time_range()

@@ -71,8 +71,10 @@ class Main(AbstractIO):
         if self.is_processed: return self.new_anims
 
         vanim_ref, vanim_target = self.video_ref.to_animation(), self.video_target.to_animation()
-        vanim_ref.time_transl(self.blender_scene.start-vanim_ref.time_range[0])
-        vanim_target.time_transl(self.blender_scene.start-vanim_target.time_range[0])
+        vanim_ref.time_transl(self.blender_scene.start-vanim_ref.time_range[0]-1) # -1 parce que en dérivant on décale de une frame donc si on veut rester sur start...
+        vanim_target.time_transl(self.blender_scene.start-vanim_target.time_range[0]-1)
+        vanim_ref.update_time_range()
+        vanim_target.update_time_range()
         vanim_ref.enrich()
         vanim_target.enrich()
         banims = self.blender_scene.get_animations()
