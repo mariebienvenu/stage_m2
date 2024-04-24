@@ -1,98 +1,100 @@
 
 import os, json
+from typing import List
 
+from app.AbstractIO import AbstractIO
 import app.InternalProcess as InternalProcess
 import app.VideoIO as VideoIO
-import app.blender_utils as b_utils
+import app.SoftwareIO as SoftIO
 
 
 def default_config():
     return {
+        "video extension": ".mp4",
+        "video reference filename" : "ref",
+        "video target filename" : "target",
+        "blender scene filename" : "scene.blend",
         "connexions of interest": [
             {
-                "feature":"First derivative of Velocity Y",
-                "channel":"Location Y"
+                "object name":"Ball",
+                "channel":"Location Y",
+                "video feature":"First derivative of Velocity Y",
             },
         ],
     }
 
 
-class Main: ## TODO Main -- untested
+class Main(AbstractIO): ## TODO Main -- untested
 
-    def __init__(self, directory, blender_object_name, reference_video_filename, target_video_filename, extension='.mp4',  verbose=0):
+    def __init__(self, directory, verbose=0):
+        super(Main, self).__init__(directory, verbose)
+        self.finalize_init(default_config)
 
-        self.video_ref = VideoIO.VideoIO(directory=directory, video_name=reference_video_filename, extension=extension, verbose=verbose-1)
-        self.video_target = VideoIO.VideoIO(directory=directory, video_name=target_video_filename, extension=extension, verbose=verbose-1)
-        self.directory = directory
-        self.blender_object_name = blender_object_name
-
-        self.config = None
-        self.config_loaded = False
+        self.video_ref = VideoIO.VideoIO(directory=directory, video_name=self.video_reference_filename, extension=self.video_extension, verbose=verbose-1)
+        self.video_target = VideoIO.VideoIO(directory=directory, video_name=self.video_target_filename, extension=self.video_extension, verbose=verbose-1)
+        self.blender_scene = SoftIO.SoftIO(directory=directory, verbose=verbose-1)
         
-        self.internal = None
-        self.is_processed = False
-
-        try:
-            self.load_config()
-            self.complete_config()
-        except OSError:
-            if verbose>0: print("Did not find config file ; reverting to default config.")
-            self.make_default_config()
-
-        assert self.config_loaded, "Error when initializing Main object."
+        self.blender_scene.check_file(self.directory+self.blender_scene_filename)
+        self.internals = None
 
 
-    def make_default_config(self):
-        self.config = default_config()
-        self.config_loaded = True
+    def __repr__(self):
+        return super(Main, self).__repr__().replace("AbstractIO","Main")
 
     
-    def complete_config(self):
-        default = default_config()
-        for key, value in default.items():
-            if key not in self.config:
-                self.config[key] = value
-
-    def save_config(self):
-        assert self.config_loaded, "Cannot save config when no config is loaded."
-        with open(self.directory+"main_config.json", "w") as outfile:
-            json.dump(self.config, outfile)
-
-
-    def load_config(self, force=False):
-        if self.config_loaded and not force:
-            return
-        if not os.path.exists(self.directory+"main_config.json"):
-            raise OSError("No config file.")
-        with open(self.directory+"main_config.json", 'r') as openfile:
-            self.config = json.load(openfile)
-        self.config_loaded = True
-
-
     @property
-    def connexions_of_interest(self):
-        return [(d['feature'], d['channel']) for d in self.config["connexions of interest"]]
+    def config_filename(self) -> str:
+        return self.directory + "main_config.json"
+    
+    @property
+    def connexions_of_interest(self) -> List[dict]:
+        return self.config["connexions of interest"]
+    
+    @property
+    def video_extension(self) -> str:
+        return self.config["video extension"]
+    
+    @property
+    def video_reference_filename(self) -> str:
+        return self.config["video reference filename"]
+    
+    @property
+    def video_target_filename(self) -> str:
+        return self.config["video target filename"]
+    
+    @property
+    def blender_scene_filename(self) -> str:
+        return self.config["blender scene filename"]
 
 
     def process(self):
-        if self.is_processed: return self.new_anim
+        if self.is_processed: return self.new_anims
 
         vanim_ref, vanim_target = self.video_ref.to_animation(), self.video_target.to_animation()
-        banim = b_utils.get_animation(self.blender_object_name)
+        vanim_ref.enrich()
+        vanim_target.enrich()
+        banims = self.blender_scene.get_animations()
+        #for banim in banims:
+        #    banim.enrich() # TODO -- will be useful when we automatically decide of connexions based on multi-modal correlations
 
-        self.internal = InternalProcess.InternalProcess(vanim_ref, vanim_target, banim)
+        self.internals = [
+            InternalProcess.InternalProcess(vanim_ref, vanim_target, banim) for banim in banims
+        ]
 
-        warps = []
-        channels = []
-        for (feature, channel) in self.connexions_of_interest:
-            warps.append(self.internal.make_warp(feature=feature))
-            channels.append(channel)
+        warps = [[] for _ in self.internals]
+        channels = [[] for _ in self.internals]
+        for connexion in self.connexions_of_interest:
+            obj_name, feature, channel = connexion["object name"], connexion["video feature"], connexion["channel"]
+            index = self.blender_scene.object_names.index(obj_name) ## costly
+            internal = self.internals[index]
+            warps[index].append(internal.make_warp(feature=feature))
+            channels[index].append(channel)
 
-        self.new_anim = self.internal.make_new_anim(channels=channels, warps=warps)
-        return self.new_anim
+        self.new_anims = [internal.make_new_anim(channels=channels[i], warps=warps[i]) for i, internal in enumerate(self.internals)]
+        return self.new_anims
 
 
     def to_blender(self):
         self.process()
-        b_utils.set_animation(self.blender_object_name, self.new_anim)
+        self.blender_scene.set_animations(self.new_anims)
 
