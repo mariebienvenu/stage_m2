@@ -29,4 +29,4 @@ main_obj = main.Main(directory, verbose=2)
 main_obj.process()
 
 print(main_obj.blender_scene._animations[0].find("location Y").get_times())
-print(main_obj.new_anims[0].find("location Y").get_times()) # not working...
+print(main_obj.new_anims[0].find("location Y").get_times()) # works !
