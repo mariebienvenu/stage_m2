@@ -24,7 +24,7 @@ def default_config():
     }
 
 
-class Main(AbstractIO): ## TODO Main -- untested
+class Main(AbstractIO):
 
     def __init__(self, directory, verbose=0):
         super(Main, self).__init__(directory, verbose)

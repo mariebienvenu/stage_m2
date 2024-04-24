@@ -4,7 +4,7 @@ import app.Animation as Animation
 import app.Warp as Warp
 import app.maths_utils as m_utils
 
-class InternalProcess: ## TODO InternalProcess -- untested
+class InternalProcess:
 
     def __init__(self, vanim_ref:Animation.Animation, vanim_target:Animation.Animation, banim:Animation.Animation):
         self.vanim1 = vanim_ref
