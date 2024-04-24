@@ -100,3 +100,7 @@ class Animation(List[Curve.Curve]):
 
     def __mod__(self, other:Animation):
         return Animation.correlate(self, other)
+    
+    def check(self):
+        for curve in self:
+            curve.check()
