@@ -71,6 +71,8 @@ class Main(AbstractIO): ## TODO Main -- untested
         if self.is_processed: return self.new_anims
 
         vanim_ref, vanim_target = self.video_ref.to_animation(), self.video_target.to_animation()
+        vanim_ref.time_transl(self.blender_scene.start-vanim_ref.time_range[0])
+        vanim_target.time_transl(self.blender_scene.start-vanim_target.time_range[0])
         vanim_ref.enrich()
         vanim_target.enrich()
         banims = self.blender_scene.get_animations()
@@ -87,7 +89,7 @@ class Main(AbstractIO): ## TODO Main -- untested
             obj_name, feature, channel = connexion["object name"], connexion["video feature"], connexion["channel"]
             index = self.blender_scene.object_names.index(obj_name) ## costly
             internal = self.internals[index]
-            warps[index].append(internal.make_warp(feature=feature))
+            warps[index].append(internal.make_warp(feature=feature, verbose=self.verbose-1))
             channels[index].append(channel)
 
         self.new_anims = [internal.make_new_anim(channels=channels[i], warps=warps[i]) for i, internal in enumerate(self.internals)]

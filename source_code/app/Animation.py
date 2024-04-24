@@ -14,11 +14,18 @@ class Animation(List[Curve.Curve]):
     def __init__(self, curves=[]):
         super().__init__(curves)
 
+
     def display(self, handles=True, style="markers", fig=None, row=None, col=None, doShow=False):
         for curve in self:
             fig = curve.display(handles=handles, style=style, fig=fig, row=row, col=col)
         if doShow: fig.show()
         return fig
+    
+
+    @property
+    def time_range(self):
+        return (min([curve.time_range[0] for curve in self]), max([curve.time_range[1] for curve in self]))
+    
     
     def sample(self, n_samples, start="all", stop="all"): # including stop
         '''pas "en place"'''
@@ -50,17 +57,19 @@ class Animation(List[Curve.Curve]):
                 
         return resampled_anim
     
+
     def crop(self, start=None, stop=None):
         for curve in self:
             curve.crop(start, stop)
 
+
     def __add__(self, other):
         return Animation(super().__add__(other)) #rely on List
     
+
     def save(self, directory):
         if not os.path.exists(directory):
             os.makedirs(directory)
-        names = [curve.fullname for curve in self]
         for i, curve in enumerate(self):
             curve.save(directory+f'/{i}.txt')
 
@@ -101,6 +110,7 @@ class Animation(List[Curve.Curve]):
     def __mod__(self, other:Animation):
         return Animation.correlate(self, other)
     
+
     def check(self):
         for curve in self:
             curve.check()
@@ -112,3 +122,20 @@ class Animation(List[Curve.Curve]):
             features = curve.compute_features()
             additionnal_curves += Animation(features)
         self += additionnal_curves
+
+
+    def time_scale(self, center=0, scale=1):
+        for curve in self:
+            curve.time_scale(center, scale)
+    
+    def value_scale(self, center=0, scale=1):
+        for curve in self:
+            curve.value_scale(center, scale)
+
+    def time_transl(self, translation):
+        for curve in self:
+            curve.time_transl(translation)
+
+    def value_transl(self, translation):
+        for curve in self:
+            curve.value_transl(translation)

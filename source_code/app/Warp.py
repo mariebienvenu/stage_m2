@@ -24,9 +24,9 @@ class AbstractWarp:
 class LinearWarp1D(AbstractWarp):
 
     def __init__(self, X_in, X_out):
-        order = np.array(X_in).argsort()
-        self.X = np.array(X_in)[order]
-        self.Y = np.array(X_out)[order]
+        #order = np.array(X_in).argsort()
+        self.X = np.array(X_in)#[order]
+        self.Y = np.array(X_out)#[order]
 
     def __call__(self, x):
         return np.interp(x, self.X, self.Y)

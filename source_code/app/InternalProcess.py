@@ -20,8 +20,8 @@ class InternalProcess: ## TODO InternalProcess -- untested
         if only_temporal:
             score, pairings = m_utils.dynamic_time_warping(curve1.get_values(), curve2.get_values())
             if verbose>0: print(f"DTW achieved a score of {score}.")
-            x_in = [curve1.get_times()[i] for i,j in pairings] 
-            x_out = [curve2.get_times()[j] for i,j in pairings]
+            x_in = [curve1.get_times()[i] for i,j in pairings[::-1]] 
+            x_out = [curve2.get_times()[j] for i,j in pairings[::-1]]
             warp = Warp.LinearWarp2D.from_1D(Warp.LinearWarp1D(x_in,x_out))
             return warp
         raise NotImplementedError

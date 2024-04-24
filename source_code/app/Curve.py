@@ -186,7 +186,7 @@ class Curve:
     
     def apply_spatio_temporal_warp(self, warp, in_place=True):
         # warp is a function that takes 2 arguments (t,value) and returns two values (t', value'). Handles arrays of same size.
-        obj = self if in_place else deepcopy(self)
+        obj = self if in_place else deepcopy(self) ## TODO -- cannot pickle 'FCurve' object
         firsts = [Attributes_Name.time, Attributes_Name.handle_left_x, Attributes_Name.handle_right_x]
         seconds = [Attributes_Name.value, Attributes_Name.handle_left_y, Attributes_Name.handle_right_y]
         for first, second in zip(firsts, seconds):

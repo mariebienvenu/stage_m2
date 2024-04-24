@@ -16,6 +16,8 @@ import app.Main as main
 
 import importlib
 importlib.reload(main)
+importlib.reload(main.InternalProcess)
+importlib.reload(main.InternalProcess.Warp)
 importlib.reload(main.SoftIO)
 importlib.reload(main.SoftIO.b_utils)
 importlib.reload(main.VideoIO)
@@ -27,6 +29,4 @@ main_obj = main.Main(directory, verbose=2)
 main_obj.process()
 
 print(main_obj.blender_scene._animations[0].find("location Y").get_times())
-print(main_obj.new_anims[0].find("location Y").get_times())
-
-a=2
+print(main_obj.new_anims[0].find("location Y").get_times()) # not working...
