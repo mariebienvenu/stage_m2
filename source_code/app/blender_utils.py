@@ -19,6 +19,14 @@ def list_scenes():
     # print all scene names in a list
     print(bpy.data.scenes.keys())
 
+
+def get_filename():
+    return bpy.data.filepath.replace('\\', '/')
+
+
+def check_filename(filename):
+    assert get_filename()==filename, f"Wrong file opened. Expected {filename} and found {get_filename()}."
+
     
 def get_animation(obj_name):
     animation = Animation.Animation()
