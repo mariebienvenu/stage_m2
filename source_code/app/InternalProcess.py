@@ -17,7 +17,6 @@ class InternalProcess:
         self.feature = feature
         curve1 = self.vanim1.find(feature)
         curve2 = self.vanim2.find(feature)
-        ## TODO : allow to rescale curve1 and curve2 to have same mean and std -> only smart if we want a temporal warp
         if only_temporal:
             curve1.normalize()
             curve2.normalize()
