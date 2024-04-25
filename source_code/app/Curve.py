@@ -170,6 +170,7 @@ class Curve:
     def time_scale(self, center=0, scale=1):
         for attr in [Attributes_Name.time, Attributes_Name.handle_left_x, Attributes_Name.handle_right_x]:
             self.set_attribute(attr, (self.get_attribute(attr)-center)*scale + center)
+        self.update_time_range()
 
     def value_scale(self, center=0, scale=1):
         for attr in [Attributes_Name.value, Attributes_Name.handle_left_y, Attributes_Name.handle_right_y]:
@@ -178,6 +179,7 @@ class Curve:
     def time_transl(self, translation):
         for attr in [Attributes_Name.time, Attributes_Name.handle_left_x, Attributes_Name.handle_right_x]:
             self.set_attribute(attr, self.get_attribute(attr)+translation)
+        self.update_time_range()
 
     def value_transl(self, translation):
         for attr in [Attributes_Name.value, Attributes_Name.handle_left_y, Attributes_Name.handle_right_y]:
