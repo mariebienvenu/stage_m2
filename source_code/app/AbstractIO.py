@@ -20,7 +20,7 @@ class AbstractIO:
         except OSError:
             if self.verbose>0: print("Did not find config file ; reverting to default config.")
             self.make_default_config(maker)
-        assert self.config_loaded, "Error when initializing Main object."
+        assert self.config_loaded, "Error when finalizing AbstractIO object."
         self.save_config()
 
 
@@ -39,7 +39,7 @@ class AbstractIO:
     def save_config(self):
         assert self.config_loaded, "Cannot save config when no config is loaded."
         with open(self.config_filename, "w") as outfile:
-            json.dump(self.config, outfile)
+            json.dump(self.config, outfile) #, indent=4)
 
 
     def load_config(self, force=False):
