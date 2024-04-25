@@ -2,7 +2,7 @@
 import os, json
 from typing import List
 
-from app.AbstractIO import AbstractIO
+import app.AbstractIO as absIO
 import app.InternalProcess as InternalProcess
 import app.VideoIO as VideoIO
 import app.SoftwareIO as SoftIO
@@ -21,10 +21,11 @@ def default_config():
                 "video feature":"First derivative of Velocity Y",
             },
         ],
+        "edit in place": False,
     }
 
 
-class Main(AbstractIO):
+class Main(absIO.AbstractIO):
 
     def __init__(self, directory, verbose=0):
         super(Main, self).__init__(directory, verbose)
@@ -65,10 +66,14 @@ class Main(AbstractIO):
     @property
     def blender_scene_filename(self) -> str:
         return self.config["blender scene filename"]
+    
+    @property
+    def edit_in_place(self) -> bool:
+        return self.config["edit in place"]
 
 
-    def process(self):
-        if self.is_processed: return self.new_anims
+    def process(self, force=False):
+        if self.is_processed and not force: return self.new_anims
 
         vanim_ref, vanim_target = self.video_ref.to_animation(), self.video_target.to_animation()
         vanim_ref.time_transl(self.blender_scene.start-vanim_ref.time_range[0]-1) # -1 parce que en dérivant on décale de une frame donc si on veut rester sur start...
@@ -95,10 +100,11 @@ class Main(AbstractIO):
             channels[index].append(channel)
 
         self.new_anims = [internal.make_new_anim(channels=channels[i], warps=warps[i]) for i, internal in enumerate(self.internals)]
+        self.is_processed = True
         return self.new_anims
 
 
     def to_blender(self):
         self.process()
-        self.blender_scene.set_animations(self.new_anims)
+        self.blender_scene.set_animations(self.new_anims, in_place=self.edit_in_place)
 
