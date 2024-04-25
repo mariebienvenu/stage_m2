@@ -19,10 +19,8 @@ class InternalProcess:
         curve2 = self.vanim2.find(feature)
         ## TODO : allow to rescale curve1 and curve2 to have same mean and std -> only smart if we want a temporal warp
         if only_temporal:
-            mean1, std1 = np.mean(curve1.get_values()), np.std(curve1.get_values())
-            mean2, std2 = np.mean(curve2.get_values()), np.std(curve2.get_values())
-            curve2.value_transl(mean1-mean2)
-            curve2.value_scale(mean1, std1/std2)
+            curve1.normalize()
+            curve2.normalize()
             score, pairings = m_utils.dynamic_time_warping(curve1.get_values(), curve2.get_values())
             if verbose>0: print(f"DTW achieved a score of {score}.")
             x_in = [curve1.get_times()[i] for i,j in pairings[::-1]] 

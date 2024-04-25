@@ -185,6 +185,11 @@ class Curve:
         for attr in [Attributes_Name.value, Attributes_Name.handle_left_y, Attributes_Name.handle_right_y]:
             self.set_attribute(attr, self.get_attribute(attr)+translation)
 
+    def normalize(self):
+        mean, std = np.mean(self.get_values()), np.std(self.get_values())
+        self.value_transl(-mean)
+        self.value_scale(0, 1/std)
+
     
     def apply_spatio_temporal_warp(self, warp, in_place=True):
         # warp is a function that takes 2 arguments (t,value) and returns two values (t', value'). Handles arrays of same size.
