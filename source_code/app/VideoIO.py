@@ -33,7 +33,7 @@ def default_config(height, width, frame_count, fps):
     }
 
 
-class VideoIO:
+class VideoIO: # TODO VideoIO -- make it herit from AbstractIO
 
 
     def __init__(self, directory, video_name, extension='.mp4', verbose=0):
