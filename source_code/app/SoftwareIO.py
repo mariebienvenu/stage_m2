@@ -55,9 +55,13 @@ class SoftIO(AbstractIO.AbstractIO):
         return self.config["object names"]
 
 
-    def process(self, force=False):
+    def process(self, force=False, backup=True):
         if self.is_processed and not force : return
         self.from_software()
+        if backup: 
+            self.original_anims = [
+                b_utils.get_animation(obj_name) for obj_name in self.object_names
+            ]
         self.is_processed = True
 
 
@@ -66,9 +70,9 @@ class SoftIO(AbstractIO.AbstractIO):
         return self._animations
 
 
-    def set_animations(self, animations:List[Animation.Animation]):
+    def set_animations(self, animations:List[Animation.Animation], in_place=False):
         self._animations = animations
-        self.to_software()
+        self.to_software(in_place=in_place)
     
 
     def check(self):
@@ -80,9 +84,10 @@ class SoftIO(AbstractIO.AbstractIO):
         b_utils.check_filename(filename)
 
 
-    def to_software(self):
+    def to_software(self, in_place=False):
         for (obj_name, animation) in zip(self.object_names, self._animations):
-            b_utils.set_animation(obj_name, animation)
+            target_obj = obj_name if in_place else obj_name+"_edited"
+            b_utils.set_animation(target_obj, animation)
         self.process(force=True)
 
 
