@@ -153,7 +153,7 @@ class VideoIO: # TODO VideoIO -- make it herit from AbstractIO
             self.position_x = anim.find('Location X').get_values()
             self.position_y = anim.find('Location Y').get_values()
             self.is_processed = True
-            return
+            return ## TODO - bug : this does not take into account the time cropping ! time_crop and curves are no longer aligned
         
         if verbose>0: print("Video currently processing (optical flow computation).")
 
