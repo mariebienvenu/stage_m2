@@ -8,13 +8,13 @@ import pandas as pd
 from app.Color import Color
 
 
-def add_curve(y, color=None, x = None, name = "", fig = None, row = None, col = None):
+def add_curve(y, color=None, x = None, name = "", fig = None, row = None, col = None, style="lines"):
     color = color if color is not None else f'rgb{Color.next()}'
     Y = np.array(y)
     X = np.array(x) if x is not None else np.array(list(range(Y.size)))
     if fig is None:
         fig = go.Figure()
-    fig.add_trace(go.Scatter(x=X, y=Y, name=name, line_color=color), row=row, col=col)
+    fig.add_trace(go.Scatter(x=X, y=Y, name=name, line_color=color, mode=style), row=row, col=col)
     return fig
 
 
@@ -76,7 +76,7 @@ def magnitude_angle(
 
 def add_pairings(y1, y2, pairs, x1=None, x2=None, color=None, fig=None, row=None, col=None, doShow=False):
     fig = fig if fig is not None else go.Figure()
-    color = color if color is not None else Color.next()
+    color = color if color is not None else 'rgba(100,100,100, 0.3)'
     x1 = np.array(x1) if x1 is not None else np.array(list(range(y1.size)))
     x2 = np.array(x2) if x2 is not None else np.array(list(range(y2.size)))
     for pair in pairs:
