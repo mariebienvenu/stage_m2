@@ -105,5 +105,3 @@ edited_anim.display(fig=fig, row=2, col=1)
 og_sampled.display(fig=fig, row=1, col=1, handles=False, style="lines")
 edited_sampled.display(fig=fig, row=2, col=1, handles=False, style="lines")
 fig.show()'''
-
-## TODO - add visualisation of the DTW graph terrain
