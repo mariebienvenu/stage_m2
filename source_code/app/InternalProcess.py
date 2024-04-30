@@ -74,4 +74,3 @@ class InternalProcess:
             minimal_additionnal_cost = np.min(alternative_costs) - center_cost if alternative_costs.size>0 else 0
             local_constraints[i] = max(0,minimal_additionnal_cost)
         return local_constraints
-
