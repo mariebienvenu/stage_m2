@@ -214,13 +214,14 @@ class Curve:
         self.array[id, 1:3] = new_time, new_value
 
 
-    def display(self, handles=True, style="markers", color=None, fig=None, row=None, col=None, doShow=False):
+    def display(self, handles=True, style="markers", color=None, name=None, fig=None, row=None, col=None, doShow=False): # TODO add possibility for a different name without renaming the curve ?
         if fig is None:
             fig = go.Figure()
         times = self.get_times()
         values = self.get_values()
         color = self.color if ('color' in dir(self) and self.color is not None) else (color if color is not None else Color.next())
-        fig.add_trace(go.Scatter(x=times, y=values, name=self.fullname, mode=style, marker_color=f'rgb{color}'), row=row, col=col) # drawing the keyframes
+        name = name if name is not None else self.fullname
+        fig.add_trace(go.Scatter(x=times, y=values, name=name, mode=style, marker_color=f'rgb{color}'), row=row, col=col) # drawing the keyframes
         if handles:
             handle_times = np.concatenate((self.get_attribute('handle_left_x'), self.get_attribute('handle_right_x')))
             handle_values = np.concatenate((self.get_attribute('handle_left_y'), self.get_attribute('handle_right_y')))
@@ -228,7 +229,6 @@ class Curve:
                 x = [handle_times[id], times[id], handle_times[id+len(self)]]
                 y = [handle_values[id], values[id], handle_values[id+len(self)]]
                 fig.add_trace(go.Scatter(x=x, y=y, mode='markers+lines', marker_color=f'rgba{color+tuple([0.4])}', showlegend=False), row=row, col=col)
-
         if doShow: fig.show()
         return fig
     
