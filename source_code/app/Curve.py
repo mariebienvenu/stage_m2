@@ -230,7 +230,7 @@ class Curve:
                 y = [handle_values[id], values[id], handle_values[id+len(self)]]
                 fig.add_trace(go.Scatter(x=x, y=y, mode='markers+lines', marker_color=f'rgba{color+tuple([0.4])}', showlegend=False), row=row, col=col)
         if doShow: fig.show()
-        return fig
+        return fig ## TODO use vis.add_trace now that it handles style ?
     
     def get_keyframe_attribute(self, id, attribute_name:Attributes_Name|str):
         column = attribute_name.value if type(attribute_name) is Attributes_Name else Attributes_Name[attribute_name].value
@@ -309,8 +309,13 @@ class Curve:
         right_unbroken_handles = np.array([ht not in [Handle_Type.FREE.value, Handle_Type.VECTOR.value] for ht in self.get_attribute(Attributes_Name.handle_right_type)])
         return dy/dx*left_unbroken_handles*right_unbroken_handles 
     
-    def sample(self, times):
+    def sample(self, times:np.ndarray|int=None):
         assert "pointer" in dir(self), "Cannot sample a curve with no associated fcurve."
+        if times is None: times = int(self.time_range[1]-self.time_range[0]+1)
+        try:
+            enumerate(times)
+        except TypeError: # typically, 'int' object is not iterable
+            times = np.linspace(self.time_range[0], self.time_range[1]+1, times)
         values = np.array([self.pointer.evaluate(time) for time in times]) # un peu ugly d'utiliser la fonction evaluate() mais c'est validé par Damien
         coordinates = np.vstack((times, values)).T
         color = getattr(self, "color", None) # here we recover additionnal info on the curve that we would like to forward to the new, sampled curve
