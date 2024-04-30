@@ -48,6 +48,10 @@ main_obj.process(force=True)
 main_obj.to_blender()
 main_obj.blender_scene.from_software() #to recover new fcurve pointer
 
+main_obj.draw_diagrams(show=True)
+
+'''
+
 og_anim = main_obj.blender_scene.original_anims[0]
 edited_anim = main_obj.blender_scene.get_animations()[0] # will have an fcurve pointer, unlike main_obj.new_anims[0] -> does not work as expected
 edited_anim = main.SoftIO.b_utils.get_animation("Ball_edited") # to force fcurve pointer retrieval
@@ -203,3 +207,5 @@ edited_sampled.display(fig=fig, row=1, col=1, handles=False, style="lines")
 fig.show()
 
 ## TODO main - clean the script...
+
+'''
