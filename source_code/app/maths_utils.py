@@ -43,7 +43,7 @@ def correlation(array1, array2):
     return correlation_object.correlation
 
 
-def dynamic_time_warping(array1, array2, debug=False):
+def dynamic_time_warping(array1, array2, debug=False): ## TODO - remove, is legacy ; got moved to dedicated class
     arr1, arr2 = np.ravel(np.array(array1)), np.ravel(np.array(array2))
     n,m = arr1.size, arr2.size
     cost_matrix = np.array([[abs(arr1[i] - arr2[j]) for j in range(m)] for i in range(n)]) # distance
