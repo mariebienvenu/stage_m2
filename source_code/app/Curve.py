@@ -214,7 +214,7 @@ class Curve:
         self.array[id, 1:3] = new_time, new_value
 
 
-    def display(self, handles=True, style="markers", color=None, name=None, fig=None, row=None, col=None, doShow=False): # TODO add possibility for a different name without renaming the curve ?
+    def display(self, handles=True, style="markers", color=None, name=None, fig=None, row=None, col=None, doShow=False):
         if fig is None:
             fig = go.Figure()
         times = self.get_times()
