@@ -13,6 +13,7 @@ check_sys_path()
 
 import cv2
 import numpy as np
+from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import pandas as pd
 from tqdm import tqdm
@@ -112,9 +113,7 @@ print(dataframe)
 resampled_animation.display(style='markers+lines', handles=False, doShow=True)
 video_movement.display(style='markers+lines', handles=False, doShow=True)
 
-# TODO: make a figure with the two animations on different subplots ; make a vis.py function to handle layout ? (name of axis, etc)
 
-from plotly.subplots import make_subplots
 
 fig = make_subplots(rows=2, cols=1, shared_xaxes=True, subplot_titles=['Video curves', 'Blender curves'])
 video_movement.display(style='markers+lines', row=1, col=1, handles=False, fig=fig)
