@@ -25,6 +25,7 @@ def default_config():
                 "object name":"Ball",
                 "channel":"Location Y",
                 "video feature":"First derivative of Velocity Y",
+                "is impulsive":True,
             },
         ],
         "edit in place": False,
@@ -98,12 +99,15 @@ class Main(absIO.AbstractIO):
 
         self.warps:List[List[InternalProcess.Warp.LinearWarp1D]] = [[] for _ in self.internals]
         self.channels:List[List[str]] = [[] for _ in self.internals]
+        self.features:List[List[str]] = [[] for _ in self.internals]
         for connexion in self.connexions_of_interest:
-            obj_name, feature, channel = connexion["object name"], connexion["video feature"], connexion["channel"]
+            obj_name, feature, channel, is_impulsive = connexion["object name"], connexion["video feature"], connexion["channel"], connexion["is impulsive"]
             index = self.blender_scene.object_names.index(obj_name) ## costly
             internal = self.internals[index]
-            self.warps[index].append(internal.make_simplified_warp(feature=feature, verbose=self.verbose-1)) ## TODO add config to chose between dense and sparse warp based on impulsivity of the signal
+            new_warp = internal.make_simplified_warp(feature=feature, uncertainty_threshold=2., verbose=self.verbose-1) if is_impulsive else internal.make_warp(feature=feature, verbose=self.verbose-1) # we prefer sparse warps for impulsive signals and dense ones for continuous signals
+            self.warps[index].append(new_warp)
             self.channels[index].append(channel)
+            self.features[index].append(feature)
 
         zipped = zip(self.internals, self.warps, self.channels)
         self.new_anims = [internal.make_new_anim(channels=channel, warps=warp) for internal, warp, channel in zipped]
@@ -117,8 +121,24 @@ class Main(absIO.AbstractIO):
 
 
     def draw_diagrams(self, animation_index=0, save=True, show=False):
-        internal, warp, channel = self.internals[animation_index], self.warps[animation_index][-1], self.channels[animation_index][-1]
+        internal, warp, channel, feature = self.internals[animation_index], self.warps[animation_index][-1], self.channels[animation_index][-1], self.features[animation_index][-1]
         dtw = internal.dtw
+        feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
+        original_curve = self.blender_scene.get_animations()[animation_index].find(channel)
+        edited_curve =  SoftIO.b_utils.get_animation("Ball_edited").find(channel) # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
+        
+        ## Video feature : original VS retake
+        fig0 = make_subplots(rows=2, shared_xaxes=True)
+        feature_curve1.display(handles=False, style="lines", fig=fig0, col=1, row=1)
+        feature_curve2.display(handles=False, style="lines", fig=fig0, col=1, row=2)
+        title0 = "Comparison of the initial and retook video feature curve"
+
+        ## Connexion : video feature curve VS animation curve
+        fig7 = make_subplots(rows=2, shared_xaxes=True)
+        feature_curve1.display(handles=False, style="lines", fig=fig7, col=1, row=1)
+        original_curve.display(fig=fig7, col=1, row=2)
+        original_curve.sample().display(fig=fig7, row=2, col=1, handles=False, style='lines')
+        title7 = "Comparison of the original animation curve and initial video feature curve"
 
         ## DTW cost matrix
         fig1 = vis.add_heatmap(pd.DataFrame(dtw.cost_matrix))
@@ -135,16 +155,14 @@ class Main(absIO.AbstractIO):
         fig3 = vis.add_curve(y=dtw.values2+3, x=dtw.times2, name=dtw.curve2.fullname)
         vis.add_curve(y=dtw.values1, x=dtw.times1, name=dtw.curve1.fullname, fig=fig3)
         vis.add_pairings(y1=dtw.values1, y2=dtw.values2+3, pairs=dtw.pairings, x1=dtw.times1, x2=dtw.times2, fig=fig3)
-        title3 = "Matches between reference and target feature curve"
+        title3 = "Matches between initial and retook feature curve"
 
         ## DTW local constraints
         fig4 = vis.add_curve(y=internal.dtw_constraints, x=dtw.bijection[0])
         title4 = "Constraint on DTW chosen path over time"
 
-        ## Edited curve VS original one
+        ## Animation curves : Edited curve VS original one
         fig5 = make_subplots(rows=2, cols=1, shared_xaxes=True, row_titles=["Original curves", "Edited curves"])
-        original_curve = self.blender_scene.get_animations()[animation_index].find(channel)
-        edited_curve =  SoftIO.b_utils.get_animation("Ball_edited").find(channel) # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
         original_curve.display(fig=fig5, row=1, col=1)
         edited_curve.display(fig=fig5, row=2, col=1)
         original_curve.sample().display(fig=fig5, row=1, col=1, handles=False, style='lines')
@@ -153,21 +171,23 @@ class Main(absIO.AbstractIO):
 
         ## Global visualisation
         fig6 = make_subplots(rows=2, cols=2, shared_xaxes="all", row_titles=["Video curves", "Animation curves"], column_titles=["Before", "After"])
-        vis.add_curve(y=dtw.values1, x=dtw.times1, name=dtw.curve1.fullname, row=1, col=1, fig=fig6)
-        vis.add_curve(y=dtw.values2, x=dtw.times2, name=dtw.curve2.fullname, row=1, col=2, fig=fig6)
+        feature_curve1.display(handles=False, style="lines", row=1, col=1, fig=fig6)
+        feature_curve2.display(handles=False, style="lines", row=1, col=2, fig=fig6)
+        #vis.add_curve(y=dtw.values1, x=dtw.times1, name=dtw.curve1.fullname, row=1, col=1, fig=fig6)
+        #vis.add_curve(y=dtw.values2, x=dtw.times2, name=dtw.curve2.fullname, row=1, col=2, fig=fig6)
         original_curve.display(fig=fig6, row=2, col=1)
         edited_curve.display(fig=fig6, row=2, col=2)
         original_curve.sample().display(fig=fig6,  row=2, col=1, handles=False, style='lines')
         edited_curve.sample().display(fig=fig6, row=2, col=2, handles=False, style='lines')
         title6 = f"Global editing process using {internal.feature} feature on {channel} channel"
 
-        figures:List[go.Figure] = [fig1, fig2, fig3, fig4, fig5, fig6]
-        titles = [title1, title2, title3, title4, title5, title6]
+        figures:List[go.Figure] = [fig0, fig1, fig2, fig3, fig4, fig5, fig6, fig7]
+        titles = [title0, title1, title2, title3, title4, title5, title6, title7]
 
         if not os.path.exists(f'{self.directory}/out/') : os.mkdir(f'{self.directory}/out/')
         for figure,title in zip(figures, titles):
             figure.update_layout(title=title)
             if save: figure.write_html(f'{self.directory}/out/{title}.html')
-            if show: figure.show() # How to make the titles show ?
+            if show: figure.show()
 
         return figures
