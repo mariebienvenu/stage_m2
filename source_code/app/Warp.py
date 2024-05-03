@@ -2,6 +2,8 @@
 import numpy as np
 import scipy.interpolate as interpolate
 
+## TODO Warp - clean the file !
+
 class WarpInterpolation:
     
     def STEP(x, **kwargs):
@@ -32,6 +34,18 @@ class LinearWarp1D(AbstractWarp):
         return np.interp(t, self.X, self.Y),x
     
 
+
+class CubicWarp1D(AbstractWarp):
+
+    def __init__(self, X_in, X_out):
+        self.X = np.array(X_in)
+        self.Y = np.array(X_out)
+        self.interpolator = interpolate.CubicSpline(self.X, self.Y, extrapolate=False, bc_type="natural") #safer
+
+    def __call__(self, t, x):
+        return self.interpolator(t),x
+    
+
 class LinearWarp2D(AbstractWarp):
 
     def __init__(self, X_in, Y_in, X_out, Y_out):
@@ -43,6 +57,9 @@ class LinearWarp2D(AbstractWarp):
     def __call__(self, x, y):
         results = self.interpolator(np.array(x), np.array(y))
         return results[:,0], results[:,1]
+    
+
+
 
 
 class Warp:

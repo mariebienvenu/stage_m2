@@ -7,19 +7,23 @@ import app.Warp as Warp
 
 DO_SHOW = True
 
-## Test de LinearWarp1D
+## Test des Warp1D
 
-X_in = np.arange(-10, 10, 0.5)
+
+X_in = np.linspace(-10, 10, 11)
 X_out = np.cos(X_in/5)
 
-Warp1D = Warp.LinearWarp1D(X_in, X_out)
+cubic_warp = Warp.CubicWarp1D(X_in, X_out)
+linear_warp = Warp.LinearWarp1D(X_in, X_out)
 
-inputs = [-20, 30, 0.3, 7.32]
-outputs,_ = Warp1D(inputs, None)
+inputs = np.linspace(-15, 15, 151)
+cubic_outputs,_ = cubic_warp(inputs, None)
+linear_outputs,_ = linear_warp(inputs, None)
 
 fig = go.Figure()
-fig.add_trace(go.Scatter(x=X_in, y=X_out, mode='markers+lines'))
-fig.add_trace(go.Scatter(x=inputs, y=outputs, mode='markers'))
+fig.add_trace(go.Scatter(x=X_in, y=X_out, mode='markers', name="control points"))
+fig.add_trace(go.Scatter(x=inputs, y=cubic_outputs, mode='lines', name="cubic interpolation"))
+fig.add_trace(go.Scatter(x=inputs, y=linear_outputs, mode='lines', name="linear interpolation"))
 if DO_SHOW : fig.show()
 
 ## Test de LinearWarp2D
@@ -49,3 +53,5 @@ fig = go.Figure()
 fig.add_trace(go.Scatter(x=X_in, y=Y_in, mode="markers", marker_color=get_colors(X_out, Y_out), marker_size=15))
 fig.add_trace(go.Scatter(x=x_inputs, y=y_inputs, mode="lines+markers", marker_color=get_colors(x_outputs, y_outputs), marker_size=40))
 if DO_SHOW : fig.show()
+
+## Test de CubicWarp1D
