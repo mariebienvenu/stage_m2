@@ -28,6 +28,7 @@ class Animation(List[Curve.Curve]):
     
     
     def sample(self, n_samples=None, start="all", stop="all"): # including stop
+        ## TODO Animation.sample() needs a makeover
         '''pas "en place"'''
         if n_samples is None:
             return Animation([curve.sample() for curve in self])
