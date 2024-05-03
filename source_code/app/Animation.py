@@ -27,10 +27,12 @@ class Animation(List[Curve.Curve]):
         return (min([curve.time_range[0] for curve in self]), max([curve.time_range[1] for curve in self]))
     
     
-    def sample(self, n_samples, start="all", stop="all"): # including stop
+    def sample(self, n_samples=None, start="all", stop="all"): # including stop
         '''pas "en place"'''
+        if n_samples is None:
+            return Animation([curve.sample() for curve in self])
 
-        if type(start) in [int, float]:
+        if type(start) in [int, float, np.float64]:
             start = [start]*len(self)
         if start in ["all", "same"]:
             start = [min([curve.time_range[0] for curve in self])]*len(self)
@@ -40,7 +42,7 @@ class Animation(List[Curve.Curve]):
         assert type(start) is list, f"Wrong type for 'start' parameter. Expected a list, got {type(start)}"
         assert len(start)==len(self), f"Wrong size for 'start' parameter. Expected {len(self)}, got {len(start)}"
 
-        if type(stop) in [int, float]:
+        if type(stop) in [int, float, np.float64]:
             stop = [stop]*len(self)
         if stop in ["all", "same"]:
             stop = [max([curve.time_range[1] for curve in self])]*len(self)
