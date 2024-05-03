@@ -34,6 +34,8 @@ def default_config():
 
 class Main(absIO.AbstractIO):
 
+    WARP_INTERPOLATION = "linear"
+
     def __init__(self, directory, verbose=0):
         super(Main, self).__init__(directory, verbose)
         self.finalize_init(default_config)
@@ -104,7 +106,9 @@ class Main(absIO.AbstractIO):
             obj_name, feature, channel, is_impulsive = connexion["object name"], connexion["video feature"], connexion["channel"], connexion["is impulsive"]
             index = self.blender_scene.object_names.index(obj_name) ## costly
             internal = self.internals[index]
-            new_warp = internal.make_simplified_warp(feature=feature, uncertainty_threshold=2., verbose=self.verbose-1) if is_impulsive else internal.make_warp(feature=feature, verbose=self.verbose-1) # we prefer sparse warps for impulsive signals and dense ones for continuous signals
+            if is_impulsive: new_warp = internal.make_simplified_warp(feature=feature, uncertainty_threshold=2., interpolation=Main.WARP_INTERPOLATION, verbose=self.verbose-1)
+            else : new_warp = internal.make_warp(feature=feature, interpolation=Main.WARP_INTERPOLATION, verbose=self.verbose-1)
+            # because we prefer sparse warps for impulsive signals and dense ones for continuous signals
             self.warps[index].append(new_warp)
             self.channels[index].append(channel)
             self.features[index].append(feature)
