@@ -13,7 +13,7 @@ class InternalProcess:
         self.banim1 = banim
 
     
-    def make_warp(self, feature:str=None, only_temporal=True, verbose=0):
+    def make_warp(self, feature:str=None, only_temporal=True, interpolation="linear", verbose=0):
         self.feature = feature
         curve1 = self.vanim1.find(feature)
         curve2 = self.vanim2.find(feature)
@@ -22,11 +22,13 @@ class InternalProcess:
         curve2.normalize()
         self.dtw = DynamicTimeWarping.DynamicTimeWarping(curve1, curve2) # performs the DTW algo at init time
         time_in, time_out = self.dtw.bijection
-        warp = Warp.LinearWarp1D(time_in, time_out)
+        warp = None
+        if interpolation=="linear": warp = Warp.LinearWarp1D(time_in, time_out)
+        elif interpolation=="cubic": warp = Warp.CubicWarp1D(time_in, time_out)
         return warp
     
 
-    def make_simplified_warp(self, feature:str=None, only_temporal=True, uncertainty_threshold=1.5, local_scale=10, verbose=0):
+    def make_simplified_warp(self, feature:str=None, only_temporal=True, uncertainty_threshold=1.5, local_scale=10, interpolation="linear", verbose=0):
         self.feature = feature
         curve1 = self.vanim1.find(feature)
         curve2 = self.vanim2.find(feature)
@@ -37,14 +39,17 @@ class InternalProcess:
         time_in, time_out = self.dtw.bijection
         self.dtw_constraints = self.measure_dtw_local_constraint(local_scale)
         self.kept_indexes = [0]
-        for i,constraint in enumerate(self.dtw_constraints):
-            if constraint > uncertainty_threshold:
-                self.kept_indexes.append(i)
+        zipped = zip(self.dtw_constraints[:-2], self.dtw_constraints[1:-1], self.dtw_constraints[2:])
+        for i,(left,constraint,right) in enumerate(zipped):
+            if constraint > max(uncertainty_threshold, left, right):
+                self.kept_indexes.append(i+1)
         self.kept_indexes.append(self.dtw_constraints.size-1)
         if len(self.kept_indexes)==2:
             if verbose>0: print(f"Warp simplification did not work ; no index has a certainty better than {uncertainty_threshold}. Reverting to classic warp computation.")
             return self.make_warp(feature, only_temporal, verbose)
-        warp = Warp.LinearWarp1D(time_in[self.kept_indexes], time_out[self.kept_indexes])
+        warp = None
+        if interpolation=="linear": warp = Warp.LinearWarp1D(time_in[self.kept_indexes], time_out[self.kept_indexes])
+        elif interpolation=="cubic": warp = Warp.CubicWarp1D(time_in[self.kept_indexes], time_out[self.kept_indexes])
         return warp
         
     
@@ -59,7 +64,7 @@ class InternalProcess:
         return banim2
 
 
-    def measure_dtw_local_constraint(self, window_size=10):
+    def measure_dtw_local_constraint(self, window_size=10): # TODO maybe move this part into the DTW class ?
         range_x = int(self.dtw.curve1.time_range[1]-self.dtw.curve1.time_range[0])
         range_y = int(self.dtw.curve2.time_range[1]-self.dtw.curve2.time_range[0])
         N = self.dtw.bijection[0].size
