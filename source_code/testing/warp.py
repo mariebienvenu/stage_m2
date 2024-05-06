@@ -9,7 +9,6 @@ DO_SHOW = True
 
 ## Test des Warp1D
 
-
 X_in = np.linspace(-10, 10, 11)
 X_out = np.cos(X_in/5)
 
@@ -35,6 +34,7 @@ X_out = np.cos(X_in/5)
 Y_out = np.sin(Y_in/5)
 
 Warp2D = Warp.LinearWarp2D(X_in, Y_in, X_out, Y_out)
+print(Warp2D)
 
 x_inputs = [-6.3, -2.7, 0.3, 7.32]
 y_inputs = [-9.7, 0.3, 6.6, -2.7]
@@ -54,4 +54,15 @@ fig.add_trace(go.Scatter(x=X_in, y=Y_in, mode="markers", marker_color=get_colors
 fig.add_trace(go.Scatter(x=x_inputs, y=y_inputs, mode="lines+markers", marker_color=get_colors(x_outputs, y_outputs), marker_size=40))
 if DO_SHOW : fig.show()
 
-## Test de CubicWarp1D
+## Test du getter
+
+X_in = np.linspace(-10, 10, 11)
+X_out = np.cos(X_in/5)
+
+warp1 = Warp.make_warp(dimension=1, interpolation='linear', X_in=X_in, X_out=X_out)
+warp2 = Warp.make_warp(dimension=1, interpolation='cubic', X_in=X_in, X_out=X_out)
+print(warp1, warp2)
+try:
+    warp3 = Warp.make_warp(dimension=1, interpolation='stuff', X_in=X_in, X_out=X_out)
+except NotImplementedError as e:
+    print(f"Raised: {e} (as expected)")
