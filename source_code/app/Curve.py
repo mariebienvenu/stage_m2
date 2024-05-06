@@ -185,10 +185,10 @@ class Curve:
         for attr in [Attributes_Name.value, Attributes_Name.handle_left_y, Attributes_Name.handle_right_y]:
             self.set_attribute(attr, self.get_attribute(attr)+translation)
 
-    def normalize(self):
-        mean, std = np.mean(self.get_values()), np.std(self.get_values())
-        self.value_transl(-mean)
-        self.value_scale(0, 1/std)
+    def normalize(self, mean=0, std=1):
+        current_mean, current_std = np.mean(self.get_values()), np.std(self.get_values())
+        self.value_transl(mean-current_mean)
+        self.value_scale(mean, std/current_std)
 
     
     def apply_spatio_temporal_warp(self, warp, in_place=True):
