@@ -22,9 +22,7 @@ class InternalProcess:
         curve2.normalize()
         self.dtw = DynamicTimeWarping.DynamicTimeWarping(curve1, curve2) # performs the DTW algo at init time
         time_in, time_out = self.dtw.bijection
-        warp = None
-        if interpolation=="linear": warp = Warp.LinearWarp1D(time_in, time_out)
-        elif interpolation=="cubic": warp = Warp.CubicWarp1D(time_in, time_out)
+        warp = Warp.make_warp(dimension=1, interpolation=interpolation, X_in=time_in, X_out=time_out)
         return warp
     
 
@@ -47,9 +45,7 @@ class InternalProcess:
         if len(self.kept_indexes)==2:
             if verbose>0: print(f"Warp simplification did not work ; no index has a certainty better than {uncertainty_threshold}. Reverting to classic warp computation.")
             return self.make_warp(feature, only_temporal, verbose)
-        warp = None
-        if interpolation=="linear": warp = Warp.LinearWarp1D(time_in[self.kept_indexes], time_out[self.kept_indexes])
-        elif interpolation=="cubic": warp = Warp.CubicWarp1D(time_in[self.kept_indexes], time_out[self.kept_indexes])
+        warp = Warp.make_warp(dimension=1, interpolation=interpolation, X_in=time_in[self.kept_indexes], X_out=time_out[self.kept_indexes])
         return warp
         
     
