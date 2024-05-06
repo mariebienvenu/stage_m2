@@ -35,7 +35,7 @@ class InternalProcess:
         curve2.normalize()
         self.dtw = DynamicTimeWarping.DynamicTimeWarping(curve1, curve2) # performs the DTW algo at init time
         time_in, time_out = self.dtw.bijection
-        self.dtw_constraints = self.measure_dtw_local_constraint(local_scale)
+        self.dtw_constraints = self.dtw.local_constraints() #measure_dtw_constraint(local=True, window_size=local_scale)
         self.kept_indexes = [0]
         zipped = zip(self.dtw_constraints[:-2], self.dtw_constraints[1:-1], self.dtw_constraints[2:])
         for i,(left,constraint,right) in enumerate(zipped):
@@ -60,18 +60,6 @@ class InternalProcess:
         return banim2
 
 
-    def measure_dtw_local_constraint(self, window_size=10): # TODO maybe move this part into the DTW class ?
-        range_x = int(self.dtw.curve1.time_range[1]-self.dtw.curve1.time_range[0])
-        range_y = int(self.dtw.curve2.time_range[1]-self.dtw.curve2.time_range[0])
-        N = self.dtw.bijection[0].size
-        local_constraints = np.zeros((N))
-        for i in range(1, N-1):
-            ix,iy = np.array(self.dtw.pairings)[::-1][i] ## TODO make pairings an int array from start ? aller voir vis.add_pairings
-            center_cost = self.dtw.cost_matrix[ix, iy] # best cost (globally)
-            w_size = min(window_size, ix, iy, range_x-ix, range_y-iy)
-            upper_costs = self.dtw.cost_matrix[ix+1:ix+w_size, iy] + self.dtw.cost_matrix[ix, iy+1:iy+w_size]
-            lower_costs = self.dtw.cost_matrix[ix-w_size:ix, iy] + self.dtw.cost_matrix[ix, iy-w_size:iy]
-            alternative_costs = np.concatenate((upper_costs, lower_costs))
-            minimal_additionnal_cost = np.min(alternative_costs) - center_cost if alternative_costs.size>0 else 0
-            local_constraints[i] = max(0,minimal_additionnal_cost)
-        return local_constraints
+    def measure_dtw_constraint(self, local=True, window_size=10): # TODO - remove, useless
+        if local: return self.dtw.local_constraints(window_size)
+        else : return self.dtw.global_constraints()

@@ -3,13 +3,6 @@ import numpy as np
 
 from app.Curve import Curve
 
-## debug
-import app.visualisation as vis
-import pandas as pd
-import numpy as np
-from plotly.subplots import make_subplots
-
-
 
 class DynamicTimeWarping:
 
@@ -52,7 +45,7 @@ class DynamicTimeWarping:
             self.pairings.append([i-1,j-1])
 
 
-    def measure_local_constraint(self, window_size=10):
+    def local_constraints(self, window_size=10):
         range_x = len(self.curve1)
         range_y = len(self.curve2)
         N = self.bijection[0].size

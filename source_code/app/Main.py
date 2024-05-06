@@ -150,8 +150,8 @@ class Main(absIO.AbstractIO):
 
         ## Bijections
         fig2 = vis.add_curve(y=dtw.bijection[1], x=dtw.bijection[0], name="DTW matches", style="lines")
-        vis.add_curve(y=warp.Y, x=warp.X, style="markers", fig=fig2, name="Warp reference points")
-        x = np.arange(warp.X[0], warp.X[-1]+1, 1)
+        vis.add_curve(y=warp.output_data, x=warp.input_data, style="markers", fig=fig2, name="Warp reference points")
+        x = np.arange(warp.input_data[0], warp.input_data[-1]+1, 1)
         vis.add_curve(y=warp(x,None)[0], x=x, style="lines", fig=fig2, name="Warp function")
         title2 = "Time bijection"
 
@@ -162,7 +162,8 @@ class Main(absIO.AbstractIO):
         title3 = "Matches between initial and retook feature curve"
 
         ## DTW local constraints
-        fig4 = vis.add_curve(y=internal.dtw_constraints, x=dtw.bijection[0])
+        fig4 = vis.add_curve(y=internal.dtw_constraints, name="local - chosen") #, x=dtw.bijection[0])
+        vis.add_curve(y=dtw.global_constraints(), name="global", fig=fig4)
         title4 = "Constraint on DTW chosen path over time"
 
         ## Animation curves : Edited curve VS original one
