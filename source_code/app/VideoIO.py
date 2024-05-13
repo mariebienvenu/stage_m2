@@ -11,6 +11,7 @@ import app.Animation as Animation
 import app.OpticalFlow as oflow
 import app.maths_utils as m_utils
 import app.visualisation as vis
+import app.AbstractIO as abstract
 
 Curve = Animation.Curve
 
@@ -33,63 +34,28 @@ def default_config(height, width, frame_count, fps):
     }
 
 
-class VideoIO: # TODO VideoIO -- make it herit from AbstractIO
+class VideoIO(abstract.AbstractIO):
 
 
-    def __init__(self, directory, video_name, extension='.mp4', verbose=0):
-
+    def __init__(self, directory:str, video_name:str, extension='.mp4', verbose=0):
+        super(VideoIO, self).__init__(directory, verbose)
         self.video = Video.Video(f'{directory}/{video_name}'+extension, verbose=verbose)
         self.name = video_name
-        self.directory = directory
+        def maker():
+            return default_config(
+                self.video.frame_height,
+                self.video.frame_width,
+                self.video.frame_count,
+                self.video.fps,
+            )
+        self.finalize_init(maker)
 
-        self.config = None
-        self.config_loaded = False
-
-        self.is_processed = False
-
-        try:
-            self.load_config()
-            self.complete_config()
-        except OSError:
-            if verbose>0: print("Did not find config file ; reverting to default config.")
-            self.make_default_config()
-
-        assert self.config_loaded, "Error when initializing VideoIO object."
-
-    def get_default_config(self):
-        return default_config(
-            self.video.frame_height,
-            self.video.frame_width,
-            self.video.frame_count,
-            self.video.fps,
-        )
+    @property
+    def config_filename(self):
+        return self.directory+self.name+"_config.json"
     
-    def make_default_config(self):
-        self.config = self.get_default_config()
-        self.config_loaded = True
-
-
-    def load_config(self, force=False):
-        if self.config_loaded and not force:
-            return
-        if not os.path.exists(self.directory+self.name+"_config.json"):
-            raise OSError("No config file.")
-        with open(self.directory+self.name+"_config.json", 'r') as openfile:
-            self.config = json.load(openfile)
-        self.config_loaded = True
-
-
-    def save_config(self):
-        assert self.config_loaded, "Cannot save config when no config is loaded."
-        with open(self.directory+self.name+"_config.json", "w") as outfile:
-            json.dump(self.config, outfile)
-
-    
-    def complete_config(self):
-        default = self.get_default_config()
-        for key, value in default.items():
-            if key not in self.config:
-                self.config[key] = value
+    def __repr__(self):
+        return f'VideoIO({self.config_filename}), {self.config})'
 
 
     def has_already_been_processed(self):
@@ -136,13 +102,13 @@ class VideoIO: # TODO VideoIO -- make it herit from AbstractIO
         return np.array(list(range(self.oflow_len)), dtype=np.float64)/self.frame_rate
     
 
-    def process(self, force=False, verbose=0):
+    def process(self, force=False):
         if self.is_processed and not force:
-            if verbose>0: print("Video already processed (VideoIO.process already called).")
+            if self.verbose>0: print("Video already processed (VideoIO.process already called).")
             return
         
         elif self.has_already_been_processed() and not force:
-            if verbose>0: print("Video already processed (found data with matching config on disk).")
+            if self.verbose>0: print("Video already processed (found data with matching config on disk).")
             anim = Animation.Animation.load(self.anim_directory)
             self.magnitude_means = anim.find('Oflow magnitude - mean').get_values()
             self.magnitude_stds = anim.find('Oflow magnitude - std').get_values()
@@ -155,7 +121,7 @@ class VideoIO: # TODO VideoIO -- make it herit from AbstractIO
             self.is_processed = True
             return ## TODO - bug : this does not take into account the time cropping ! time_crop and curves are no longer aligned
         
-        if verbose>0: print("Video currently processing (optical flow computation).")
+        if self.verbose>0: print("Video currently processing (optical flow computation).")
 
         N = self.oflow_len
         self.magnitude_means = np.zeros((N))
@@ -181,7 +147,7 @@ class VideoIO: # TODO VideoIO -- make it herit from AbstractIO
         self.is_processed = True
 
 
-    def draw_diagrams(self, fig:go.Figure=None, save=True, show=False, time_in_seconds=False, verbose=0): # can be drawn either in frame scale or seconds scale
+    def draw_diagrams(self, fig:go.Figure=None, save=True, show=False, time_in_seconds=False): # can be drawn either in frame scale or seconds scale
         fig = make_subplots(rows=2, cols=3, subplot_titles=(
             "Amplitude du flux au cours du temps",
             "Vitesses au cours du temps" ,
@@ -191,7 +157,7 @@ class VideoIO: # TODO VideoIO -- make it herit from AbstractIO
             "Trajectoire",
         )) if fig is None else fig
 
-        self.process(verbose=verbose-1)
+        self.process()
 
         frame_times = self.get_frame_times() if time_in_seconds else np.array(list(range(self.oflow_len)))
 
@@ -230,8 +196,8 @@ class VideoIO: # TODO VideoIO -- make it herit from AbstractIO
         return [fig, fig2, fig3]
 
 
-    def to_animation(self, save=True, verbose=0): # always in frame scale
-        self.process(verbose=verbose-1)
+    def to_animation(self, save=True): # always in frame scale
+        self.process()
         times = np.array(list(range(self.oflow_len))) if self.magnitude_means.size==self.oflow_len else np.array(list(range(self.time_crop[0], self.time_crop[1]+1)))
         anim = Animation.Animation([
             Curve.Curve(np.vstack((times, self.magnitude_means)).T, fullname='Oflow magnitude - mean'),
@@ -258,8 +224,8 @@ class VideoIO: # TODO VideoIO -- make it herit from AbstractIO
         return crop
     
 
-    def auto_time_crop(self, patience=2, save=True, verbose=0):
-        self.process(verbose=verbose-1)
+    def auto_time_crop(self, patience=2, save=True):
+        self.process()
         times = np.array(list(range(self.oflow_len)))
         curve = Curve.Curve(np.vstack((times, self.magnitude_means)).T)
         start, stop = curve.get_auto_crop(use_handles=False, patience=patience)

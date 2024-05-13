@@ -4,7 +4,7 @@ import os, json
 
 class AbstractIO:
 
-    def __init__(self, directory, verbose=0):
+    def __init__(self, directory:str, verbose=0):
         self.directory = directory
         self.verbose = verbose
 

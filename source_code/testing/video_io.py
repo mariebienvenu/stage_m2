@@ -2,6 +2,7 @@
 import os, sys
 
 from app.VideoIO import VideoIO
+from app.VideoIO import default_config
 
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
@@ -13,7 +14,15 @@ VIDEO_NAME = '03-28 used red object/sec' #21 added light and glove/close_startup
 video_io = VideoIO(data_path, VIDEO_NAME, verbose=10)
 print(f'Config at init time: {video_io.config}')
 
-video_io.make_default_config()
+def maker():
+    return default_config(
+        video_io.video.frame_height,
+        video_io.video.frame_width,
+        video_io.video.frame_count,
+        video_io.video.fps,
+    )
+
+video_io.make_default_config(maker)
 print(f'Config after making default config: {video_io.config}')
 
 video_io.save_config()
