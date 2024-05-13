@@ -202,3 +202,7 @@ class Video:
             elif Subsampling_FPS[fps] is Subsampling_FPS.KEEP:
                 new_fps = self.fps/rate
         return Video.from_array(array, filepath, fps=new_fps, verbose=verbose)
+    
+    @property
+    def frame_times(self):
+        return np.array(list(range(self.frame_count)), dtype=np.float64)/self.fps
