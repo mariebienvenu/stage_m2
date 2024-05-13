@@ -24,11 +24,6 @@ class SoftIO(AbstractIO.AbstractIO):
     def __init__(self, directory, verbose=0):
         super(SoftIO, self).__init__(directory, verbose)
         self.finalize_init(default_config)
-
-
-    def __repr__(self):
-        return super(SoftIO, self).__repr__().replace("AbstractIO","SoftIO")
-
     
     @property
     def config_filename(self):

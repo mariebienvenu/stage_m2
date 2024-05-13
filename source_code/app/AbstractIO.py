@@ -20,7 +20,7 @@ class AbstractIO:
         except OSError:
             if self.verbose>0: print("Did not find config file ; reverting to default config.")
             self.make_default_config(maker)
-        assert self.config_loaded, "Error when finalizing AbstractIO object."
+        assert self.config_loaded, f"Error when finalizing {type(self).__name__} object."
         self.save_config()
 
 
@@ -62,4 +62,4 @@ class AbstractIO:
     
 
     def __repr__(self):
-        return f'AbstractIO({self.config_filename}), {self.config})'
+        return f'{type(self).__name__}({self.config_filename}, {self.config})'

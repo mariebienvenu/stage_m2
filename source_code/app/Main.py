@@ -46,11 +46,6 @@ class Main(absIO.AbstractIO):
         
         self.blender_scene.check_file(self.directory+self.blender_scene_filename)
         self.internals = None
-
-
-    def __repr__(self):
-        return super(Main, self).__repr__().replace("AbstractIO","Main")
-
     
     @property
     def config_filename(self) -> str:

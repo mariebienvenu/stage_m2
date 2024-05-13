@@ -53,9 +53,6 @@ class VideoIO(abstract.AbstractIO):
     @property
     def config_filename(self):
         return self.directory+self.name+"_config.json"
-    
-    def __repr__(self):
-        return f'VideoIO({self.config_filename}), {self.config})'
 
 
     def has_already_been_processed(self):
