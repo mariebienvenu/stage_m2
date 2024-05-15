@@ -14,6 +14,7 @@ import app.visualisation as vis
 import app.AbstractIO as abstract
 
 Curve = Animation.Curve
+Color = Animation.Curve.Color
 
 
 def default_config(height, width, frame_count, fps):
@@ -157,6 +158,7 @@ class VideoIO(abstract.AbstractIO):
         self.process()
 
         frame_times = self.oflow_frame_times if time_in_seconds else np.array(list(range(self.oflow_len)))
+        Color.reset()
 
         vis.magnitude_angle(frame_times, self.magnitude_means, self.magnitude_stds, self.angle_means, self.angle_stds, fig=fig, rows=[1,2], cols=[1,1])
         vis.add_curve(y=self.velocity_y, x=self.position_y, name="y'=f(y) - Portrait de phase de Y", fig=fig, col=3, row=1)
@@ -183,6 +185,13 @@ class VideoIO(abstract.AbstractIO):
         for row, col in zip(rows2, cols2):
             fig2.add_vline(x=start, row=row, col=col)
             fig2.add_vline(x=stop, row=row, col=col)
+        fig2.update_layout(
+            title=f'Optical flow  - {self.name}',
+            yaxis1_title="magnitude (pixels)",
+            yaxis2_title="angle (degrees)",
+            xaxis2_title="time (frames)",
+            showlegend=False,
+        )
         if save: fig2.write_html(self.directory+f"/{self.name}_oflow.html")
         if show: fig2.show()
 
