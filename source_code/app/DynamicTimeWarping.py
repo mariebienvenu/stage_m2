@@ -6,6 +6,8 @@ from app.Curve import Curve
 
 class DynamicTimeWarping:
 
+    ## TODO : make an "algo" static method that computes DTW out of the cost matrix
+
 
     def __init__(self, curve1:Curve, curve2:Curve):
         self.curve1 = curve1
