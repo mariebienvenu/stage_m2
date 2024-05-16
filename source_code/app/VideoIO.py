@@ -187,8 +187,8 @@ class VideoIO(abstract.AbstractIO):
             fig2.add_vline(x=stop, row=row, col=col)
         fig2.update_layout(
             title=f'Optical flow  - {self.name}',
-            yaxis1_title="magnitude (pixels)",
-            yaxis2_title="angle (degrees)",
+            yaxis1_title="magnitude (pixels/frame)",
+            yaxis2_title="angle (degrees/frame)",
             xaxis2_title="time (frames)",
             showlegend=False,
         )

@@ -13,6 +13,7 @@ import app.VideoIO as VideoIO
 import app.SoftwareIO as SoftIO
 import app.visualisation as vis
 
+Color = VideoIO.Color
 
 def default_config():
     return {
@@ -125,22 +126,27 @@ class Main(absIO.AbstractIO):
         feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
         original_curve = self.blender_scene.get_animations()[animation_index].find(channel)
         edited_curve =  SoftIO.b_utils.get_animation("Ball_edited").find(channel) # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
+
+        Color.reset()
         
         ## Video feature : original VS retake
-        fig0 = make_subplots(rows=2, shared_xaxes=True)
+        fig0 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: initial', f'Video feature curve: retook'], vertical_spacing=0.1)
         feature_curve1.display(handles=False, style="lines", fig=fig0, col=1, row=1)
         feature_curve2.display(handles=False, style="lines", fig=fig0, col=1, row=2)
-        title0 = "Comparison of the initial and retook video feature curve"
+        fig0.update_layout(xaxis2_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis2_title="Magnitude (~pixels)", showlegend=False)
+        title0 = f'Comparison of the initial and retook video feature curve "{feature}"'
 
         ## Connexion : video feature curve VS animation curve
-        fig7 = make_subplots(rows=2, shared_xaxes=True)
+        fig7 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: {feature}', f'Animation curve: {original_curve.fullname}'], vertical_spacing=0.1)
         feature_curve1.display(handles=False, style="lines", fig=fig7, col=1, row=1)
         original_curve.display(fig=fig7, col=1, row=2)
         original_curve.sample().display(fig=fig7, row=2, col=1, handles=False, style='lines')
+        fig7.update_layout(xaxis2_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis2_title="Magnitude (Blender unit)", showlegend=False)
         title7 = "Comparison of the original animation curve and initial video feature curve"
 
         ## DTW cost matrix
         fig1 = vis.add_heatmap(pd.DataFrame(dtw.cost_matrix))
+        fig1.update_layout(xaxis_title="Time (frames) - retook", yaxis_title="Time (frames) - initial")
         title1 = "DTW cost matrix"
 
         ## Bijections
@@ -148,38 +154,41 @@ class Main(absIO.AbstractIO):
         vis.add_curve(y=warp.output_data, x=warp.input_data, style="markers", fig=fig2, name="Warp reference points")
         x = np.arange(warp.input_data[0], warp.input_data[-1]+1, 1)
         vis.add_curve(y=warp(x,None)[0], x=x, style="lines", fig=fig2, name="Warp function")
+        fig2.update_layout(xaxis_title="Time (frames) - initial", yaxis_title="Time (frames) - retook")
         title2 = "Time bijection"
 
         ## DTW pairs
-        fig3 = vis.add_curve(y=dtw.values2+3, x=dtw.times2, name=dtw.curve2.fullname)
-        vis.add_curve(y=dtw.values1, x=dtw.times1, name=dtw.curve1.fullname, fig=fig3)
+        fig3 = vis.add_curve(y=dtw.values2+3, x=dtw.times2, name='retook')
+        vis.add_curve(y=dtw.values1, x=dtw.times1, name='initial', fig=fig3)
         vis.add_pairings(y1=dtw.values1, y2=dtw.values2+3, pairs=dtw.pairings, x1=dtw.times1, x2=dtw.times2, fig=fig3)
-        title3 = "Matches between initial and retook feature curve"
+        fig3.update_layout(xaxis_title="Time (frames)", yaxis_title="Magnitude (~pixels)")
+        title3 = f'Matches between initial and retook feature curve "{feature}"'
 
-        ## DTW local constraints
-        fig4 = vis.add_curve(y=internal.dtw_constraints, name="local - chosen") #, x=dtw.bijection[0])
+        ## DTW local constraints along the path
+        fig4 = vis.add_curve(y=internal.dtw_constraints, name="local - chosen")
         vis.add_curve(y=dtw.global_constraints(), name="global", fig=fig4)
+        fig4.update_layout(xaxis_title="DTW path (pairs over time)", yaxis_title="Avoided cost (~pixels)")
         title4 = "Constraint on DTW chosen path over time"
 
         ## Animation curves : Edited curve VS original one
-        fig5 = make_subplots(rows=2, cols=1, shared_xaxes=True, row_titles=["Original curves", "Edited curves"])
+        fig5 = make_subplots(rows=2, cols=1, shared_xaxes=True, subplot_titles=["Original curves", "Edited curves"], vertical_spacing=0.1)
         original_curve.display(fig=fig5, row=1, col=1)
         edited_curve.display(fig=fig5, row=2, col=1)
         original_curve.sample().display(fig=fig5, row=1, col=1, handles=False, style='lines')
         edited_curve.sample().display(fig=fig5, row=2, col=1, handles=False, style='lines')
+        fig5.update_layout(xaxis2_title="Time (frames)", yaxis1_title="Magnitude (Blender units)", yaxis2_title="Magnitude (Blender units)", showlegend=False)
         title5 = "Comparison of the original and post-editing animation curves"
 
         ## Global visualisation
-        fig6 = make_subplots(rows=2, cols=2, shared_xaxes="all", row_titles=["Video curves", "Animation curves"], column_titles=["Before", "After"])
+        fig6 = make_subplots(rows=2, cols=2, shared_xaxes="all", row_titles=["Video curves", "Animation curves"], column_titles=["Before", "After"], vertical_spacing=0.1, horizontal_spacing=0.1)
         feature_curve1.display(handles=False, style="lines", row=1, col=1, fig=fig6)
         feature_curve2.display(handles=False, style="lines", row=1, col=2, fig=fig6)
-        #vis.add_curve(y=dtw.values1, x=dtw.times1, name=dtw.curve1.fullname, row=1, col=1, fig=fig6)
-        #vis.add_curve(y=dtw.values2, x=dtw.times2, name=dtw.curve2.fullname, row=1, col=2, fig=fig6)
         original_curve.display(fig=fig6, row=2, col=1)
         edited_curve.display(fig=fig6, row=2, col=2)
         original_curve.sample().display(fig=fig6,  row=2, col=1, handles=False, style='lines')
         edited_curve.sample().display(fig=fig6, row=2, col=2, handles=False, style='lines')
-        title6 = f"Global editing process using {internal.feature} feature on {channel} channel"
+        fig6.update_layout(xaxis3_title="Time (frames)", xaxis4_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis3_title="Magnitude (Blender units)", showlegend=False)
+        title6 = f'Global editing process using "{internal.feature}" feature on "{channel}" channel'
 
         figures:List[go.Figure] = [fig0, fig1, fig2, fig3, fig4, fig5, fig6, fig7]
         titles = [title0, title1, title2, title3, title4, title5, title6, title7]
@@ -187,7 +196,8 @@ class Main(absIO.AbstractIO):
         if not os.path.exists(f'{self.directory}/out/') : os.mkdir(f'{self.directory}/out/')
         for figure,title in zip(figures, titles):
             figure.update_layout(title=title)
-            if save: figure.write_html(f'{self.directory}/out/{title}.html')
+            filetitle = title.replace('"','')
+            if save: figure.write_html(f'{self.directory}/out/{filetitle}.html')
             if show: figure.show()
 
         return figures
