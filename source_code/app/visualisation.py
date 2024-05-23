@@ -8,13 +8,13 @@ import pandas as pd
 from app.Color import Color
 
 
-def add_curve(y, color=None, x = None, name = "", fig = None, row = None, col = None, style="lines"):
+def add_curve(y, color=None, x=None, name="", fig=None, row=None, col=None, style="lines", legend=None):
     color = color if color is not None else f'rgb{Color.next()}'
     Y = np.array(y)
     X = np.array(x) if x is not None else np.array(list(range(Y.size)))
     if fig is None:
         fig = go.Figure()
-    fig.add_trace(go.Scatter(x=X, y=Y, name=name, line_color=color, mode=style), row=row, col=col)
+    fig.add_trace(go.Scatter(x=X, y=Y, name=name, line_color=color, mode=style, showlegend=legend), row=row, col=col)
     return fig
 
 
