@@ -35,7 +35,8 @@ def default_config():
 
 class Main(absIO.AbstractIO):
 
-    WARP_INTERPOLATION = "linear"
+    WARP_INTERPOLATION = "linear" # the way the warping is interpolated between matches
+    DTW_CONSTRAINTS_LOCAL = 10 # if 0 : dtw constraint computation is global ; else, it is local with a range of DTW_CONSTRAINTS_LOCAL (in frames)
 
     def __init__(self, directory, verbose=0):
         super(Main, self).__init__(directory, verbose)
@@ -102,9 +103,19 @@ class Main(absIO.AbstractIO):
             obj_name, feature, channel, is_impulsive = connexion["object name"], connexion["video feature"], connexion["channel"], connexion["is impulsive"]
             index = self.blender_scene.object_names.index(obj_name) ## costly
             internal = self.internals[index]
-            if is_impulsive: new_warp = internal.make_simplified_warp(feature=feature, uncertainty_threshold=2., interpolation=Main.WARP_INTERPOLATION, verbose=self.verbose-1)
-            else : new_warp = internal.make_warp(feature=feature, interpolation=Main.WARP_INTERPOLATION, verbose=self.verbose-1)
-            # because we prefer sparse warps for impulsive signals and dense ones for continuous signals
+            # we prefer sparse warps for impulsive signals and dense ones for continuous signals
+            if is_impulsive: new_warp = internal.make_simplified_warp(
+                feature=feature,
+                constraint_threshold=2.,
+                interpolation=Main.WARP_INTERPOLATION,
+                local_scale=Main.DTW_CONSTRAINTS_LOCAL,
+                verbose=self.verbose-1
+            )
+            else : new_warp = internal.make_warp(
+                feature=feature,
+                interpolation=Main.WARP_INTERPOLATION,
+                verbose=self.verbose-1
+            )
             self.warps[index].append(new_warp)
             self.channels[index].append(channel)
             self.features[index].append(feature)
