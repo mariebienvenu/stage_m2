@@ -2,6 +2,8 @@
 from typing import Protocol
 from enum import Enum
 
+## TODO : what about objects in the 3D scene ? like a get_animation(obj_name) -> List[AnimationCurve]
+
 class ValueType(Enum):
     POSITION = 0
     ORIENTATION = 1
