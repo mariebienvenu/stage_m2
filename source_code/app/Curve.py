@@ -9,6 +9,7 @@ import bpy
 
 from app.Color import Color
 import app.maths_utils as m_utils
+import app.visualisation as vis
 
 
 @unique
@@ -215,22 +216,23 @@ class Curve:
 
 
     def display(self, handles=True, style="markers", color=None, name=None, fig=None, row=None, col=None, doShow=False):
-        if fig is None:
-            fig = go.Figure()
+        if fig is None: fig = go.Figure()
         times = self.get_times()
         values = self.get_values()
         color = self.color if ('color' in dir(self) and self.color is not None) else (color if color is not None else Color.next())
         name = name if name is not None else self.fullname
-        fig.add_trace(go.Scatter(x=times, y=values, name=name, mode=style, marker_color=f'rgb{color}'), row=row, col=col) # drawing the keyframes
+        if not handles:
+            vis.add_curve(x=times, y=values, name=name, style=style, color=f'rgb{color}', fig=fig, row=row, col=col)
         if handles:
             handle_times = np.concatenate((self.get_attribute('handle_left_x'), self.get_attribute('handle_right_x')))
             handle_values = np.concatenate((self.get_attribute('handle_left_y'), self.get_attribute('handle_right_y')))
-            for id in range(len(self)): # drawing the handles
+            for id in range(len(self)): # drawing the keyframes with tangent handles
                 x = [handle_times[id], times[id], handle_times[id+len(self)]]
                 y = [handle_values[id], values[id], handle_values[id+len(self)]]
-                fig.add_trace(go.Scatter(x=x, y=y, mode='markers+lines', marker_color=f'rgba{color+tuple([0.4])}', showlegend=False), row=row, col=col)
+                vis.add_curve(x=x, y=y, style="markers+lines", color=f'rgba{color+tuple([0.4])}', fig=fig, row=row, col=col, legend=False)
+            self.sample().display(handles=False, style='lines', color=color, name=name, fig=fig, row=row, col=col) # drawing the interpolated curve
         if doShow: fig.show()
-        return fig ## TODO use vis.add_trace now that it handles style ?
+        return fig
     
     def get_keyframe_attribute(self, id, attribute_name:Attributes_Name|str):
         column = attribute_name.value if type(attribute_name) is Attributes_Name else Attributes_Name[attribute_name].value
@@ -315,7 +317,7 @@ class Curve:
         try:
             enumerate(times)
         except TypeError: # typically, 'int' object is not iterable
-            times = np.linspace(self.time_range[0], self.time_range[1]+1, times)
+            times = np.linspace(self.time_range[0], self.time_range[1], times)
         values = np.array([self.pointer.evaluate(time) for time in times]) # un peu ugly d'utiliser la fonction evaluate() mais c'est validé par Damien
         coordinates = np.vstack((times, values)).T
         color = getattr(self, "color", None) # here we recover additionnal info on the curve that we would like to forward to the new, sampled curve
