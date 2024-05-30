@@ -67,20 +67,15 @@ class Animation(List[Curve.Curve]):
                     raise TypeError(f"Did not provide with correct enum. Expected TimeIndication, got {type(param)}.")
 
         resampled_anim = Animation()
+        start : Iterable = start #          -
+        stop : Iterable = stop #            - > Necessary to have autocomplete on curve three lines later
+        n_samples : Iterable = n_samples #  -
         for curve, strt, stp, n in zip(self, start, stop, n_samples, strict=True):
             times = np.concatenate((np.arange(strt, stp, step=(stp-strt)/(n-1)), [stp])) if strt!=stp else np.array([strt])
-            new_curve = curve.sample(times) # TODO fix : curve is not type hinted in animation.sample() on a for curve, a, b in zip(self, A, B) if not everyone is strictly iterable
+            new_curve = curve.sample(times)
             resampled_anim.append(new_curve)
 
         return resampled_anim
-    
-    ## ONLY HELPFUL TO UNDERSTAND THE TODO ABOVE
-    def truc(self):
-        abc = [1,2,3]
-        d : Iterable = 1 # without this type hint, curve has no autocomplete
-        for curve, letter, other_letter in zip(self,abc, d):
-            debug = 0
-            #curve.
     
 
     def crop(self, start=None, stop=None):
