@@ -2,12 +2,20 @@ from __future__ import annotations # otherwise using Animation type hints inside
 
 import os
 from typing import List
+from collections.abc import Iterable
+from enum import Enum
 
 import numpy as np
 import pandas as pd
 
 import app.Curve as Curve
 import app.maths_utils as m_utils
+
+class TimeIndication(Enum):
+    ALL = 0
+    EACH = 1
+    SAME = 2
+
 
 class Animation(List[Curve.Curve]):
 
@@ -27,38 +35,52 @@ class Animation(List[Curve.Curve]):
         return (min([curve.time_range[0] for curve in self]), max([curve.time_range[1] for curve in self]))
     
     
-    def sample(self, n_samples=None, start="all", stop="all"): # including stop
-        ## TODO Animation.sample() needs a makeover
-        '''pas "en place"'''
-        if n_samples is None:
-            return Animation([curve.sample() for curve in self])
+    def sample(
+            self,
+            n_samples:int|Iterable[int]|None=None,
+            start:float|Iterable[float]|TimeIndication=TimeIndication.ALL,
+            stop:float|Iterable[float]|TimeIndication=TimeIndication.ALL
+        ):
+        """Does not sample "in place". Stops are included as sampling times."""
+        if n_samples is None: return Animation([curve.sample() for curve in self])
+        try:
+            enumerate(n_samples)
+        except AttributeError: # "int is not iterable"
+            n_samples = [n_samples]*len(self)
 
-        if type(start) in [int, float, np.float64]:
-            start = [start]*len(self)
-        if start in ["all", "same"]:
-            start = [min([curve.time_range[0] for curve in self])]*len(self)
-        if start in ["each"]:
-            start = [curve.time_range[0] for curve in self]
-        
-        assert type(start) is list, f"Wrong type for 'start' parameter. Expected a list, got {type(start)}"
-        assert len(start)==len(self), f"Wrong size for 'start' parameter. Expected {len(self)}, got {len(start)}"
-
-        if type(stop) in [int, float, np.float64]:
-            stop = [stop]*len(self)
-        if stop in ["all", "same"]:
-            stop = [max([curve.time_range[1] for curve in self])]*len(self)
-        if stop in ["each"]:
-            stop = [curve.time_range[1] for curve in self]
-        assert type(stop) is list, f"Wrong type for 'stop' parameter. Expected a list, got {type(stop)}"
-        assert len(stop)==len(self), f"Wrong size for 'stop' parameter. Expected {len(self)}, got {len(stop)}"
+        for param, operator, index in zip([start, stop], [min, max], [0,1]):
+            try:
+                param.value
+            except AttributeError: # "list does not have value", or "float does not have value"
+                try:
+                    enumerate(param)
+                except AttributeError: # "float is not iterable"
+                    param = [param]*len(self)
+                finally:
+                    assert len(param)==len(self), f"Wrong size for '{param._name_}' parameter. Expected {len(self)}, got {len(param)}"
+            finally:
+                if param in [TimeIndication.ALL, TimeIndication.SAME]:
+                    param = [operator([curve.time_range[index] for curve in self])]*len(self)
+                elif param is TimeIndication.EACH:
+                    param = [curve.time_range[index] for curve in self]
+                else:
+                    raise TypeError(f"Did not provide with correct enum. Expected TimeIndication, got {type(param)}.")
 
         resampled_anim = Animation()
-        for curve, strt, stp in zip(self, start, stop):
-            times = np.concatenate((np.arange(strt, stp, step=(stp-strt)/(n_samples-1)), [stp])) if strt!=stp else np.array([strt])
-            new_curve = curve.sample(times)
+        for curve, strt, stp, n in zip(self, start, stop, n_samples, strict=True):
+            times = np.concatenate((np.arange(strt, stp, step=(stp-strt)/(n-1)), [stp])) if strt!=stp else np.array([strt])
+            new_curve = curve.sample(times) # TODO fix : curve is not type hinted in animation.sample() on a for curve, a, b in zip(self, A, B) if not everyone is strictly iterable
             resampled_anim.append(new_curve)
-                
+
         return resampled_anim
+    
+    ## ONLY HELPFUL TO UNDERSTAND THE TODO ABOVE
+    def truc(self):
+        abc = [1,2,3]
+        d : Iterable = 1 # without this type hint, curve has no autocomplete
+        for curve, letter, other_letter in zip(self,abc, d):
+            debug = 0
+            #curve.
     
 
     def crop(self, start=None, stop=None):
