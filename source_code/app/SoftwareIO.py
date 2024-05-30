@@ -86,9 +86,9 @@ class SoftIO(AbstractIO.AbstractIO):
         self.process(force=True)
 
 
-    def from_software(self):
+    def from_software(self, in_place=True):
         self._animations = [
-            b_utils.get_animation(obj_name) for obj_name in self.object_names
+            b_utils.get_animation(obj_name+"_edited" if not in_place else obj_name) for obj_name in self.object_names
         ]
         for anim in self._animations:
             anim.crop(self.start, self.stop)
