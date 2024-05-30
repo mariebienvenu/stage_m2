@@ -6,9 +6,6 @@ from app.Curve import Curve
 
 class DynamicTimeWarping:
 
-    ## TODO : make an "algo" static method that computes DTW out of the cost matrix
-
-
     def __init__(self, curve1:Curve, curve2:Curve):
         self.curve1 = curve1
         self.curve2 = curve2
@@ -24,30 +21,24 @@ class DynamicTimeWarping:
     def compute(self):
         self.values1, self.values2 = np.ravel(self.curve1.get_values()), np.ravel(self.curve2.get_values())
         n,m = self.values1.size, self.values2.size
-        self.cost_matrix = np.array([[abs(self.values1[i] - self.values2[j]) for j in range(m)] for i in range(n)]) # distance
-        self.DTW = np.ones((n+1,m+1))*np.inf
-        self.DTW[0,0] = 0
+        self.cost_matrix = np.array([[abs(self.values1[i] - self.values2[j]) for j in range(m)] for i in range(n)]) # coût d'une paire = distance entre valeurs
+        self.DTW = DynamicTimeWarping.distances(self.cost_matrix)
+        self.score = self.DTW[n,m]
+        self.pairings = DynamicTimeWarping.shortest_path(self.DTW, self.cost_matrix)
+        assert sum([self.cost_matrix[i,j] for i,j in self.pairings]) == self.score, f"DTW score does not match :\n\t final distance:{self.score},\n\t path cumulative cost: {sum([self.cost_matrix[i,j] for i,j in self.pairings])}"
+
+
+    @staticmethod
+    def distances(costs:np.ndarray):
+        n,m = costs.shape
+        distances = np.ones((n+1,m+1))*np.inf
+        distances[0,0] = 0
         for i in range(n):
             for j in range(m):
-                cost = self.cost_matrix[i,j]
-                additionnal_cost = min(self.DTW[i+1,j], self.DTW[i,j+1], self.DTW[i, j])
-                self.DTW[i+1,j+1] = cost + additionnal_cost
-        self.score = self.DTW[n,m]
-        """self.pairings = [[n-1,m-1]]
-        i,j = n,m
-        while i>1 or j>1:
-            current = self.DTW[i,j]
-            if self.DTW[i-1, j-1] <= current:
-                i -= 1
-                j -= 1
-            elif self.DTW[i, j-1] <= current:
-                j -= 1
-            elif self.DTW[i-1, j] <= current:
-                i -= 1
-            self.pairings.append([i-1,j-1])"""
-        self.pairings = DynamicTimeWarping.shortest_path(self.DTW, self.cost_matrix)
-        assert sum([self.cost_matrix[i,j] for i,j in self.pairings]) == self.score, f"Score:{self.score}, path score: {sum([self.cost_matrix[i,j] for i,j in self.pairings])}"
-
+                cost = costs[i,j]
+                additionnal_cost = min(distances[i+1,j], distances[i,j+1], distances[i, j])
+                distances[i+1,j+1] = cost + additionnal_cost
+        return distances
 
     @staticmethod
     def shortest_path(distances:np.ndarray,costs:np.ndarray):
@@ -87,11 +78,11 @@ class DynamicTimeWarping:
         return local_constraints
     
 
-    def global_constraints(self, debug=False):
+    def global_constraints(self):
+        """Computes the cost each pair contributed to save to the final score, using DTW"""
         N = self.bijection[0].size
-        n,m = self.values1.size, self.values2.size
-
-        if debug: DTWs, paths = np.zeros((N, n+1, m+1)), [None]
+        self.global_constraints_distances = np.zeros(N, self.values1.size+1, self.values2.size+1)
+        self.global_constraints_alternative_paths = [None]
 
         global_constraints = np.zeros((N))
         cost_matrix = np.copy(self.cost_matrix)
@@ -104,21 +95,14 @@ class DynamicTimeWarping:
             ix,iy = np.array(self.pairings)[index]
             cost_matrix[ix, iy] = 1e10 # put prohibitive cost
             
-            # recompute DTW with this modified cost matrix
-            DTW = np.ones((n+1,m+1))*np.inf
-            DTW[0,0] = 0
-            for i in range(n):
-                for j in range(m):
-                    cost = cost_matrix[i,j]
-                    additionnal_cost = min(DTW[i+1,j], DTW[i,j+1], DTW[i, j])
-                    DTW[i+1,j+1] = cost + additionnal_cost
-            score = DTW[n,m]
-            if debug: 
-                DTWs[index,:,:] = DTW
-                paths.append(DynamicTimeWarping.shortest_path(DTW, cost_matrix))
+            distances = DynamicTimeWarping.distances(cost_matrix) # recompute DTW with this modified cost matrix
+            
+            self.global_constraints_distances[index,:,:] = distances
+            self.global_constraints_alternative_paths.append(DynamicTimeWarping.shortest_path(distances, cost_matrix))
 
-            minimal_additionnal_cost = score - self.score
+            alternative_score = distances[-1,-1]
+            minimal_additionnal_cost = alternative_score - self.score
             global_constraints[index] = minimal_additionnal_cost
 
-        paths.append(None)
-        return global_constraints if not debug else (global_constraints, {"Cumulative costs":DTWs, "Shortest paths":paths})
+        self.global_constraints_alternative_paths.append(None)
+        return global_constraints
