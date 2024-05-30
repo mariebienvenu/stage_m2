@@ -16,6 +16,9 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
+
+import plotly
+plotly.io.kaleido.scope.mathjax= None # supposedly makes saving figures faster
  
 import app.Main as main
 import app.visualisation as vis
@@ -45,6 +48,8 @@ chosen_feature = possible_features[-1]
 
 directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/bouncing_ball_retiming/"
 
+SHOW = False
+
 ## Let's process our case
 main.Main.DTW_CONSTRAINTS_LOCAL = 10
 main_obj = main.Main(directory, verbose=2)
@@ -72,7 +77,6 @@ def distL1(x1, y1, x2, y2):
     while index_1<y1.size and index_2<y2.size:
         current_x = min(x1[index_1-1], x2[index_2-1])
         next_x1 , next_x2 = x1[index_1], x2[index_2]
-        debug = 1
         if next_x1 == current_x:
             index_1 += 1
         elif next_x2 == current_x:
@@ -86,7 +90,6 @@ def distL1(x1, y1, x2, y2):
             dist += (previous_diff+next_diff)/(2*(next_x2-current_x))
             index_1 += 1
             index_2 += 1
-        debug = 0
     return dist
 
 
@@ -146,7 +149,7 @@ fig1.update_layout(
      xaxis_title="Pairs over time",
      yaxis_title="Degree of constraint",
 )
-fig1.show()
+if SHOW: fig1.show()
 
 # Next, the alternative paths chosen by the global algo
 fig2 = go.Figure()
@@ -169,7 +172,7 @@ fig2.update_layout(
     xaxis_title="Time (frames) - initial",
     yaxis_title="Time (frames) - retook",
 )
-fig2.show()
+if SHOW: fig2.show()
 
 # Next, the difference between said paths and the reference one (the optimum)
 fig3 = vis.add_curve(y=diffs, x=list(range(1, len(paths))))
@@ -178,7 +181,7 @@ fig3.update_layout(
     xaxis_title="Pairs over time",
     yaxis_title="Absolute difference in L1 norm (in %)",
 )
-fig3.show()
+if SHOW: fig3.show()
 
 # Next, the warping and the "kept" indexes
 fig4 = vis.add_curve(y=dtw.bijection[1], x=dtw.bijection[0], name="DTW matches", style="lines")
@@ -186,7 +189,7 @@ vis.add_curve(y=warp.output_data, x=warp.input_data, style="markers", fig=fig4, 
 x = np.arange(warp.input_data[0], warp.input_data[-1]+1, 1)
 vis.add_curve(y=warp(x,None)[0], x=x, style="lines", fig=fig4, name="Warp function")
 fig4.update_layout(title="Time bijection", xaxis_title="Time (frames) - initial", yaxis_title="Time (frames) - retook")
-fig4.show()
+if SHOW: fig4.show()
 
 ## Let's sum up all this with a recap figure
 Color.next() # prettier
@@ -266,4 +269,95 @@ for index_list, color, name in zip([kept_indexes, discarded_for_integration_valu
 fig5.add_hline(y=CONSTRAINT_THRESHOLD, line_dash="dash", annotation_text=f"Additionnal cost > {CONSTRAINT_THRESHOLD}", opacity=0.7, row=1, col=1)
 fig5.add_hline(y=AREA_THRESHOLD,  line_dash="dash", annotation_text=f"Integration difference < {AREA_THRESHOLD}%", opacity=0.7, row=1, col=2)
 
-fig5.show()
+if SHOW: fig5.show()
+
+
+
+## New visualisation : the pairings done by an alternate path compared to original pairings
+
+Color.reset()
+Color.next()
+
+def illustrate_alternate_pairings(index:int, color1=Color.next(), color2=Color.next(), fig=None):
+    if fig is None : fig=go.Figure()
+
+    alternate_path = paths[index-1]
+    forbidden_pair = best_path[index]
+    alternate_pairs = [[i,j] for i,j in alternate_path if [i,j] not in best_path]
+
+    x1, y1, x2, y2 = dtw.times1, dtw.values1, dtw.times2, dtw.values2+2
+
+    vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=best_path, color="rgb(200, 200, 200)", fig=fig) # optimal path in light grey
+    vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=alternate_pairs, color="green", fig=fig)
+    vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=[forbidden_pair], color="red", fig=fig)
+
+    vis.add_curve(y=y2, x=x2, name="curve1", color=f'rgb{color2}', fig=fig)
+    vis.add_curve(y=y1, x=x1, name="curve2",color=f'rgb{color1}', fig=fig)
+
+    return fig
+
+zipped = zip(
+    [discarded_for_constraint_value, discarded_for_integration_value, discarded_for_local_maxima, kept_indexes[1:-1]],
+    ['discarded for being too cheap compared to ideal pairings', 'discarded for being too far from ideal pairings', 'discarded for not being a local constraint maximum', 'kept'],
+    ['too cheap compared to ideal pairings', 'too far from ideal pairings', 'not a local constraint maximum', 'kept'],
+)
+
+if False:
+    for indexes, name, subdirectory in zipped:
+        for index in indexes:
+            print(index)
+            fig = illustrate_alternate_pairings(index)
+            fig.update_layout(title=f'Alternate pairing for index={index} : {name}')
+            fig.update_layout(xaxis_title="Time (frames)", yaxis_title="Amplitude (normalized)")
+            fig.write_html(directory+f'/out/Feature curve matching simplification/{subdirectory}/{index}.html')
+            fig.write_image(directory+f'/out/Feature curve matching simplification/{subdirectory}/{index}.png', height=1080, width=1920) #, scale=2)
+            if SHOW: fig.show()
+
+
+## Let's see what our warped anim would look like with "naive" global constraints, and compare it with refined constraints.
+
+naive_indexes = [0] + [index for i,index in enumerate(pair_indexes) if is_constrained_enough[i]] + [len(constraints)-1]
+refined_indexes = kept_indexes
+
+fig = make_subplots(
+    rows=2, cols=2, 
+    shared_xaxes='all', 
+    subplot_titles=["Naive filtering of the matches", "Refined filtering of the matches", "Edited animation using naive warp", "Edited animation using refined warp"],
+    vertical_spacing=0.1, horizontal_spacing=0.1,
+)
+
+color1, color2 = Color.next(), Color.next()
+
+x1, y1, x2, y2 = dtw.times1+3, dtw.values1, dtw.times2+3, dtw.values2+4
+naive_pairings = [e for i,e in enumerate(best_path) if i in naive_indexes]
+refined_pairings = [e for i,e in enumerate(best_path) if i in refined_indexes]
+vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=best_path, color="rgb(210, 210, 210)", fig=fig, row=1, col=1)
+vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=best_path, color="rgb(210, 210, 210)", fig=fig, row=1, col=2)
+for col in [1,2]:
+    vis.add_curve(y=y2, x=x2, name="curve1", color=f'rgb{color2}', fig=fig, row=1, col=col)
+    vis.add_curve(y=y1, x=x1, name="curve2",color=f'rgb{color1}', fig=fig, row=1, col=col)
+vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=naive_pairings, color="green", fig=fig, row=1, col=1)
+vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=refined_pairings, color="green", fig=fig, row=1, col=2)
+
+
+time_in, time_out = dtw.bijection
+naive_warp = Warp.make_warp(X_in=time_in[naive_indexes]+3, X_out=time_out[naive_indexes]+3)
+refined_warp = Warp.make_warp(X_in=time_in[refined_indexes]+3, X_out=time_out[refined_indexes]+3)
+
+edited_naive_animcurve = main_obj.internals[0].make_new_anim(channels=[main_obj.connexions_of_interest[0]['channel']], warps=[naive_warp])
+edited_refined_animcurve = main_obj.internals[0].make_new_anim(channels=[main_obj.connexions_of_interest[0]['channel']], warps=[refined_warp])
+
+for new_anim, col in zip([edited_refined_animcurve, edited_naive_animcurve], [2,1]):
+    main_obj.new_anims = [new_anim]
+    main_obj.to_blender()
+    main_obj.blender_scene.from_software(in_place=False)
+    blender_anim = main_obj.blender_scene.get_animations()[0]
+    blender_anim.display(fig=fig, row=2, col=col)
+
+fig.update_layout(
+    xaxis3_title="Time (frames)",
+    xaxis4_title="Time (frames)",
+    yaxis1_title="Amplitude (arbitrary)",
+    yaxis3_title="Amplitude (blender unit)",
+)
+fig.show()
