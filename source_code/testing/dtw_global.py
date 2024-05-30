@@ -37,6 +37,7 @@ importlib.reload(main.VideoIO.Animation.Curve)
 importlib.reload(vis)
 
 Warp = main.InternalProcess.Warp
+DTW = main.InternalProcess.DynamicTimeWarping
 
 Color = main.VideoIO.Animation.Curve.Color
 Color.reset()
@@ -102,10 +103,10 @@ y_prime = [0, 1, 2, 3, 3, 2, 3, 4, 5]
 assert distL1(x, y, x_prime, y_prime)==4.5
 
 ## Now, let's get the info we want
-dtw = main_obj.internals[0].dtw
+dtw:DTW.DynamicTimeWarping = main_obj.internals[0].dtw
 best_path = dtw.pairings
-constraints, debug_dic = dtw.global_constraints(debug=True) # This takes a while
-distances, paths = debug_dic["Cumulative costs"], debug_dic["Shortest paths"]
+constraints = dtw.global_constraints() # This takes a while
+distances, paths = dtw.global_constraints_distances, dtw.global_constraints_alternative_paths
 paths = paths[1:-1] # first and last are None because we can't remove starting point or final point
 bijections = [(
         np.array([dtw.times1[i] for i,j in path]),
