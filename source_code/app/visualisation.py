@@ -1,5 +1,8 @@
 
+from typing import Any
+
 import numpy as np
+import numpy.typing as npt
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -74,11 +77,12 @@ def magnitude_angle(
     return fig
 
 
-def add_pairings(y1, y2, pairs, x1=None, x2=None, color=None, fig=None, row=None, col=None, doShow=False):
+def add_pairings(y1:np.ndarray, y2:np.ndarray, pairs:list[list[int]], x1:list|np.ndarray=None, x2:list|np.ndarray=None, color=None, fig=None, row=None, col=None, doShow=False):
     fig = fig if fig is not None else go.Figure()
     color = color if color is not None else 'rgba(100,100,100, 0.3)'
-    x1 = np.array(x1) if x1 is not None else np.array(list(range(y1.size)))
-    x2 = np.array(x2) if x2 is not None else np.array(list(range(y2.size)))
+    if x1 is None: x1 = list(range(y1.size))
+    if x2 is None: x2 = list(range(y2.size))
+    x1, x2 = np.array(x1), np.array(x2)
     for pair in pairs:
         i,j = pair
         fig.add_trace(go.Scatter(x=[x1[i], x2[j]], y=[y1[i], y2[j]], showlegend=False, line_color=color, mode="lines"), row=row, col=col)

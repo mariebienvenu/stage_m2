@@ -67,7 +67,7 @@ class DynamicTimeWarping:
         N = self.bijection[0].size
         local_constraints = np.zeros((N))
         for i in range(1, N-1):
-            ix,iy = np.array(self.pairings)[i] ## TODO make pairings an int array from start ? aller voir vis.add_pairings
+            ix,iy = self.pairings[i]
             center_cost = self.cost_matrix[ix, iy] # best cost (globally)
             w_size = min(window_size, ix, iy, range_x-ix, range_y-iy)
             upper_costs = self.cost_matrix[ix+1:ix+w_size, iy] + self.cost_matrix[ix, iy+1:iy+w_size]
@@ -81,7 +81,7 @@ class DynamicTimeWarping:
     def global_constraints(self):
         """Computes the cost each pair contributed to save to the final score, using DTW"""
         N = self.bijection[0].size
-        self.global_constraints_distances = np.zeros(N, self.values1.size+1, self.values2.size+1)
+        self.global_constraints_distances = np.zeros((N, self.values1.size+1, self.values2.size+1))
         self.global_constraints_alternative_paths = [None]
 
         global_constraints = np.zeros((N))
@@ -89,10 +89,10 @@ class DynamicTimeWarping:
 
         for index in range(1, N-1):
 
-            previous_ix, previous_iy = np.array(self.pairings)[index-1]
+            previous_ix, previous_iy = self.pairings[index-1]
             cost_matrix[previous_ix, previous_iy] = self.cost_matrix[previous_ix, previous_iy] # repair the cost matrix
 
-            ix,iy = np.array(self.pairings)[index]
+            ix,iy = self.pairings[index]
             cost_matrix[ix, iy] = 1e10 # put prohibitive cost
             
             distances = DynamicTimeWarping.distances(cost_matrix) # recompute DTW with this modified cost matrix
