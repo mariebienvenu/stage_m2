@@ -34,12 +34,13 @@ importlib.reload(main.SoftIO.b_utils)
 importlib.reload(main.VideoIO)
 importlib.reload(main.VideoIO.Animation)
 importlib.reload(main.VideoIO.Animation.Curve)
+importlib.reload(main.VideoIO.Animation.Curve.Color)
 importlib.reload(vis)
 
 Warp = main.InternalProcess.Warp
 DTW = main.InternalProcess.DynamicTimeWarping
 
-Color = main.VideoIO.Animation.Curve.Color
+Color = main.VideoIO.Animation.Curve.Color.Color
 Color.reset()
 Color.next()
 
@@ -49,7 +50,7 @@ chosen_feature = possible_features[-1]
 
 directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/bouncing_ball_retiming/"
 
-SHOW = False
+SHOW = True
 
 ## Let's process our case
 main.Main.DTW_CONSTRAINTS_LOCAL = 10
@@ -155,16 +156,17 @@ if SHOW: fig1.show()
 # Next, the alternative paths chosen by the global algo
 fig2 = go.Figure()
 for i,(path, diff, bijection) in enumerate(zip(paths,diffs, bijections)):
-     fig2.add_trace(go.Scatter(
+     vis.add_curve(
         y=bijection[1],
         x=bijection[0],
-        line_color=f'rgba(255,100,0,{diff/max(diffs)})',
+        color=(255,100,0,diff/max(diffs)),
         name=f"{i+1}",
-    ))
+        fig=fig2,
+     )
 vis.add_curve(
     y=dtw.bijection[1],
     x=dtw.bijection[0],
-    color='rgb(100,100,255)',
+    color=(100,100,255),
     fig=fig2,
     name="reference"
 )
@@ -194,7 +196,7 @@ if SHOW: fig4.show()
 
 ## Let's sum up all this with a recap figure
 Color.next() # prettier
-kept_color, diff_color, maxim_color = f"rgb{Color.next()}",f"rgb{Color.next()}", f"rgb{Color.next()}"
+kept_color, diff_color, maxim_color = Color.next(), Color.next(), Color.next()
 
 fig5 = make_subplots(
     rows=2, cols=2, 
@@ -217,8 +219,6 @@ vis.add_curve(y=constraints, name="Global constraints", row=1, col=1, fig=fig5)
 
 vis.add_curve(y=diffs, x=list(range(1, len(diffs)+1)), name="Integration relative differences", row=1, col=2, fig=fig5)
 
-#r,g,b = Color.next()
-#color = f'rgba{(r,g,b,0.3)}'
 for i,(index,bijection) in enumerate(zip(pair_indexes, bijections)):
     bij_x, bij_y = bijection
     color = None
@@ -236,7 +236,7 @@ for i,(index,bijection) in enumerate(zip(pair_indexes, bijections)):
     bij_x, bij_y = bijection
     vis.add_curve(y=bij_y, x=bij_x, color=color, name=f"Alternative path n°{i+1}", row=2, col=1, fig=fig5, legend=False)'''
 
-color = f"rgb{Color.next()}"
+color = Color.next()
 bij_x_ref, bij_y_ref = dtw.bijection
 vis.add_curve(y=bij_y_ref, x=bij_x_ref, name="Reference path", color=color, row=2, col=1, fig=fig5)
 
@@ -261,7 +261,7 @@ for index_list, color, name in zip([kept_indexes, discarded_for_integration_valu
                 x0=index-0.5, x1=index+0.5,
                 opacity=0.5,
                 line_width=0,
-                fillcolor=color,
+                fillcolor=f'rgb{color}',
                 row=1, col=colomn,
                 name=name,
                 showlegend=(index==index_list[0] and colomn==1),
@@ -288,12 +288,12 @@ def illustrate_alternate_pairings(index:int, color1=Color.next(), color2=Color.n
 
     x1, y1, x2, y2 = dtw.times1, dtw.values1, dtw.times2, dtw.values2+2
 
-    vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=best_path, color="rgb(200, 200, 200)", fig=fig) # optimal path in light grey
+    vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=best_path, color=(200, 200, 200), fig=fig) # optimal path in light grey
     vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=alternate_pairs, color="green", fig=fig)
     vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=[forbidden_pair], color="red", fig=fig)
 
-    vis.add_curve(y=y2, x=x2, name="curve1", color=f'rgb{color2}', fig=fig)
-    vis.add_curve(y=y1, x=x1, name="curve2",color=f'rgb{color1}', fig=fig)
+    vis.add_curve(y=y2, x=x2, name="curve1", color=color2, fig=fig)
+    vis.add_curve(y=y1, x=x1, name="curve2",color=color1, fig=fig)
 
     return fig
 
@@ -329,31 +329,34 @@ fig = make_subplots(
 
 color1, color2 = Color.next(), Color.next()
 
-x1, y1, x2, y2 = dtw.times1+3, dtw.values1, dtw.times2+3, dtw.values2+4
+x1, y1, x2, y2 = dtw.times1, dtw.values1, dtw.times2, dtw.values2+4
 naive_pairings = [e for i,e in enumerate(best_path) if i in naive_indexes]
 refined_pairings = [e for i,e in enumerate(best_path) if i in refined_indexes]
-vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=best_path, color="rgb(210, 210, 210)", fig=fig, row=1, col=1)
-vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=best_path, color="rgb(210, 210, 210)", fig=fig, row=1, col=2)
+vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=best_path, color=(210, 210, 210), opacity=1, fig=fig, row=1, col=1)
+vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=best_path, color=(210, 210, 210), opacity=1, fig=fig, row=1, col=2)
 for col in [1,2]:
-    vis.add_curve(y=y2, x=x2, name="curve1", color=f'rgb{color2}', fig=fig, row=1, col=col)
-    vis.add_curve(y=y1, x=x1, name="curve2",color=f'rgb{color1}', fig=fig, row=1, col=col)
-vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=naive_pairings, color="green", fig=fig, row=1, col=1)
-vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=refined_pairings, color="green", fig=fig, row=1, col=2)
+    vis.add_curve(y=y2, x=x2, name="curve1", color=color2, fig=fig, row=1, col=col)
+    vis.add_curve(y=y1, x=x1, name="curve2", color=color1, fig=fig, row=1, col=col)
+vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=naive_pairings, color="green", opacity=1, fig=fig, row=1, col=1)
+vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=refined_pairings, color="green", opacity=1, fig=fig, row=1, col=2)
 
 
 time_in, time_out = dtw.bijection
-naive_warp = Warp.make_warp(X_in=time_in[naive_indexes]+3, X_out=time_out[naive_indexes]+3)
-refined_warp = Warp.make_warp(X_in=time_in[refined_indexes]+3, X_out=time_out[refined_indexes]+3)
+naive_warp = Warp.make_warp(X_in=time_in[naive_indexes], X_out=time_out[naive_indexes])
+refined_warp = Warp.make_warp(X_in=time_in[refined_indexes], X_out=time_out[refined_indexes])
 
-edited_naive_animcurve = main_obj.internals[0].make_new_anim(channels=[main_obj.connexions_of_interest[0]['channel']], warps=[naive_warp])
-edited_refined_animcurve = main_obj.internals[0].make_new_anim(channels=[main_obj.connexions_of_interest[0]['channel']], warps=[refined_warp])
+edited_naive_anim = main_obj.internals[0].make_new_anim(channels=[main_obj.connexions_of_interest[0]['channel']], warps=[naive_warp])
+edited_refined_anim = main_obj.internals[0].make_new_anim(channels=[main_obj.connexions_of_interest[0]['channel']], warps=[refined_warp])
 
-for new_anim, col in zip([edited_refined_animcurve, edited_naive_animcurve], [2,1]):
-    main_obj.new_anims = [new_anim]
+main_obj.blender_scene.from_software(in_place=True)
+initial_anim = main_obj.blender_scene.get_animations()[0]
+
+for anim, col, opacity in zip([initial_anim, initial_anim, edited_refined_anim, edited_naive_anim], [1, 2, 2, 1], [0.3, 0.3, 1., 1.]):
+    main_obj.new_anims = [anim]
     main_obj.to_blender()
     main_obj.blender_scene.from_software(in_place=False)
     blender_anim = main_obj.blender_scene.get_animations()[0]
-    blender_anim.display(fig=fig, row=2, col=col)
+    blender_anim.display(opacity=opacity, fig=fig, row=2, col=col)
 
 fig.update_layout(
     xaxis3_title="Time (frames)",

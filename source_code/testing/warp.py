@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import cv2
 
 import app.Warp as Warp
+from app.Color import Color
 
 DO_SHOW = True
 
@@ -47,7 +48,7 @@ def get_colors(x,y):
     v = (y+1)/2*256
     hsv = np.vstack((h,s,v)).T
     grid = cv2.cvtColor(hsv.reshape(L,L, 3).astype(np.uint8), cv2.COLOR_HSV2RGB).reshape(L**2, 3)
-    return [f'rgb{tuple(grid[i,:])}' for i in range(L**2)]
+    return [Color.to_string(tuple(grid[i,:])) for i in range(L**2)]
 
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=X_in, y=Y_in, mode="markers", marker_color=get_colors(X_out, Y_out), marker_size=15))

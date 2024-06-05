@@ -17,7 +17,7 @@ class Color:
         cls.current = -1
 
     @staticmethod
-    def to_string(color:tuple[int, float]|str, opacity:float=1.): # TODO : find all occurences and replace using this method
+    def to_string(color:tuple[int, float]|str, opacity:float=1.):
         if opacity==1 and type(color)==str: return color
         if type(color)==str:
             if 'rgba' in color:

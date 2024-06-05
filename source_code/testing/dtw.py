@@ -26,7 +26,7 @@ print(f"Computed table: \n{pd.DataFrame(dtw.DTW)}")
 fig = go.Figure()
 vis.add_curve(y=y1, fig=fig)
 vis.add_curve(y=y2+4, fig=fig)
-vis.add_pairings(y1=y1, y2=y2+4, pairs=dtw.pairings, color='rgba(150,150,150,0.5)', fig=fig)
+vis.add_pairings(y1=y1, y2=y2+4, pairs=dtw.pairings, fig=fig)
 if DO_SHOW: fig.show()
 
 # MORE REALISTIC CASE: NOISY COSINE
@@ -48,7 +48,7 @@ print(f"DTW score in realistic case: {score:.2f}")
 fig2 = go.Figure()
 vis.add_curve(x=x1, y=y1, fig=fig2, name="Cosine")
 vis.add_curve(x=x2, y=y2+4, fig=fig2, name="Noisy, shifted and undersampled cosine")
-vis.add_pairings(x1=x1, y1=y1, x2=x2, y2=y2+4, pairs=p, color='rgba(150,150,150,0.5)', fig=fig2)
+vis.add_pairings(x1=x1, y1=y1, x2=x2, y2=y2+4, pairs=p, fig=fig2)
 if DO_SHOW: fig2.show()
 
 ## LOCAL AND GLOBAL CONSTRAINTS: IMPULSIVE SIGNAL
@@ -68,8 +68,8 @@ curve1, curve2 = Curve(co1), Curve(co2)
 curve1.normalize(), curve2.normalize()
 
 dtw = DynamicTimeWarping(curve1, curve2)
-constraints = dtw.measure_local_constraint()
-global_constraints, DTWs = dtw.global_constraints(debug=True)
+constraints = dtw.local_constraints()
+global_constraints = dtw.global_constraints()
 
 fig3 = go.Figure()
 vis.add_curve(x=x1, y=y1, fig=fig3, name="Curve1")
@@ -86,7 +86,7 @@ if DO_SHOW: fig4.show()
 
 fig5 = make_subplots(rows=2, cols=3, row_titles=["Pair location in cost matrix", "New distance propagation"], column_titles=["On spike", "Right next to spike", "Noisy area"])
 for column, index in enumerate([12, 13, 85]):
-    DTW = DTWs[index, :, :]
+    DTW = dtw.global_constraints_distances[index, :, :]
     ix, iy = np.array(dtw.pairings)[::-1][index]
     vis.add_heatmap(pd.DataFrame(dtw.cost_matrix), fig=fig5, row=1, col=column+1)
     fig5.add_vline(x=iy, line_color='rgb(1, 255, 1)', row=1, col=column+1, line_dash="dot")

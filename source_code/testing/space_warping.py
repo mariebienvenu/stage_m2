@@ -44,8 +44,8 @@ x6 = 5*np.cos((t6+ramp*0.2)/10*(1*np.pi)) #si on veut checker le cas où c'est l
 x7 = 5.1*np.cos(t6/10*(1*np.pi)) - 0.1
 
 t8 = np.linspace(1, 10, 100)
-x8 = 1./np.sqrt(2*np.pi)*np.exp(-(t8-5)**2/2) + 0.02*np.random.random(t8.shape)
-x9 = 1./np.sqrt(2*np.pi)*np.exp(-(t8-5)**2/2/0.5**2) + 0.02*np.random.random(t8.shape)
+x8 = 1./np.sqrt(2*np.pi)*np.exp(-(t8-5)**2/2) #+ 0.02*np.random.random(t8.shape)
+x9 = 1./np.sqrt(2*np.pi)*np.exp(-(t8-5)**2/2/0.5**2) #+ 0.02*np.random.random(t8.shape)
 
 data = [[t0, x0, x1], [t2, x2, x3], [t4, x4, x5], [t6, x6, x7], [t8, x8, x9]]
 
@@ -144,7 +144,7 @@ print(f"Score: {score1} Score:{sum(costs)}")
 
 co1 = np.vstack((t,x)).T
 co2 = np.vstack((t,y)).T
-curve1, curve2 = Curve(co1), Curve(co2)
+curve1, curve2 = Curve(co1), Curve(co2)  
 dtw = DynamicTimeWarping(curve1, curve2)
 dtw_pairs = dtw.pairings
 

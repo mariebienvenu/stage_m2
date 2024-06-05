@@ -26,8 +26,7 @@ class Animation(List[Curve.Curve]):
 
     def display(self, handles=True, style="markers", opacity=1., fig=None, row=None, col=None, doShow=False):
         for curve in self:
-            color = f"rgba{getattr(curve, 'color', Color.Color.next())}"[:-1]+f", {opacity})"
-            fig = curve.display(handles=handles, style=style, color=color, fig=fig, row=row, col=col)
+            fig = curve.display(handles=handles, style=style, color=getattr(curve, 'color',None), opacity=opacity, fig=fig, row=row, col=col)
         if doShow: fig.show()
         return fig
     
