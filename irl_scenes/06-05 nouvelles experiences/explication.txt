@@ -1,0 +1,9 @@
+- par rapport à l'expérience des 4 claquements de doigt: 
+	- plus de claquements (7) : P1010248
+	- moins de claquements (3) : P1010249
+- marche avec les mains
+	- lente : P1010251
+	- rapide : P1010252
+- claquements de mains
+	- bam bambam bam : P1010253
+	- bambam bam bam : P1010254
