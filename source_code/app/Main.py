@@ -48,7 +48,6 @@ class Main(absIO.AbstractIO):
         self.blender_scene = SoftIO.SoftIO(directory=directory, verbose=verbose-1)
         
         self.blender_scene.check_file(self.directory+self.blender_scene_filename)
-        self.internals = None
     
     @property
     def config_filename(self) -> str:
@@ -143,7 +142,7 @@ class Main(absIO.AbstractIO):
         original_curve = self.blender_scene.get_animations()[animation_index].find(channel)
         edited_curve =  SoftIO.b_utils.get_animation("Ball_edited").find(channel) # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
 
-        Color.reset()
+        Color.Color.reset()
         
         ## Video feature : original VS retake
         fig0 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: initial', f'Video feature curve: retook'], vertical_spacing=0.1)
