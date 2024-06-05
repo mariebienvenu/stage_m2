@@ -18,14 +18,14 @@ class DynamicTimeWarping:
         )
     
 
-    def compute(self):
+    def compute(self, eps=1e-11):
         self.values1, self.values2 = np.ravel(self.curve1.get_values()), np.ravel(self.curve2.get_values())
         n,m = self.values1.size, self.values2.size
         self.cost_matrix = np.array([[abs(self.values1[i] - self.values2[j]) for j in range(m)] for i in range(n)]) # coût d'une paire = distance entre valeurs
         self.DTW = DynamicTimeWarping.distances(self.cost_matrix)
         self.score = self.DTW[n,m]
         self.pairings = DynamicTimeWarping.shortest_path(self.DTW, self.cost_matrix)
-        assert sum([self.cost_matrix[i,j] for i,j in self.pairings]) == self.score, f"DTW score does not match :\n\t final distance:{self.score},\n\t path cumulative cost: {sum([self.cost_matrix[i,j] for i,j in self.pairings])}"
+        assert abs(sum([self.cost_matrix[i,j] for i,j in self.pairings]) - self.score)<eps, f"DTW score does not match :\n\t final distance:{self.score},\n\t path cumulative cost: {sum([self.cost_matrix[i,j] for i,j in self.pairings])}"
 
 
     @staticmethod
