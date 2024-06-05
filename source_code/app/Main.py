@@ -18,18 +18,19 @@ Color = VideoIO.Color
 def default_config():
     return {
         "video extension": ".mp4",
-        "video reference filename" : "ref",
-        "video target filename" : "target",
-        "blender scene filename" : "scene.blend",
+        "video reference filename": "ref",
+        "video target filename": "target",
+        "blender scene filename": "scene.blend",
         "connexions of interest": [
             {
-                "object name":"Ball",
-                "channel":"Location Y",
-                "video feature":"First derivative of Velocity Y",
-                "is impulsive":True,
+                "object name": "Ball",
+                "channel": "Location Y",
+                "video feature": "First derivative of Velocity Y",
+                "is impulsive": True,
             },
         ],
         "edit in place": False,
+        "temporal offset": 0, # offset to add to video curves to be aligned in time with the animation curves ; should be small (less than 5 frames).
     }
 
 
@@ -77,13 +78,17 @@ class Main(absIO.AbstractIO):
     def edit_in_place(self) -> bool:
         return self.config["edit in place"]
 
+    @property
+    def temporal_offset(self) -> int:
+        return self.config["temporal offset"]
+    
 
     def process(self, force=False):
         if self.is_processed and not force: return self.new_anims
 
         vanim_ref, vanim_target = self.video_ref.to_animation(), self.video_target.to_animation()
-        vanim_ref.time_transl(self.blender_scene.start-vanim_ref.time_range[0]-1) # -1 parce que en dérivant on décale de une frame donc si on veut rester sur start...
-        vanim_target.time_transl(self.blender_scene.start-vanim_target.time_range[0]-1)
+        vanim_ref.time_transl(self.blender_scene.start-vanim_ref.time_range[0]-1+self.temporal_offset) # -1 parce que en dérivant on décale de une frame donc si on veut rester sur start...
+        vanim_target.time_transl(self.blender_scene.start-vanim_target.time_range[0]-1+self.temporal_offset)
         vanim_ref.update_time_range()
         vanim_target.update_time_range()
         vanim_ref.enrich()
