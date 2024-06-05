@@ -44,7 +44,7 @@ class InternalProcess:
         self.kept_indexes.append(self.dtw_constraints.size-1)
         if len(self.kept_indexes)==2:
             if verbose>0: print(f"Warp simplification did not work ; no index has a certainty better than {constraint_threshold}. Reverting to classic warp computation.")
-            return self.make_warp(feature, only_temporal, verbose)
+            return self.make_warp(feature, only_temporal, interpolation, verbose=verbose)
         warp = Warp.make_warp(dimension=1, interpolation=interpolation, X_in=time_in[self.kept_indexes], X_out=time_out[self.kept_indexes])
         return warp
         
