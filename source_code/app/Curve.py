@@ -7,7 +7,7 @@ import numpy as np
 import plotly.graph_objects as go
 import bpy
 
-from app.Color import Color
+import app.Color as Color
 import app.maths_utils as m_utils
 import app.visualisation as vis
 
@@ -125,7 +125,8 @@ class Curve:
         
         for (key, value) in kwargs.items():
             assert key not in dir(self), f"Invalid name: {key} is already taken."
-            self.__setattr__(key, value) # no autocomplete for these
+            if value is not None :
+                self.__setattr__(key, value) # no autocomplete for these
 
     def check(self):
         assert len(self.array.shape)==2 and self.array.shape[1] == Curve.N_ATTRIBUTES, f"Curve self checking failed: array shape is {self.array.shape} instead of (N, {Curve.N_ATTRIBUTES})"
@@ -215,22 +216,21 @@ class Curve:
         self.array[id, 1:3] = new_time, new_value
 
 
-    def display(self, handles=True, style="markers", color=None, name=None, fig=None, row=None, col=None, doShow=False):
-        if fig is None: fig = go.Figure()
+    def display(self, handles=True, style="markers", color=None, opacity=1., name=None, fig=None, row=None, col=None, doShow=False):
+        if color is None: color = getattr(self, 'color', Color.Color.next())
+        if name is None: name = self.fullname
         times = self.get_times()
         values = self.get_values()
-        color = self.color if ('color' in dir(self) and self.color is not None) else (color if color is not None else Color.next())
-        name = name if name is not None else self.fullname
         if not handles:
-            vis.add_curve(x=times, y=values, name=name, style=style, color=f'rgb{color}', fig=fig, row=row, col=col)
+            fig = vis.add_curve(x=times, y=values, name=name, style=style, color=color, opacity=opacity, fig=fig, row=row, col=col)
         if handles:
             handle_times = np.concatenate((self.get_attribute('handle_left_x'), self.get_attribute('handle_right_x')))
             handle_values = np.concatenate((self.get_attribute('handle_left_y'), self.get_attribute('handle_right_y')))
             for id in range(len(self)): # drawing the keyframes with tangent handles
                 x = [handle_times[id], times[id], handle_times[id+len(self)]]
                 y = [handle_values[id], values[id], handle_values[id+len(self)]]
-                vis.add_curve(x=x, y=y, style="markers+lines", color=f'rgba{color+tuple([0.4])}', fig=fig, row=row, col=col, legend=False)
-            self.sample().display(handles=False, style='lines', color=color, name=name, fig=fig, row=row, col=col) # drawing the interpolated curve
+                fig = vis.add_curve(x=x, y=y, style="markers+lines", color=color, opacity=0.4*opacity, fig=fig, row=row, col=col, legend=False)
+            fig = self.sample().display(handles=False, style='lines', color=color, opacity=opacity, name=name, fig=fig, row=row, col=col) # drawing the interpolated curve
         if doShow: fig.show()
         return fig
     
@@ -432,5 +432,5 @@ class Curve:
     
 
     def __deepcopy__(self, memo):
-        new = Curve.from_array(self.array.__deepcopy__(memo), fullname=self.fullname, color=getattr(self, "color"))
+        new = Curve.from_array(self.array.__deepcopy__(memo), fullname=self.fullname, color=getattr(self, "color", None))
         return new

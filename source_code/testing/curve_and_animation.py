@@ -2,7 +2,8 @@ import numpy as np
 from random import random
 from plotly.subplots import make_subplots
 
-from app.Curve import Curve, Color
+from app.Curve import Curve
+from app.Color import Color
 from app.Animation import Animation
 import app.visualisation as vis
 
@@ -20,7 +21,7 @@ class FakeCurvePointer:
                 return v
             
 DO_SHOW = False
-            
+
 # COLOR
             
 for _ in range(20):
@@ -101,6 +102,7 @@ curve_with_handles = Curve(
     tangent_right_handle_x=right_x,
     tangent_right_handle_y=right_y,
     fullname='original curve',
+    pointer = FakeCurvePointer(times, values)
 )
 curve_with_handles.set_keyframe_attribute(9, "handle_left_type", "FREE")
 curve_with_handles.set_keyframe_attribute(9, "handle_right_type", "FREE")
@@ -165,7 +167,8 @@ fake_blender_curve = Curve(
     tangent_left_handle_x=left_handle_x,
     tangent_left_handle_y=left_handle_y,
     tangent_right_handle_x=right_handle_x,
-    tangent_right_handle_y=right_handle_y
+    tangent_right_handle_y=right_handle_y,
+    pointer = FakeCurvePointer(times, values)
 )
 
 start, stop = fake_blender_curve.get_auto_crop()

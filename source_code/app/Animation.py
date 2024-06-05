@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 import app.Curve as Curve
+import app.Color as Color
 import app.maths_utils as m_utils
 
 class TimeIndication(Enum):
@@ -23,9 +24,10 @@ class Animation(List[Curve.Curve]):
         super().__init__(curves)
 
 
-    def display(self, handles=True, style="markers", fig=None, row=None, col=None, doShow=False):
+    def display(self, handles=True, style="markers", opacity=1., fig=None, row=None, col=None, doShow=False):
         for curve in self:
-            fig = curve.display(handles=handles, style=style, fig=fig, row=row, col=col)
+            color = f"rgba{getattr(curve, 'color', Color.Color.next())}"[:-1]+f", {opacity})"
+            fig = curve.display(handles=handles, style=style, color=color, fig=fig, row=row, col=col)
         if doShow: fig.show()
         return fig
     
@@ -38,38 +40,47 @@ class Animation(List[Curve.Curve]):
     def sample(
             self,
             n_samples:int|Iterable[int]|None=None,
-            start:float|Iterable[float]|TimeIndication=TimeIndication.ALL,
-            stop:float|Iterable[float]|TimeIndication=TimeIndication.ALL
+            start:float|Iterable[float]|TimeIndication|str=TimeIndication.ALL,
+            stop:float|Iterable[float]|TimeIndication|str=TimeIndication.ALL
         ):
         """Does not sample "in place". Stops are included as sampling times."""
         if n_samples is None: return Animation([curve.sample() for curve in self])
         try:
             enumerate(n_samples)
-        except AttributeError: # "int is not iterable"
+        except TypeError: # "int is not iterable"
             n_samples = [n_samples]*len(self)
-
-        for param, operator, index in zip([start, stop], [min, max], [0,1]):
+        
+        parameters = [start, stop]
+        names = ['start', 'stop']
+        for i, param in enumerate(parameters):
             try:
-                param.value
+                param.split()
+            except AttributeError: # "Object has no attribute 'split'"
+                pass
+            else:
+                parameters[i] = TimeIndication[param.upper()]
+        for param, operator, index in zip(parameters, [min, max], [0,1]):
+            try:
+                param.value # differentiate between enums and the rest
             except AttributeError: # "list does not have value", or "float does not have value"
                 try:
                     enumerate(param)
-                except AttributeError: # "float is not iterable"
-                    param = [param]*len(self)
-                finally:
-                    assert len(param)==len(self), f"Wrong size for '{param._name_}' parameter. Expected {len(self)}, got {len(param)}"
-            finally:
+                except TypeError: # "float is not iterable"
+                    parameters[index] = [param]*len(self)
+                else:
+                    assert len(param)==len(self), f"Wrong size for '{names[index]}' parameter. Expected {len(self)}, got {len(param)}"
+            else:
                 if param in [TimeIndication.ALL, TimeIndication.SAME]:
-                    param = [operator([curve.time_range[index] for curve in self])]*len(self)
+                    parameters[index] = [operator([curve.time_range[index] for curve in self])]*len(self)
                 elif param is TimeIndication.EACH:
-                    param = [curve.time_range[index] for curve in self]
+                    parameters[index] = [curve.time_range[index] for curve in self]
                 else:
                     raise TypeError(f"Did not provide with correct enum. Expected TimeIndication, got {type(param)}.")
 
         resampled_anim = Animation()
-        start : Iterable = start #          -
-        stop : Iterable = stop #            - > Necessary to have autocomplete on curve three lines later
-        n_samples : Iterable = n_samples #  -
+        start : Iterable = parameters[0] #          -
+        stop : Iterable = parameters[1]  #          - > Necessary to have autocomplete on curve three lines later
+        n_samples : Iterable = n_samples #          -
         for curve, strt, stp, n in zip(self, start, stop, n_samples, strict=True):
             times = np.concatenate((np.arange(strt, stp, step=(stp-strt)/(n-1)), [stp])) if strt!=stp else np.array([strt])
             new_curve = curve.sample(times)
