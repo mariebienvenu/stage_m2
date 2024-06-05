@@ -168,3 +168,5 @@ _*.mp4
 
 #TOO BIG
 *.MP4
+maya_scenes/*.avi
+movies/*.avi
