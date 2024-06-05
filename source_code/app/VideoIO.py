@@ -158,7 +158,7 @@ class VideoIO(abstract.AbstractIO):
         self.process()
 
         frame_times = self.oflow_frame_times if time_in_seconds else np.array(list(range(self.oflow_len)))
-        Color.reset()
+        Color.Color.reset()
 
         vis.magnitude_angle(frame_times, self.magnitude_means, self.magnitude_stds, self.angle_means, self.angle_stds, fig=fig, rows=[1,2], cols=[1,1])
         vis.add_curve(y=self.velocity_y, x=self.position_y, name="y'=f(y) - Portrait de phase de Y", fig=fig, col=3, row=1)
