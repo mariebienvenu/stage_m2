@@ -34,6 +34,15 @@ class AbstractIO:
         for key, value in default.items():
             if key not in self.config:
                 self.config[key] = value
+            if type(value) is dict:
+                for key2, value2 in value.items():
+                    if key2 not in self.config[key]:
+                        self.config[key][key2] = value2
+            if type(value) is list and len(value)==1 and type(value[0]) is dict:
+                for index in range(len(self.config[key])):
+                    for key2, value2 in value[0].items():
+                        if key2 not in self.config[key][index]:
+                            self.config[key][index][key2] = value2
 
     
     def save_config(self):
