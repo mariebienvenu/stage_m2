@@ -163,9 +163,9 @@ class VideoIO(abstract.AbstractIO):
         vis.magnitude_angle(frame_times, self.magnitude_means, self.magnitude_stds, self.angle_means, self.angle_stds, fig=fig, rows=[1,2], cols=[1,1])
         vis.add_curve(y=self.velocity_y, x=self.position_y, name="y'=f(y) - Portrait de phase de Y", fig=fig, col=3, row=1)
         vis.add_curve(y=self.velocity_x, x=self.position_x, name="x'=f(x) - Portrait de phase de X", fig=fig, col=3, row=1)
-        vis.add_curve(y=self.velocity_y, x=frame_times, name="y=f(t) - Velocity along X axis", fig=fig, col=2, row=1)
+        vis.add_curve(y=self.velocity_y, x=frame_times, name="y=f(t) - Velocity along Y axis", fig=fig, col=2, row=1)
         vis.add_curve(y=self.velocity_x, x=frame_times, name="x=f(t) - Velocity along X axis", fig=fig, col=2, row=1)
-        vis.add_curve(y=self.position_y, x=frame_times, name="y=f(t) - Translation along X axis", fig=fig, col=2, row=2)
+        vis.add_curve(y=self.position_y, x=frame_times, name="y=f(t) - Translation along Y axis", fig=fig, col=2, row=2)
         vis.add_curve(y=self.position_x, x=frame_times, name="x=f(t) - Translation along X axis", fig=fig, col=2, row=2)
         vis.add_curve(y=self.position_y, x=self.position_x, name="y=f(x) - Trajectoire", fig=fig, col=3, row=2)
 
