@@ -25,8 +25,8 @@ def integrale1(array, step:int|float):
         res[i+1] = curr
     return res
 
-def integrale3(array, step:int|float):
-    x = np.array(list(range(np.array(array).size)))/step
+def integrale3(array, x=None, step:int|float=1):
+    if x is None: x = np.array(list(range(np.array(array).size)))/step
     res = [0]
     for i in range(1, x.size):
         y = array[:i]
