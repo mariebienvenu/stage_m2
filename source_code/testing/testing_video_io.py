@@ -1,8 +1,7 @@
 
 import os, sys
 
-from app.VideoIO import VideoIO
-from app.VideoIO import default_config
+from app.video_io import VideoIO, default_config
 
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"

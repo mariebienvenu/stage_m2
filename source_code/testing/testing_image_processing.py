@@ -3,8 +3,8 @@ import os
 import numpy as np
 import plotly.express as px
 
-from app.Video import Video
-from app.ImageProcessing import ImageProcessing
+from app.video import Video
+from app.image_processing import ImageProcessing
 
 
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'

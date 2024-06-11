@@ -5,7 +5,7 @@ from time import time
 import numpy as np
 import cv2
 
-from app.Video import Video
+from app.video import Video
 
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"

@@ -7,13 +7,14 @@ import pandas as pd
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
-import app.AbstractIO as absIO
-import app.InternalProcess as InternalProcess
-import app.VideoIO as VideoIO
-import app.SoftwareIO as SoftIO
+from app.abstract_io import AbstractIO
+from app.internal_process import InternalProcess
+from app.video_io import VideoIO
+from app.dcc_io import SoftIO
 import app.visualisation as vis
-
-Color = VideoIO.Color
+from app.color import Color
+import app.warping as warping
+import app.blender_utils as b_utils
 
 def default_config():
     return {
@@ -34,7 +35,7 @@ def default_config():
     }
 
 
-class Main(absIO.AbstractIO):
+class Main(AbstractIO):
 
     WARP_INTERPOLATION = "linear" # the way the warping is interpolated between matches
     DTW_CONSTRAINTS_LOCAL = 10 # if 0 : dtw constraint computation is global ; else, it is local with a range of DTW_CONSTRAINTS_LOCAL (in frames)
@@ -43,9 +44,9 @@ class Main(absIO.AbstractIO):
         super(Main, self).__init__(directory, verbose)
         self.finalize_init(default_config)
 
-        self.video_ref = VideoIO.VideoIO(directory=directory, video_name=self.video_reference_filename, extension=self.video_extension, verbose=verbose-1)
-        self.video_target = VideoIO.VideoIO(directory=directory, video_name=self.video_target_filename, extension=self.video_extension, verbose=verbose-1)
-        self.blender_scene = SoftIO.SoftIO(directory=directory, verbose=verbose-1)
+        self.video_ref = VideoIO(directory=directory, video_name=self.video_reference_filename, extension=self.video_extension, verbose=verbose-1)
+        self.video_target = VideoIO(directory=directory, video_name=self.video_target_filename, extension=self.video_extension, verbose=verbose-1)
+        self.blender_scene = SoftIO(directory=directory, verbose=verbose-1)
         
         self.blender_scene.check_file(self.directory+self.blender_scene_filename)
     
@@ -97,10 +98,10 @@ class Main(absIO.AbstractIO):
         #    banim.enrich() # TODO -- will be useful when we automatically decide of connexions based on multi-modal correlations
 
         self.internals = [
-            InternalProcess.InternalProcess(vanim_ref, vanim_target, banim) for banim in banims
+            InternalProcess(vanim_ref, vanim_target, banim) for banim in banims
         ]
 
-        self.warps:List[List[InternalProcess.Warp.LinearWarp1D]] = [[] for _ in self.internals]
+        self.warps:List[List[warping.LinearWarp1D]] = [[] for _ in self.internals]
         self.channels:List[List[str]] = [[] for _ in self.internals]
         self.features:List[List[str]] = [[] for _ in self.internals]
         for connexion in self.connexions_of_interest:
@@ -140,9 +141,9 @@ class Main(absIO.AbstractIO):
         dtw = internal.dtw
         feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
         original_curve = self.blender_scene.get_animations()[animation_index].find(channel)
-        edited_curve =  SoftIO.b_utils.get_animation("Ball_edited").find(channel) # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
+        edited_curve =  b_utils.get_animation("Ball_edited").find(channel) # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
 
-        Color.Color.reset()
+        Color.reset()
         
         ## Video feature : original VS retake
         fig0 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: initial', f'Video feature curve: retook'], vertical_spacing=0.1)

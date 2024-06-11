@@ -5,8 +5,9 @@ import pandas as pd
 from plotly.subplots import make_subplots
 
 import app.visualisation as vis
-from app.DynamicTimeWarping import DynamicTimeWarping
-from app.Curve import Curve, Color
+from app.dynamic_time_warping import DynamicTimeWarping
+from app.curve import Curve
+from app.color import Color
 
 Color.reset()
 np.random.seed(7) #5

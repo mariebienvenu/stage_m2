@@ -6,10 +6,10 @@ from time import time
 
 t0 = time()
 
-from app.VideoIO import VideoIO, default_config
-from app.Color import Color
-from app.Video import Video
-from app.ImageProcessing import ImageProcessing
+from app.video_io import VideoIO, default_config
+from app.color import Color
+from app.video import Video
+from app.image_processing import ImageProcessing
 
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"

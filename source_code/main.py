@@ -17,23 +17,28 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
  
-import app.Main as main
+import app.main as main
 import app.visualisation as vis
+import app.dynamic_time_warping as DTW
+import app.abstract_io, app.internal_process, app.warping, app.dcc_io, app.blender_utils, app.video_io
+import app.animation, app.curve, app.color
 
 import importlib
 importlib.reload(main)
-importlib.reload(main.absIO)
-importlib.reload(main.InternalProcess)
-importlib.reload(main.InternalProcess.Warp)
-importlib.reload(main.InternalProcess.DynamicTimeWarping)
-importlib.reload(main.SoftIO)
-importlib.reload(main.SoftIO.b_utils)
-importlib.reload(main.VideoIO)
-importlib.reload(main.VideoIO.Animation)
-importlib.reload(main.VideoIO.Animation.Curve)
+importlib.reload(app.abstract_io)
+importlib.reload(app.internal_process)
+importlib.reload(app.warping)
+importlib.reload(DTW)
+importlib.reload(app.dcc_io)
+importlib.reload(app.blender_utils)
+importlib.reload(app.video_io)
+importlib.reload(app.animation)
+importlib.reload(app.curve)
+importlib.reload(app.color)
 importlib.reload(vis)
 
-Color = main.VideoIO.Animation.Curve.Color
+Color = app.color.Color
+warping = app.warping
 Color.reset()
 Color.next()
 
@@ -68,7 +73,7 @@ fig.show()
 
 from app.maths_utils import correlation
 
-def get_offset_correlation(curve1:main.VideoIO.Animation.Curve.Curve, curve2:main.VideoIO.Animation.Curve.Curve, offset_max=10):
+def get_offset_correlation(curve1:app.curve.Curve, curve2:app.curve.Curve, offset_max=10):
     # curves have to be sampled with the same timestep but not necessarily with exactly the same time range
     offsets = list(range(-offset_max, offset_max+1))
     correlations=np.zeros((len(offsets)))

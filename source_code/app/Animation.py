@@ -8,8 +8,7 @@ from enum import Enum
 import numpy as np
 import pandas as pd
 
-import app.Curve as Curve
-import app.Color as Color
+from app.curve import Curve
 import app.maths_utils as m_utils
 
 class TimeIndication(Enum):
@@ -18,7 +17,7 @@ class TimeIndication(Enum):
     SAME = 2
 
 
-class Animation(List[Curve.Curve]):
+class Animation(List[Curve]):
 
     def __init__(self, curves=[]):
         super().__init__(curves)
@@ -113,7 +112,7 @@ class Animation(List[Curve.Curve]):
     def load(directory):
         res, i = Animation(), 0
         while os.path.exists(directory+f'/{i}.txt'):
-            curve = Curve.Curve.load(directory+f'/{i}.txt')
+            curve = Curve.load(directory+f'/{i}.txt')
             res.append(curve)
             i += 1
         return res

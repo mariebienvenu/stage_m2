@@ -1,7 +1,7 @@
 from typing import Protocol, List
 from enum import Enum
 
-from protocols.curve_types import AnimationCurve
+from types.curve_types import AnimationCurve
 
 class RotationOrder(Enum):
     "Specifies the rotation order of an object."

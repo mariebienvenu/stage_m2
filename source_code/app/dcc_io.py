@@ -3,8 +3,8 @@ import os
 from typing import List
 
 import app.blender_utils as b_utils
-import app.Animation as Animation
-import app.AbstractIO as AbstractIO
+from app.animation import Animation
+from app.abstract_io import AbstractIO
 # bientôt: import app.maya_utils as maya_utils
 
 def default_config():
@@ -19,7 +19,7 @@ def default_config():
     }
 
 
-class SoftIO(AbstractIO.AbstractIO):
+class SoftIO(AbstractIO):
 
     def __init__(self, directory, verbose=0):
         super(SoftIO, self).__init__(directory, verbose)
@@ -65,7 +65,7 @@ class SoftIO(AbstractIO.AbstractIO):
         return self._animations
 
 
-    def set_animations(self, animations:List[Animation.Animation], in_place=False):
+    def set_animations(self, animations:List[Animation], in_place=False):
         self._animations = animations
         self.to_software(in_place=in_place)
     

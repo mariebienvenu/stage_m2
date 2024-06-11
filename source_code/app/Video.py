@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from enum import Enum
 
-from app.ImageProcessing import ImageProcessing
+from app.image_processing import ImageProcessing
 
 
 def no_crop(height, width):
@@ -96,7 +96,7 @@ class Video:
             print(f'Displaying frame {start+diff}')
 
 
-    def get_frame(self, index, image_processing : ImageProcessing|str = ImageProcessing.none, crop=None):
+    def get_frame(self, index, image_processing : ImageProcessing|str = ImageProcessing.none, crop=None) -> np.ndarray :
         crop = no_crop(self.frame_height, self.frame_width) if crop is None else crop
         self.load()
         assert index>=0 and index<self.frame_count, f"Index {index} out of video range [0, {self.frame_count}]."

@@ -13,14 +13,14 @@ def check_sys_path(
 
 check_sys_path()
 
-import app.SoftwareIO as sio
+import app.dcc_io as dio
 
 import importlib
-importlib.reload(sio)
+importlib.reload(dio)
 
 
 directory = "C:/Users/Marie Bienvenu/stage_m2/afac/"
-softIO = sio.SoftIO(directory, verbose=2)
+softIO = dio.SoftIO(directory, verbose=2)
 softIO.process() # will fetch the animation from the software
 
 fig = go.Figure()

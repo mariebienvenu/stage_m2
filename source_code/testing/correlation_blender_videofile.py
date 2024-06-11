@@ -20,24 +20,27 @@ from tqdm import tqdm
 
 import bpy
 
-from app.Video import Video
-import app.VideoIO as VideoIO
-import app.OpticalFlow as OpticalFlow
+from app.video import Video
+import app.video_io as VIO
+import app.optical_flow as oflow
 import app.visualisation as vis
 import app.blender_utils as b_utils
+import app.curve as C
+import app.animation as A
+import app.maths_utils as m_utils
 
 import importlib
 importlib.reload(b_utils)
-importlib.reload(VideoIO)
+importlib.reload(VIO)
+importlib.reload(C)
+importlib.reload(A)
+importlib.reload(m_utils)
 
 import app.blender_utils as b_utils
-import app.VideoIO as VideoIO
-
-Curve = b_utils.Curve
-Animation = b_utils.Animation
-m_utils = VideoIO.m_utils
-
-importlib.reload(Curve)
+import app.video_io as VIO
+import app.curve as C
+import app.animation as A
+import app.maths_utils as m_utils
 
 blender_filepath = bpy.data.filepath
 scene_path = '/'.join(blender_filepath.split('\\')[:-1])+'/'
@@ -51,10 +54,10 @@ VIDEO_NAME = 'P1010236'
 
 #video_io = VideoIO.VideoIO(f'{data_path}/{subdirectory}/', VIDEO_NAME, verbose=10)
 #video_movement = video_io.to_animation()
-video_movement = Animation.Animation().load(f'{data_path}/{subdirectory}/{VIDEO_NAME}/')
+video_movement = A.Animation().load(f'{data_path}/{subdirectory}/{VIDEO_NAME}/')
 frame_times = video_movement[0].get_times()
 
-additionnal_curves_video = Animation.Animation()
+additionnal_curves_video = A.Animation()
 for curve in video_movement:
     first_derivative = curve.first_derivative()
     bottom, top = first_derivative.get_value_range()
@@ -73,7 +76,7 @@ animation = b_utils.get_animation(NAME)
 for curve in animation:
     start, stop = curve.get_auto_crop()
     #curve.crop(start, stop)
-additionnal_curves = Animation.Animation()
+additionnal_curves = A.Animation()
 
 for curve in animation:
     first_derivative = curve.first_derivative(n_samples=frame_times.size-2)
@@ -87,13 +90,13 @@ for curve in animation:
         additionnal_curves.append(second_derivative)
 
 #print(additionnal_curves)
-resampled_animation = Animation.Animation()
+resampled_animation = A.Animation()
 for curve in animation.sample(frame_times.size, start="each", stop="each") + additionnal_curves:
     if len(curve)>1:
         resampled_animation.append(curve)
 #print(resampled_animation)
 
-matrix = Animation.Animation.correlate(animation.sample(frame_times.size, start="each", stop="each"), video_movement)
+matrix = A.Animation.correlate(animation.sample(frame_times.size, start="each", stop="each"), video_movement)
 
 rows = [curve.fullname for curve in animation.sample(frame_times.size, start="each", stop="each")]
 columns = [curve.fullname for curve in video_movement]
@@ -102,7 +105,7 @@ dataframe = pd.DataFrame(matrix, columns=columns, index=rows)
 print(dataframe)
 
 
-matrix = Animation.Animation.correlate(additionnal_curves, additionnal_curves_video)
+matrix = A.Animation.correlate(additionnal_curves, additionnal_curves_video)
 
 rows = [curve.fullname for curve in additionnal_curves]
 columns = [curve.fullname for curve in additionnal_curves_video]
@@ -130,7 +133,7 @@ transl_video = video_movement.find("Location Y")
 mean_diff = np.mean(transl_blender.get_values()) - np.mean(transl_video.get_values())
 std_diff = np.std(transl_blender.get_values()) / np.std(transl_video.get_values())
 
-def affine_transform(curve : Curve.Curve):
+def affine_transform(curve : C.Curve):
     curve.value_transl(mean_diff)
     curve.value_scale(center=np.mean(curve.get_values()), scale=std_diff)
 

@@ -12,17 +12,28 @@ def check_sys_path(
 
 check_sys_path()
 
-import app.Main as main
+import app.main as main
+import app.visualisation as vis
+import app.dynamic_time_warping as DTW
+import app.abstract_io, app.internal_process, app.warping, app.dcc_io, app.blender_utils, app.video_io
+import app.animation, app.curve, app.color
 
 import importlib
 importlib.reload(main)
-importlib.reload(main.InternalProcess)
-importlib.reload(main.InternalProcess.Warp)
-importlib.reload(main.SoftIO)
-importlib.reload(main.SoftIO.b_utils)
-importlib.reload(main.VideoIO)
-importlib.reload(main.VideoIO.Animation)
-importlib.reload(main.VideoIO.Animation.Curve)
+importlib.reload(app.abstract_io)
+importlib.reload(app.internal_process)
+importlib.reload(app.warping)
+importlib.reload(DTW)
+importlib.reload(app.dcc_io)
+importlib.reload(app.blender_utils)
+importlib.reload(app.video_io)
+importlib.reload(app.animation)
+importlib.reload(app.curve)
+importlib.reload(app.color)
+importlib.reload(vis)
+
+Color = app.color.Color
+warping = app.warping
 
 directory = "C:/Users/Marie Bienvenu/stage_m2/afac/main/"
 main_obj = main.Main(directory, verbose=2)

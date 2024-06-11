@@ -6,8 +6,8 @@ from time import time
 
 t0 = time()
 
-from app.VideoIO import VideoIO, default_config
-from app.Color import Color
+from app.video_io import VideoIO, default_config
+from app.color import Color
 
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"
@@ -48,7 +48,7 @@ for directory in directories:
             video_io.draw_diagrams(time_in_seconds=time_in_seconds)
             video_io.to_animation()
 
-            #vid = video_io.record_video() # a bit long + requires loading the entire video in memory...
+            vid = video_io.record_video() # a bit long + requires loading the entire video in memory...
 
 tf = time()
 print(f'Computation took {int(tf-t0)} seconds.') # less than two minutes for 10 videos # way longer if longer videos or higher fps -> up to 10 minutes per video

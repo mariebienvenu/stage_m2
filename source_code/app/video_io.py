@@ -6,15 +6,16 @@ from tqdm import tqdm
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
-import app.Video as Video
-import app.Animation as Animation
-import app.OpticalFlow as oflow
+from app.video import Video
+from app.animation import Animation
+from app.optical_flow import OpticalFlow
+import app.optical_flow as oflow
 import app.maths_utils as m_utils
 import app.visualisation as vis
-import app.AbstractIO as abstract
+from app.abstract_io import AbstractIO
 
-Curve = Animation.Curve
-Color = Animation.Curve.Color
+from app.curve import Curve
+from app.color import Color
 
 
 def default_config(height, width, frame_count, fps):
@@ -35,12 +36,12 @@ def default_config(height, width, frame_count, fps):
     }
 
 
-class VideoIO(abstract.AbstractIO):
+class VideoIO(AbstractIO):
 
 
     def __init__(self, directory:str, video_name:str, extension='.mp4', verbose=0):
         super(VideoIO, self).__init__(directory, verbose)
-        self.video = Video.Video(f'{directory}/{video_name}'+extension, verbose=verbose)
+        self.video = Video(f'{directory}/{video_name}'+extension, verbose=verbose)
         self.name = video_name
         def maker():
             return default_config(
@@ -107,7 +108,7 @@ class VideoIO(abstract.AbstractIO):
         
         elif self.has_already_been_processed() and not force:
             if self.verbose>0: print("Video already processed (found data with matching config on disk).")
-            anim = Animation.Animation.load(self.anim_directory)
+            anim = Animation.load(self.anim_directory)
             self.magnitude_means = anim.find('Oflow magnitude - mean').get_values()
             self.magnitude_stds = anim.find('Oflow magnitude - std').get_values()
             self.angle_means = anim.find('Oflow angle - mean').get_values()
@@ -130,7 +131,7 @@ class VideoIO(abstract.AbstractIO):
         for index in tqdm(range(self.oflow_len), desc='Oflow computation'):
             frame_before = self.video.get_frame(index, image_processing=self.image_processing_method, crop=self.spatial_crop)
             frame_after = self.video.get_frame(index+1, image_processing=self.image_processing_method, crop=self.spatial_crop)
-            flow = oflow.OpticalFlow.compute_oflow(frame_before, frame_after, use_degrees=True)
+            flow = OpticalFlow.compute_oflow(frame_before, frame_after, use_degrees=True)
         
             mask = flow.get_mask(background_proportion=self.background_proportion)
             self.magnitude_means[index] = flow.get_measure(oflow.Measure.MAGNITUDE_MEAN, mask)
@@ -158,7 +159,7 @@ class VideoIO(abstract.AbstractIO):
         self.process()
 
         frame_times = self.oflow_frame_times if time_in_seconds else np.array(list(range(self.oflow_len)))
-        Color.Color.reset()
+        Color.reset()
 
         vis.magnitude_angle(frame_times, self.magnitude_means, self.magnitude_stds, self.angle_means, self.angle_stds, fig=fig, rows=[1,2], cols=[1,1])
         vis.add_curve(y=self.velocity_y, x=self.position_y, name="y'=f(y) - Portrait de phase de Y", fig=fig, col=3, row=1)
@@ -205,15 +206,15 @@ class VideoIO(abstract.AbstractIO):
     def to_animation(self, save=True): # always in frame scale
         self.process()
         times = np.array(list(range(self.oflow_len))) if self.magnitude_means.size==self.oflow_len else np.array(list(range(self.time_crop[0], self.time_crop[1]+1)))
-        anim = Animation.Animation([
-            Curve.Curve(np.vstack((times, self.magnitude_means)).T, fullname='Oflow magnitude - mean'),
-            Curve.Curve(np.vstack((times, self.magnitude_stds)).T, fullname='Oflow magnitude - std'),
-            Curve.Curve(np.vstack((times, self.angle_means)).T, fullname='Oflow angle - mean'),
-            Curve.Curve(np.vstack((times, self.angle_stds)).T, fullname='Oflow angle - std'),
-            Curve.Curve(np.vstack((times, self.velocity_x)).T, fullname='Velocity X'),
-            Curve.Curve(np.vstack((times, self.velocity_y)).T, fullname='Velocity Y'),
-            Curve.Curve(np.vstack((times, self.position_x)).T, fullname='Location X'),
-            Curve.Curve(np.vstack((times, self.position_y)).T, fullname='Location Y'),
+        anim = Animation([
+            Curve(np.vstack((times, self.magnitude_means)).T, fullname='Oflow magnitude - mean'),
+            Curve(np.vstack((times, self.magnitude_stds)).T, fullname='Oflow magnitude - std'),
+            Curve(np.vstack((times, self.angle_means)).T, fullname='Oflow angle - mean'),
+            Curve(np.vstack((times, self.angle_stds)).T, fullname='Oflow angle - std'),
+            Curve(np.vstack((times, self.velocity_x)).T, fullname='Velocity X'),
+            Curve(np.vstack((times, self.velocity_y)).T, fullname='Velocity Y'),
+            Curve(np.vstack((times, self.position_x)).T, fullname='Location X'),
+            Curve(np.vstack((times, self.position_y)).T, fullname='Location Y'),
         ])
         anim.crop(start=self.time_crop[0], stop=self.time_crop[1])
         if save: 
@@ -233,7 +234,7 @@ class VideoIO(abstract.AbstractIO):
     def auto_time_crop(self, patience=2, save=True):
         self.process()
         times = np.array(list(range(self.oflow_len)))
-        curve = Curve.Curve(np.vstack((times, self.magnitude_means)).T)
+        curve = Curve(np.vstack((times, self.magnitude_means)).T)
         start, stop = curve.get_auto_crop(use_handles=False, patience=patience)
         self.config['time crop'] = {'start':int(start), 'stop':int(stop)} # int32 -> int because int32 not json serialisable
         if save: self.save_config()
@@ -247,7 +248,7 @@ class VideoIO(abstract.AbstractIO):
         for i,index in enumerate(range(self.time_crop[0], self.time_crop[1]+1)):
             frame = self.video.get_frame(index, image_processing=self.image_processing_method, crop=self.spatial_crop)
             content[i,:,:] = np.copy(frame)
-        video = Video.Video.from_array(content, self.directory+f'/_{self.name}_preprocessed.mp4', fps=self.video.fps)
+        video = Video.from_array(content, self.directory+f'/_{self.name}_preprocessed.mp4', fps=self.video.fps)
         return video
 
         

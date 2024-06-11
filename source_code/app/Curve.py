@@ -7,7 +7,7 @@ import numpy as np
 import plotly.graph_objects as go
 import bpy
 
-import app.Color as Color
+from app.color import Color
 import app.maths_utils as m_utils
 import app.visualisation as vis
 
@@ -217,7 +217,7 @@ class Curve:
 
 
     def display(self, handles=True, style="markers", color=None, opacity=1., name=None, fig=None, row=None, col=None, doShow=False):
-        if color is None: color = getattr(self, 'color', Color.Color.next())
+        if color is None: color = getattr(self, 'color', Color.next())
         if name is None: name = self.fullname
         times = self.get_times()
         values = self.get_values()

@@ -19,21 +19,22 @@ import pandas as pd
 
 import bpy
 
-import app.VideoIO as VideoIO
+import app.video_io as VIO
 import app.blender_utils as b_utils
+import app.curve as C
+import app.animation as A
+import app.maths_utils as m_utils
+import app.visualisation as vis
+import app.color as color_management
 
 import importlib
 importlib.reload(b_utils)
-importlib.reload(b_utils.Curve)
-importlib.reload(VideoIO)
-
-import app.blender_utils as b_utils
-import app.VideoIO as VideoIO
-
-Curve = b_utils.Curve
-Animation = b_utils.Animation
-m_utils = VideoIO.m_utils
-vis = VideoIO.vis
+importlib.reload(C)
+importlib.reload(A)
+importlib.reload(m_utils)
+importlib.reload(vis)
+importlib.reload(VIO)
+importlib.reload(color_management)
 
 
 blender_filepath = bpy.data.filepath
@@ -46,7 +47,7 @@ assert os.path.exists(data_path), "Wrong PATH"
 subdirectory = '04-08 appareil de Damien' #'03-11 initial videos'
 VIDEO_NAME = 'P1010236'
 
-video_movement = Animation.Animation().load(f'{data_path}/{subdirectory}/{VIDEO_NAME}/')
+video_movement = A.Animation().load(f'{data_path}/{subdirectory}/{VIDEO_NAME}/')
 
 frame_times = video_movement[0].get_times()
 
@@ -56,7 +57,7 @@ for curve in animation:
     start, stop = curve.get_auto_crop()
     #curve.crop(start, stop)
 
-additionnal_curves = Animation.Animation()
+additionnal_curves = A.Animation()
 
 for curve in animation:
     sampling_step = (curve.time_range[1]-curve.time_range[0])/(frame_times.size-1)
@@ -71,12 +72,12 @@ for curve in animation:
     absolute_first_derivative = np.abs(first_derivative)
     if np.max(absolute_first_derivative)-np.min(absolute_first_derivative)  > 1e-2 : # variation in derivative
         coordinates = np.vstack((sampling_t, absolute_first_derivative)).T
-        additionnal_curves.append(Curve.Curve(coordinates, fullname=f'absolute first derivative of {curve.fullname}'))
+        additionnal_curves.append(C.Curve(coordinates, fullname=f'absolute first derivative of {curve.fullname}'))
 
         coordinates = np.vstack((sampling_t, first_derivative)).T
-        additionnal_curves.append(Curve.Curve(coordinates, fullname=f'first derivative of {curve.fullname}'))
+        additionnal_curves.append(C.Curve(coordinates, fullname=f'first derivative of {curve.fullname}'))
 
-resampled_animation = Animation.Animation()
+resampled_animation = A.Animation()
 for curve in animation.sample(frame_times.size, start="each", stop="each") + additionnal_curves:
     if len(curve)>1:
         resampled_animation.append(curve)

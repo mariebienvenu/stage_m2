@@ -7,8 +7,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 import app.visualisation as vis
-from app.Curve import Curve
-from app.DynamicTimeWarping import DynamicTimeWarping
+from app.curve import Curve
+from app.dynamic_time_warping import DynamicTimeWarping
 
 DO_SHOW = True
 

@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
 
-from app.Color import Color
+from app.color import Color
 
 
 def add_curve(y, color=None, opacity=None, x=None, name="", fig=None, row=None, col=None, style="lines", legend=None):

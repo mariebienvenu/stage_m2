@@ -1,8 +1,8 @@
 
 import numpy as np
 
-from app.Curve import Curve
-import app.Warp as Warp
+from app.curve import Curve
+import app.warping as W
 import app.maths_utils as m_utils
 import app.visualisation as vis
 
@@ -19,7 +19,7 @@ x2[[10, 30, 78]] = [4, -8, 3]
 
 ## Now the definitions
 
-class AmplitudeWarping(Warp.AbstractWarp):
+class AmplitudeWarping(W.AbstractWarp):
 
     def __init__(self, times, multiplicative_factors):
         super(AmplitudeWarping, self).__init__(np.array(times), np.array(multiplicative_factors))
@@ -56,9 +56,9 @@ curve2 = Curve(coordinates=np.vstack((t,x2)).T, fullname="target curve")
 spike_times = [t[10], t[30],t[72]]
 window_size = 0.3
 multiplicative_factors = [multiplicative_factor(curve1, curve2, spike, window_size) for spike in spike_times]
-print(spike_times, multiplicative_factors)
+print([1]+spike_times+[10], [1]+multiplicative_factors+[1])
 
-warp = AmplitudeWarping(spike_times, multiplicative_factors)
+warp = AmplitudeWarping([1]+spike_times+[10], [1]+multiplicative_factors+[1])
 new_curve = curve1.apply_spatio_temporal_warp(warp, in_place=False)
 new_curve.rename("computed curve")
 
@@ -67,4 +67,11 @@ new_curve.rename("computed curve")
 fig = curve1.display(handles=False, style="lines")
 curve2.display(handles=False, style="lines", fig=fig)
 new_curve.display(handles=False, style="lines", fig=fig)
+fig.show()
+
+## Are we sure the multiplicative factor scaled correctly ?
+
+arr = np.arange(1, 10.1, 0.1)
+res = np.interp(arr, [1]+spike_times+[10], [1]+multiplicative_factors+[1])
+vis.add_curve(res, x=arr, name="scaling", fig=fig)
 fig.show()

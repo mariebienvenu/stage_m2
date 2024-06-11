@@ -3,8 +3,8 @@ import numpy as np
 import plotly.graph_objects as go
 import cv2
 
-import app.Warp as Warp
-from app.Color import Color
+import app.warping as W
+from app.color import Color
 
 DO_SHOW = True
 
@@ -13,8 +13,8 @@ DO_SHOW = True
 X_in = np.linspace(-10, 10, 11)
 X_out = np.cos(X_in/5)
 
-cubic_warp = Warp.CubicWarp1D(X_in, X_out)
-linear_warp = Warp.LinearWarp1D(X_in, X_out)
+cubic_warp = W.CubicWarp1D(X_in, X_out)
+linear_warp = W.LinearWarp1D(X_in, X_out)
 
 inputs = np.linspace(-15, 15, 151)
 cubic_outputs,_ = cubic_warp(inputs, None)
@@ -34,7 +34,7 @@ Y_in = np.ravel(grid.T)
 X_out = np.cos(X_in/5)
 Y_out = np.sin(Y_in/5)
 
-Warp2D = Warp.LinearWarp2D(X_in, Y_in, X_out, Y_out)
+Warp2D = W.LinearWarp2D(X_in, Y_in, X_out, Y_out)
 print(Warp2D)
 
 x_inputs = [-6.3, -2.7, 0.3, 7.32]
@@ -60,10 +60,10 @@ if DO_SHOW : fig.show()
 X_in = np.linspace(-10, 10, 11)
 X_out = np.cos(X_in/5)
 
-warp1 = Warp.make_warp(dimension=1, interpolation='linear', X_in=X_in, X_out=X_out)
-warp2 = Warp.make_warp(dimension=1, interpolation='cubic', X_in=X_in, X_out=X_out)
+warp1 = W.make_warp(dimension=1, interpolation='linear', X_in=X_in, X_out=X_out)
+warp2 = W.make_warp(dimension=1, interpolation='cubic', X_in=X_in, X_out=X_out)
 print(warp1, warp2)
 try:
-    warp3 = Warp.make_warp(dimension=1, interpolation='stuff', X_in=X_in, X_out=X_out)
+    warp3 = W.make_warp(dimension=1, interpolation='stuff', X_in=X_in, X_out=X_out)
 except NotImplementedError as e:
     print(f"Raised: {e} (as expected)")

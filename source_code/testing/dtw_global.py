@@ -16,31 +16,33 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
+from copy import deepcopy
 
 import plotly
 plotly.io.kaleido.scope.mathjax= None # supposedly makes saving figures faster
  
-import app.Main as main
+import app.main as main
 import app.visualisation as vis
+import app.dynamic_time_warping as DTW
+import app.abstract_io, app.internal_process, app.warping, app.dcc_io, app.blender_utils, app.video_io
+import app.animation, app.curve, app.color
 
 import importlib
 importlib.reload(main)
-importlib.reload(main.absIO)
-importlib.reload(main.InternalProcess)
-importlib.reload(main.InternalProcess.Warp)
-importlib.reload(main.InternalProcess.DynamicTimeWarping)
-importlib.reload(main.SoftIO)
-importlib.reload(main.SoftIO.b_utils)
-importlib.reload(main.VideoIO)
-importlib.reload(main.VideoIO.Animation)
-importlib.reload(main.VideoIO.Animation.Curve)
-importlib.reload(main.VideoIO.Animation.Curve.Color)
+importlib.reload(app.abstract_io)
+importlib.reload(app.internal_process)
+importlib.reload(app.warping)
+importlib.reload(DTW)
+importlib.reload(app.dcc_io)
+importlib.reload(app.blender_utils)
+importlib.reload(app.video_io)
+importlib.reload(app.animation)
+importlib.reload(app.curve)
+importlib.reload(app.color)
 importlib.reload(vis)
 
-Warp = main.InternalProcess.Warp
-DTW = main.InternalProcess.DynamicTimeWarping
-
-Color = main.VideoIO.Animation.Curve.Color.Color
+Color = app.color.Color
+warping = app.warping
 Color.reset()
 Color.next()
 
@@ -48,7 +50,7 @@ possible_features = ["Velocity Y", "First derivative of Velocity Y", "Location Y
 chosen_feature = possible_features[-1]
 ## il se trouve que c'est Location Y qui est la meilleure in fine sur le score, mais Second derivative of Location Y gère mieux le timing des rebonds
 
-directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/bouncing_ball_retiming/"
+directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/bouncing_ball_more/" #retiming/"
 
 SHOW = True
 
@@ -57,6 +59,7 @@ main.Main.DTW_CONSTRAINTS_LOCAL = 10
 main_obj = main.Main(directory, verbose=2)
 main_obj.connexions_of_interest[0]["video feature"] = chosen_feature
 main_obj.process(force=True)
+main_obj.draw_diagrams()
 
 ## A little helper function
 def integrale(y, x=None, debug=False):
@@ -114,15 +117,17 @@ bijections = [(
         np.array([dtw.times2[j] for i,j in path]),
     ) for path in paths
 ]
+n = dtw.times1[-1] - dtw.times1[0]
+m = dtw.times2[-1] - dtw.times2[0]
 integrales = [integrale(bijection[1], bijection[0]) for bijection in bijections]
 integrale_ref = integrale(dtw.bijection[1], dtw.bijection[0])
-diffs = np.array([abs(integrale - integrale_ref)/integrale_ref*100 for integrale in integrales])
-diffs_ = np.array([distL1(bij_x,bij_y, dtw.bijection[0], dtw.bijection[1])/integrale_ref*100 for bij_x,bij_y in bijections])
+diffs = np.array([abs(integrale - integrale_ref)/(n*m)*100 for integrale in integrales])
+diffs_ = np.array([distL1(bij_x,bij_y, dtw.bijection[0], dtw.bijection[1])/(n*m)*100 for bij_x,bij_y in bijections])
 ## Les deux sont pareils parce que dans notre cas, nos chemins ne se croisent pas ! Ils ne forme qu'une poche de difference puisque le but c'est de prendre au plus court (chemin comme chaîne de Markov, toute solution qui se croise devient égale après...)
 
 ## Define the thresholds and filter
-CONSTRAINT_THRESHOLD = 3
-AREA_THRESHOLD = 0.3
+CONSTRAINT_THRESHOLD = 2 #3
+AREA_THRESHOLD = 0.1 #0.3
 pair_indexes = list(range(1, len(paths)))
 is_constrained_enough = [constraints[index]>CONSTRAINT_THRESHOLD for index in pair_indexes]
 is_similar_enough = [diffs[index-1]<AREA_THRESHOLD for index in pair_indexes]
@@ -139,7 +144,7 @@ print(f"Corresponding times: {[(dtw.bijection[0][index],dtw.bijection[1][index])
 print(f"Discarded for being not constrained enough : {discarded_for_constraint_value}")
 print(f"Discarded for being too far from ideal path : {discarded_for_integration_value}")
 print(f"Discarded for not being a local constraint maxima : {discarded_for_local_maxima}")
-warp = Warp.LinearWarp1D(X_in=[dtw.bijection[0][index] for index in kept_indexes], X_out=[dtw.bijection[1][index] for index in kept_indexes])
+warp = warping.LinearWarp1D(X_in=[dtw.bijection[0][index] for index in kept_indexes], X_out=[dtw.bijection[1][index] for index in kept_indexes])
 
 ## And let's start visualizing !
 
@@ -342,8 +347,8 @@ vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=refined_pairings, color="gree
 
 
 time_in, time_out = dtw.bijection
-naive_warp = Warp.make_warp(X_in=time_in[naive_indexes], X_out=time_out[naive_indexes])
-refined_warp = Warp.make_warp(X_in=time_in[refined_indexes], X_out=time_out[refined_indexes])
+naive_warp = warping.make_warp(X_in=time_in[naive_indexes], X_out=time_out[naive_indexes])
+refined_warp = warping.make_warp(X_in=time_in[refined_indexes], X_out=time_out[refined_indexes])
 
 edited_naive_anim = main_obj.internals[0].make_new_anim(channels=[main_obj.connexions_of_interest[0]['channel']], warps=[naive_warp])
 edited_refined_anim = main_obj.internals[0].make_new_anim(channels=[main_obj.connexions_of_interest[0]['channel']], warps=[refined_warp])
@@ -364,4 +369,46 @@ fig.update_layout(
     yaxis1_title="Amplitude (arbitrary)",
     yaxis3_title="Amplitude (blender unit)",
 )
+fig.show()
+
+
+## Other - 06/06
+print(f"Score : {dtw.score}")
+Color.reset()
+ref_color = Color.next()
+
+#indexes = [22, 67, 100, 125, 245, 280, 349, 357, 372] #for bouncing_ball_more_old
+indexes = [91, 119, 164, 203, 269, 326, 378] #for bouncing_ball_more
+#indexes = [] # for bouncing_ball_retiming
+
+fig = vis.add_heatmap(pd.DataFrame(dtw.cost_matrix))
+for index  in indexes:
+    x,y = bijections[index-1]
+    i,j = bij_y_ref[index]-bij_y_ref[0], bij_x_ref[index]-bij_x_ref[0]
+    color = Color.next()
+    vis.add_curve(y=x-x[0], x=y-y[0], name=f'{index}', fig=fig, color=color)
+    fig.add_shape(
+        type="circle",
+        x0=i-2, y0=j-2, x1=i+2, y1=j+2,
+        line_color=Color.to_string(color),
+        name=f'{index}',
+    )
+    print(f"Index: {index}, coût:{constraints[index]}, écart:{diffs[index-1]}")
+vis.add_curve(y=bij_x_ref-bij_x_ref[0], x=bij_y_ref-bij_y_ref[0], color=ref_color, fig=fig)
+fig.show()
+
+debug= 0
+
+from tqdm import tqdm
+
+best_scores = [np.inf]
+m = len(dtw.times2)
+start, stop = dtw.curve2.time_range
+for i in tqdm(range(1,m), desc="Computation of best cropped scores"):
+    new_curve = deepcopy(dtw.curve2)
+    cropped = new_curve.crop(start, start+i) # in frames ?
+    new_dtw = DTW.DynamicTimeWarping(dtw.curve1, new_curve)
+    best_scores.append(new_dtw.score)
+
+fig = vis.add_curve(y=best_scores, x=dtw.times2, name="Best cost along time cropping")
 fig.show()

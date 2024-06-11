@@ -1,7 +1,7 @@
 
 import numpy as np
 
-from app.AbstractIO import AbstractIO
+from app.abstract_io import AbstractIO
 
 def maker():
     return {"test":0, "new":1}

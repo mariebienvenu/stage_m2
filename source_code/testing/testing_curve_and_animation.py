@@ -2,9 +2,9 @@ import numpy as np
 from random import random
 from plotly.subplots import make_subplots
 
-from app.Curve import Curve
-from app.Color import Color
-from app.Animation import Animation
+from app.curve import Curve
+from app.color import Color
+from app.animation import Animation
 import app.visualisation as vis
 
 class FakeCurvePointer:

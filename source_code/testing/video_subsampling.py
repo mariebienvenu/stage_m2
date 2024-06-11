@@ -3,7 +3,7 @@ import os
 import numpy as np
 import cv2
 
-import app.Video as Video
+import app.video as Video
 
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
 assert os.path.exists(data_path), "Wrong PATH"

@@ -14,24 +14,30 @@ check_sys_path()
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
- 
-import app.Main as main
+
+import app.main as main
 import app.visualisation as vis
+import app.dynamic_time_warping as DTW
+import app.abstract_io, app.internal_process, app.warping, app.dcc_io, app.blender_utils, app.video_io
+import app.animation, app.curve, app.color
 
 import importlib
 importlib.reload(main)
-importlib.reload(main.absIO)
-importlib.reload(main.InternalProcess)
-importlib.reload(main.InternalProcess.Warp)
-importlib.reload(main.InternalProcess.DynamicTimeWarping)
-importlib.reload(main.SoftIO)
-importlib.reload(main.SoftIO.b_utils)
-importlib.reload(main.VideoIO)
-importlib.reload(main.VideoIO.Animation)
-importlib.reload(main.VideoIO.Animation.Curve)
+importlib.reload(app.abstract_io)
+importlib.reload(app.internal_process)
+importlib.reload(app.warping)
+importlib.reload(DTW)
+importlib.reload(app.dcc_io)
+importlib.reload(app.blender_utils)
+importlib.reload(app.video_io)
+importlib.reload(app.animation)
+importlib.reload(app.curve)
+importlib.reload(app.color)
 importlib.reload(vis)
 
-Color = main.VideoIO.Animation.Curve.Color.Color
+Color = app.color.Color
+warping = app.warping
+
 Color.reset()
 
 possible_features = ["Velocity Y", "First derivative of Velocity Y", "Location Y", "First derivative of Location Y", "Second derivative of Location Y"]
@@ -52,7 +58,7 @@ for i,feature in enumerate(possible_features):
 
     og_anim = main_obj.blender_scene.original_anims[0]
     edited_anim = main_obj.blender_scene.get_animations()[0] # will have an fcurve pointer, unlike main_obj.new_anims[0] -> does not work as expected
-    edited_anim = main.SoftIO.b_utils.get_animation("Ball_edited") # to force fcurve pointer retrieval
+    edited_anim = app.blender_utils.get_animation("Ball_edited") # to force fcurve pointer retrieval
 
     edited_curve, og_curve = edited_anim.find("location Z"), og_anim.find("location Z")
     edited_curve.rename(f"location Z -  {feature}")

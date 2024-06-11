@@ -3,11 +3,11 @@ import os
 import numpy as np
 from plotly.subplots import make_subplots
 
-import app.Animation as Animation
-import app.Curve as Curve
+import app.animation as Animation
+import app.curve as Curve
 import app.maths_utils as m_utils
 import app.visualisation as vis
-from app.DynamicTimeWarping import DynamicTimeWarping
+from app.dynamic_time_warping import DynamicTimeWarping
 
 # Here we define which videos we will compare
 data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'

@@ -1,7 +1,8 @@
 
 import numpy as np
+from tqdm import tqdm
 
-from app.Curve import Curve
+from app.curve import Curve
 
 
 class DynamicTimeWarping:
@@ -16,6 +17,9 @@ class DynamicTimeWarping:
             np.array([self.times1[i] for i,j in self.pairings]),
             np.array([self.times2[j] for i,j in self.pairings])
         )
+
+        self.local_processed = False
+        self.global_processed = False
     
 
     def compute(self, eps=1e-11):
@@ -60,12 +64,12 @@ class DynamicTimeWarping:
         path = reverse_path[::-1]
         return path
 
-
     def local_constraints(self, window_size=10):
+        if self.local_processed: return self._local_constraints
         range_x = len(self.curve1)
         range_y = len(self.curve2)
         N = self.bijection[0].size
-        local_constraints = np.zeros((N))
+        self._local_constraints = np.zeros((N))
         for i in range(1, N-1):
             ix,iy = self.pairings[i]
             center_cost = self.cost_matrix[ix, iy] # best cost (globally)
@@ -74,20 +78,22 @@ class DynamicTimeWarping:
             lower_costs = self.cost_matrix[ix-w_size:ix, iy] + self.cost_matrix[ix, iy-w_size:iy]
             alternative_costs = np.concatenate((upper_costs, lower_costs))
             minimal_additionnal_cost = np.min(alternative_costs) - center_cost if alternative_costs.size>0 else 0
-            local_constraints[i] = max(0,minimal_additionnal_cost)
-        return local_constraints
+            self._local_constraints[i] = max(0,minimal_additionnal_cost)
+        self.local_processed = True
+        return self._local_constraints
     
 
     def global_constraints(self):
         """Computes the cost each pair contributed to save to the final score, using DTW"""
+        if self.global_processed: return self._global_constraints
         N = self.bijection[0].size
         self.global_constraints_distances = np.zeros((N, self.values1.size+1, self.values2.size+1))
         self.global_constraints_alternative_paths = [None]
 
-        global_constraints = np.zeros((N))
+        self._global_constraints = np.zeros((N))
         cost_matrix = np.copy(self.cost_matrix)
 
-        for index in range(1, N-1):
+        for index in tqdm(range(1, N-1), desc="Global constraint on DTW computation"):
 
             previous_ix, previous_iy = self.pairings[index-1]
             cost_matrix[previous_ix, previous_iy] = self.cost_matrix[previous_ix, previous_iy] # repair the cost matrix
@@ -102,7 +108,8 @@ class DynamicTimeWarping:
 
             alternative_score = distances[-1,-1]
             minimal_additionnal_cost = alternative_score - self.score
-            global_constraints[index] = minimal_additionnal_cost
+            self._global_constraints[index] = minimal_additionnal_cost
 
         self.global_constraints_alternative_paths.append(None)
-        return global_constraints
+        self.global_processed = True
+        return self._global_constraints
