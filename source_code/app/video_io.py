@@ -164,8 +164,8 @@ class VideoIO(AbstractIO):
         vis.magnitude_angle(frame_times, self.magnitude_means, self.magnitude_stds, self.angle_means, self.angle_stds, fig=fig, rows=[1,2], cols=[1,1])
         vis.add_curve(y=self.velocity_y, x=self.position_y, name="y'=f(y) - Portrait de phase de Y", fig=fig, col=3, row=1)
         vis.add_curve(y=self.velocity_x, x=self.position_x, name="x'=f(x) - Portrait de phase de X", fig=fig, col=3, row=1)
-        vis.add_curve(y=self.velocity_y, x=frame_times, name="y=f(t) - Velocity along Y axis", fig=fig, col=2, row=1)
-        vis.add_curve(y=self.velocity_x, x=frame_times, name="x=f(t) - Velocity along X axis", fig=fig, col=2, row=1)
+        vis.add_curve(y=self.velocity_y, x=frame_times, name="y'=f(t) - Velocity along Y axis", fig=fig, col=2, row=1)
+        vis.add_curve(y=self.velocity_x, x=frame_times, name="x'=f(t) - Velocity along X axis", fig=fig, col=2, row=1)
         vis.add_curve(y=self.position_y, x=frame_times, name="y=f(t) - Translation along Y axis", fig=fig, col=2, row=2)
         vis.add_curve(y=self.position_x, x=frame_times, name="x=f(t) - Translation along X axis", fig=fig, col=2, row=2)
         vis.add_curve(y=self.position_y, x=self.position_x, name="y=f(x) - Trajectoire", fig=fig, col=3, row=2)
@@ -200,7 +200,13 @@ class VideoIO(AbstractIO):
         if save: fig3.write_html(self.directory+f"/{self.name}_trajectory.html")
         if show: fig3.show()
 
-        return [fig, fig2, fig3]
+        fig4 = vis.add_curve(y=m_utils.derivee_seconde(self.position_y, step=1), x=frame_times, name='y"=f(t) - Acceleration along Y axis')
+        vis.add_curve(y=m_utils.derivee_seconde(self.position_x, step=1), x=frame_times, name='x"=f(t) - Acceleration along X axis', fig=fig4)
+        fig4.update_layout(title=f'Acceleration  - {self.name}', xaxis_title="time (frames)", yaxis_title="magnitude (pixels/frame²)")
+        if save: fig4.write_html(self.directory+f"/{self.name}_acceleration.html")
+        if show: fig4.show()
+
+        return [fig, fig2, fig3, fig4]
 
 
     def to_animation(self, save=True): # always in frame scale
