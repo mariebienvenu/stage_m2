@@ -1,15 +1,17 @@
 
 import numpy as np
 from tqdm import tqdm
+from copy import deepcopy
 
 from app.curve import Curve
 
 
 class DynamicTimeWarping:
 
-    def __init__(self, curve1:Curve, curve2:Curve):
-        self.curve1 = curve1
-        self.curve2 = curve2
+    def __init__(self, curve1:Curve, curve2:Curve, normalize=True):
+        self.curve1 = deepcopy(curve1)
+        self.curve2 = deepcopy(curve2)
+        if normalize: self.curve1.normalize(), self.curve2.normalize()
         self.times1, self.times2 = curve1.get_times(), curve2.get_times()
         self.compute()
 
