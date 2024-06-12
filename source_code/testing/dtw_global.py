@@ -26,7 +26,7 @@ import app.visualisation as vis
 import app.dynamic_time_warping as DTW
 import app.abstract_io, app.internal_process, app.warping, app.dcc_io, app.blender_utils, app.video_io
 import app.animation, app.curve, app.color
-
+'''
 import importlib
 importlib.reload(main)
 importlib.reload(app.abstract_io)
@@ -40,7 +40,7 @@ importlib.reload(app.animation)
 importlib.reload(app.curve)
 importlib.reload(app.color)
 importlib.reload(vis)
-
+'''
 Color = app.color.Color
 warping = app.warping
 Color.reset()
@@ -50,7 +50,7 @@ possible_features = ["Velocity Y", "First derivative of Velocity Y", "Location Y
 chosen_feature = possible_features[-1]
 ## il se trouve que c'est Location Y qui est la meilleure in fine sur le score, mais Second derivative of Location Y gère mieux le timing des rebonds
 
-directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/bouncing_ball_more/" #retiming/"
+directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/empty/" #bouncing_ball_more/" #retiming/"
 
 SHOW = True
 
@@ -403,12 +403,23 @@ from tqdm import tqdm
 
 best_scores = [np.inf]
 m = len(dtw.times2)
-start, stop = dtw.curve2.time_range
+start1, stop1 = dtw.curve1.time_range
+start2, stop2 = dtw.curve2.time_range
 for i in tqdm(range(1,m), desc="Computation of best cropped scores"):
     new_curve = deepcopy(dtw.curve2)
-    cropped = new_curve.crop(start, start+i) # in frames ?
+    cropped = new_curve.crop(start2, start2+i) # in frames ?
     new_dtw = DTW.DynamicTimeWarping(dtw.curve1, new_curve)
     best_scores.append(new_dtw.score)
 
 fig = vis.add_curve(y=best_scores, x=dtw.times2, name="Best cost along time cropping")
+fig.update_layout(title=f"Best cost along time cropping : {min(best_scores)} VS {dtw.score}")
 fig.show()
+
+normalized_best_score = [e/i/(stop1-start1) if i!=0 else e for i,e in enumerate(best_scores)]
+fig = vis.add_curve(y=normalized_best_score, x=dtw.times2, name="Best normalized cost along time cropping")
+fig.update_layout(title=f"Best normalized cost along time cropping : {min(normalized_best_score)} VS {dtw.score/(stop2-start2)/(stop1-start1)}")
+fig.show()
+
+
+costs_along_path = [dtw.cost_matrix[i,j] for i,j in dtw.pairings]
+print(f"Worst instant cost along best path: {max(costs_along_path)}")
