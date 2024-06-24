@@ -15,6 +15,8 @@ import app.visualisation as vis
 from app.color import Color
 import app.warping as warping
 import app.blender_utils as b_utils
+from app.animation import Animation
+from app.curve import Curve
 
 def default_config():
     return {
@@ -40,15 +42,14 @@ class Main(AbstractIO):
     WARP_INTERPOLATION = "linear" # the way the warping is interpolated between matches
     DTW_CONSTRAINTS_LOCAL = 10 # if 0 : dtw constraint computation is global ; else, it is local with a range of DTW_CONSTRAINTS_LOCAL (in frames)
 
-    def __init__(self, directory, verbose=0):
+    def __init__(self, directory, no_blender=False, verbose=0):
         super(Main, self).__init__(directory, verbose)
         self.finalize_init(default_config)
-
-        self.video_ref = VideoIO(directory=directory, video_name=self.video_reference_filename, extension=self.video_extension, verbose=verbose-1)
-        self.video_target = VideoIO(directory=directory, video_name=self.video_target_filename, extension=self.video_extension, verbose=verbose-1)
-        self.blender_scene = SoftIO(directory=directory, verbose=verbose-1)
-        
-        self.blender_scene.check_file(self.directory+self.blender_scene_filename)
+        self.load_videos()
+        self.no_blender = no_blender
+        if not no_blender:
+            self.blender_scene = SoftIO(directory=directory, verbose=verbose-1)
+            self.blender_scene.check_file(self.directory+self.blender_scene_filename)
     
     @property
     def config_filename(self) -> str:
@@ -83,17 +84,23 @@ class Main(AbstractIO):
         return self.config["temporal offset"]
     
 
+    def load_videos(self):
+        self.video_ref = VideoIO(directory=self.directory, video_name=self.video_reference_filename, extension=self.video_extension, verbose=self.verbose-1)
+        self.video_target = VideoIO(directory=self.directory, video_name=self.video_target_filename, extension=self.video_extension, verbose=self.verbose-1)
+    
+
     def process(self, force=False):
         if self.is_processed and not force: return self.new_anims
 
         vanim_ref, vanim_target = self.video_ref.to_animation(), self.video_target.to_animation()
-        vanim_ref.time_transl(self.blender_scene.start-vanim_ref.time_range[0]-1+self.temporal_offset) # -1 parce que en dérivant on décale de une frame donc si on veut rester sur start...
-        vanim_target.time_transl(self.blender_scene.start-vanim_target.time_range[0]-1+self.temporal_offset)
+        if not self.no_blender: vanim_ref.time_transl(self.blender_scene.start-vanim_ref.time_range[0]-1+self.temporal_offset) # -1 parce que en dérivant on décale de une frame donc si on veut rester sur start...
+        if not self.no_blender: vanim_target.time_transl(self.blender_scene.start-vanim_target.time_range[0]-1+self.temporal_offset)
         vanim_ref.update_time_range()
         vanim_target.update_time_range()
         vanim_ref.enrich()
         vanim_target.enrich()
-        banims = self.blender_scene.get_animations()
+        if not self.no_blender: banims = self.blender_scene.get_animations()
+        else : banims = [Animation()]
         #for banim in banims:
         #    banim.enrich() # TODO -- will be useful when we automatically decide of connexions based on multi-modal correlations
 
@@ -106,7 +113,7 @@ class Main(AbstractIO):
         self.features:List[List[str]] = [[] for _ in self.internals]
         for connexion in self.connexions_of_interest:
             obj_name, feature, channel, is_impulsive = connexion["object name"], connexion["video feature"], connexion["channel"], connexion["is impulsive"]
-            index = self.blender_scene.object_names.index(obj_name) ## costly
+            index = self.blender_scene.object_names.index(obj_name) if not self.no_blender else 0 ## costly
             internal = self.internals[index]
             # we prefer sparse warps for impulsive signals and dense ones for continuous signals
             if is_impulsive: new_warp = internal.make_simplified_warp(
@@ -132,16 +139,19 @@ class Main(AbstractIO):
 
 
     def to_blender(self):
+        assert not self.no_blender, "Impossible to send to blender when no_blender is set to True."
         self.process()
         self.blender_scene.set_animations(self.new_anims, in_place=self.edit_in_place)
 
 
-    def draw_diagrams(self, animation_index=0, save=True, show=False):
+    def draw_diagrams(self, animation_index=0, save=True, show=False, directory=None):
+        if directory is None: directory = self.directory + '/out/'
+
         internal, warp, channel, feature = self.internals[animation_index], self.warps[animation_index][-1], self.channels[animation_index][-1], self.features[animation_index][-1]
         dtw = internal.dtw
         feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
-        original_curve = self.blender_scene.get_animations()[animation_index].find(channel)
-        edited_curve =  b_utils.get_animation("Ball_edited").find(channel) # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
+        original_curve = self.blender_scene.get_animations()[animation_index].find(channel) if not self.no_blender else Curve()
+        edited_curve =  b_utils.get_animation("Ball_edited").find(channel)  if not self.no_blender else Curve() # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
 
         Color.reset()
         
@@ -213,7 +223,7 @@ class Main(AbstractIO):
         for figure,title in zip(figures, titles):
             figure.update_layout(title=title)
             filetitle = title.replace('"','')
-            if save: figure.write_html(f'{self.directory}/out/{filetitle}.html')
+            if save: figure.write_html(f'{directory}/{filetitle}.html')
             if show: figure.show()
 
         return figures
