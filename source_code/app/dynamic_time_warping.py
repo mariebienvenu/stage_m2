@@ -49,7 +49,7 @@ class DynamicTimeWarping:
     @staticmethod
     def shortest_path(distances:np.ndarray,costs:np.ndarray):
         n,m = costs.shape
-        eps = 1e-13
+        eps = 1e-12
         reverse_path = [[n-1,m-1]]
         i,j = n,m
         while i>1 or j>1:
@@ -62,6 +62,12 @@ class DynamicTimeWarping:
                 j -= 1
             elif abs(distances[i-1, j] - precedent_cost) < eps:
                 i -= 1
+            else:
+                print(f"i:{i}, j:{j}, threhold:{eps}")
+                print(f" Candidate [i-1, j-1]: {abs(distances[i-1, j-1] - precedent_cost)}")
+                print(f" Candidate [  i, j-1]: {abs(distances[i, j-1] - precedent_cost)}")
+                print(f" Candidate [i-1,   j]: {abs(distances[i-1, j] - precedent_cost)}")
+                raise TimeoutError("Stuck in infinite while loop in DynamicTimeWarping.shortest_path()...")
             reverse_path.append([i-1,j-1])
         path = reverse_path[::-1]
         return path
