@@ -96,7 +96,7 @@ def warping_and_kept_indexes(dict):
 
 def best_path_in_cost_matrix(dict): 
     fig = vis.add_heatmap(pd.DataFrame(dict["dtw"].cost_matrix))
-    for index  in dict["kept_indexes"]:
+    for index  in dict["kept_indexes"][1:-1]:
         x,y = dict["bijections"][index-1]
         i,j = dict["bij_y_ref"][index]-dict["bij_y_ref"][0], dict["bij_x_ref"][index]-dict["bij_x_ref"][0]
         color = Color.next()
@@ -129,14 +129,14 @@ def score_along_cropping(dict):
 
     for i in tqdm(range(1,m), desc="Computation of best cropped scores"):
         new_curve = deepcopy(dict["dtw"].curve2)
-        cropped = new_curve.crop(start2, start2+i) # in frames ?
-        new_dtw = DTW.DynamicTimeWarping(dict["dtw"].curve1, new_curve)
+        new_curve.crop(start2, start2+i) # in frames ?
+        new_dtw = DTW.DynamicTimeWarping(dict["dtw"].curve1, new_curve) # ça renormalise... est-ce pour ça que la forme a changé ?
         best_scores2.append(new_dtw.score)
 
     for i in tqdm(range(1,n), desc="Computation of best cropped scores"):
         new_curve = deepcopy(dict["dtw"].curve1)
-        cropped = new_curve.crop(start1, start1+i) # in frames ?
-        new_dtw = DTW.DynamicTimeWarping(cropped, dict["dtw"].curve2)
+        new_curve.crop(start1, start1+i) # in frames ?
+        new_dtw = DTW.DynamicTimeWarping(new_curve, dict["dtw"].curve2) # problème ici avec une courbe de taille 3
         best_scores1.append(new_dtw.score)
 
     fig = vis.add_curve(y=best_scores1, x=dict["dtw"].times2, name="Cropping the first curve")
@@ -258,7 +258,7 @@ def make_diagrams(dict):
     titles : list[str] = []
     figures : list[go.Figure] = []
     for f in makers:
-        title, fig = f(dict)
+        fig, title = f(dict)
         figures.append(fig)
         titles.append(title)
     return figures,titles
@@ -269,6 +269,7 @@ def experiment(ref:str, target:str):
     main_obj = main.Main(directory, no_blender=True, verbose=2)
     main_obj.config["video reference filename"] = ref
     main_obj.config["video target filename"] = target
+    main_obj.load_videos() # to load correct videos
     main_obj.process(force=True)
     if not os.path.exists(exp_directory): os.mkdir(exp_directory)
     main_obj.draw_diagrams(directory=exp_directory)
@@ -333,7 +334,7 @@ def experiment(ref:str, target:str):
         "warp":warp,
         "bij_y_ref":bij_y_ref,
         "bij_x_ref":bij_x_ref,
-        "distances":distances,
+        "distances":dtw.DTW,
     }
     figures, titles = make_diagrams(dictionary)
     figures : list[go.Figure]
