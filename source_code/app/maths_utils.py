@@ -36,6 +36,33 @@ def integrale3(array, x=None, step:int|float=1):
     result = [0]+[integrate.simpson(y=array[:i], x=x[:i]) for i in range(1,x.size)]
     return np.array(result)
 
+
+def distL1(x1, y1, x2, y2):
+    '''On part du principe que x1 et x2 sont pareils à répétitions près, et y1 et y2 aussi (points sur une grille)'''
+    x1, y1, x2, y2 = np.array(x1), np.array(y1), np.array(x2), np.array(y2)
+    start_x = x1[0]
+    current_x = start_x
+    dist = 0
+    index_1 = 1
+    index_2 = 1
+    while index_1<y1.size and index_2<y2.size:
+        current_x = min(x1[index_1-1], x2[index_2-1])
+        next_x1 , next_x2 = x1[index_1], x2[index_2]
+        if next_x1 == current_x:
+            index_1 += 1
+        elif next_x2 == current_x:
+            index_2 += 1
+        else:
+            assert next_x2==next_x1
+            previous_y1, previous_y2 = y1[index_1-1], y2[index_2-1]
+            next_y1, next_y2 = y1[index_1], y2[index_2]
+            previous_diff = abs(previous_y2 - previous_y1)
+            next_diff = abs(next_y2 - next_y1)
+            dist += (previous_diff+next_diff)/(2*(next_x2-current_x))
+            index_1 += 1
+            index_2 += 1
+    return dist
+
 def correlation(array1, array2):
     arr1, arr2 = np.ravel(np.array(array1)), np.ravel(np.array(array2))
     assert arr1.size == arr2.size, f"Cannot compute correlation coefficient with different size inputs: {arr1.size} != {arr2.size}"
