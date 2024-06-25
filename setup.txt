@@ -6,7 +6,7 @@ Open Anaconda Prompt
 Il faut le même python que celui de blender ! (-> 3.10 pour moi)
 "conda create --name blender2 python=3.10 plotly matplotlib pandas scipy
 "conda activate blender2
-"pip install fake-bpy-module opencv-python scikit-learn tqdm webcolors
+"pip install fake-bpy-module opencv-python scikit-learn tqdm webcolors snakeviz
 "pip install --force-reinstall kaleido==0.1.0post1  # Pour exporter des figures plotly en PNG
 
 -> Install VSCode
