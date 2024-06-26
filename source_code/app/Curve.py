@@ -448,7 +448,7 @@ class Curve:
         return new
     
 
-    def stitch(self, curve:Curve, blend=False): # TODO write a test for this !
+    def stitch(self, curve:Curve, blend=False):
         ## TODO maybe make a separate function for blending ? which blends linearly the entire curves, assuming they have same length and time
         other = deepcopy(curve)
         start, end = self.time_range
