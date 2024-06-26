@@ -471,7 +471,7 @@ class Curve:
                 factor = (last_time-current_time)/(last_time-first_time) if last_time != first_time else 0.5
                 other_kf_id = int(other.get_attribute("id")[i])
                 matching_self_kf_id = [int(id) for (id, time) in zip(self.get_attribute("id"),self.get_times()) if time==current_time]
-                assert len(matching_self_kf_id)==1, "Problem" # TODO write a better message
+                assert len(matching_self_kf_id)==1, f"Found {len(matching_self_kf_id)} time matches during curve blending, expected 1."
                 overlapping_self_ids.append(matching_self_kf_id[0])
                 overlapping_other_ids.append(other_kf_id)
                 factors.append(factor)
@@ -480,8 +480,6 @@ class Curve:
             columns = [attr.value for attr in attributes_to_blend]
             self_array = self._get_data(overlapping_self_ids, columns)
             other_array = other._get_data(overlapping_other_ids, columns)
-            assert self_array.shape == other_array.shape, "Problem"  # TODO write a better message
-            assert self_array.shape[0] == len(factors), "Problem"  # TODO write a better message
             big_factors = np.tile(np.array(factors), (len(columns),1)).T
             new_array = big_factors*self_array  + (1-big_factors)*other_array
             self._set_data(new_array, overlapping_self_ids, columns)
