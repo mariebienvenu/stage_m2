@@ -23,6 +23,7 @@ class DynamicTimeWarping:
 
         self.local_processed = False
         self.global_processed = False
+        self.filtered_indexes_done = False
     
 
     def compute(self, eps=1e-11) : #1e-11 if distances is float64, Ae-5 if float32
@@ -146,6 +147,7 @@ class DynamicTimeWarping:
 
     def filtered_indexes(self, use_global=True, use_constraint_local_maximum=True, constraint_threshold=2, area_difference_threshold=0.1):
         ## TODO dtw.filtered_indexes() -- not tested yet
+        if self.filtered_indexes_done : return self._filtered_indexes
         pair_indexes = list(range(1, len(self.pairings)-1))
         constraints = self.global_constraints() if use_global else self.local_constraints()
         alternate_path_differences = self.alternate_path_differences()
@@ -158,6 +160,7 @@ class DynamicTimeWarping:
             and self.is_index_similar_enough[i] 
             and self.is_index_local_max[i]
         ] + [len(constraints)-1]
+        self.filtered_indexes_done = True
         return self._filtered_indexes
     
 
