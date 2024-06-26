@@ -217,6 +217,34 @@ curve_no_handles = Curve(
 start, stop = curve_no_handles.get_auto_crop(use_handles=False, padding_out=0, padding_in=0)
 print(f"Found autocrop of {(start,stop)} whithout using handles")
 
+# test of curve stitching and blending
+
+'''arr = np.array([[i*5+j for j in range(5)] for i in range(5)])
+content = arr[(1,2),(3,4)]
+other_content= arr[np.ix_((1,2),(3,4))] # advanced slicing'''
+
+curve1 = Curve(coordinates, fullname='first curve')
+curve2 = Curve(coordinates, fullname='second curve')
+curve2.value_scale(scale=5)
+
+stitched_curve = Curve(coordinates, fullname='stitched curve')
+stitched_curve.stitch(curve2)
+stitched_curve.value_transl(13*20)
+
+blended_curves : list[Curve] = []
+for blend in range(10):
+    blended_curve = Curve(coordinates, fullname=f'blended curve : {blend}')
+    blended_curve.stitch(curve2, blend=blend)
+    blended_curve.value_transl((blend+1)*20)
+    blended_curves.append(blended_curve)
+
+fig = curve1.display(handles=False, style="markers+lines")
+curve2.display(handles=False, style="markers+lines", fig=fig)
+for i,curve in enumerate(blended_curves+[stitched_curve]):
+    curve.display(handles=False, style="markers+lines", fig=fig)
+if DO_SHOW: fig.show()
+
+
 ## ANIMATION
 
 empty_anim = Animation()
