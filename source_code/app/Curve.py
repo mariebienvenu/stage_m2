@@ -1,3 +1,4 @@
+from __future__ import annotations # otherwise using Curve type hints inside Curve does not work
 
 import os
 from enum import Enum, unique
@@ -147,7 +148,7 @@ class Curve:
     def get_keyframe(self, id):
         kf = self._get_row(id)
         assert kf[0] == id, "Error in getting keyframe."
-        return kf[1,:]
+        return kf[1:]
     
     def set_keyframe(self, id, array): # array SHOULD start with id
         assert id==array[0], "Wrong ID !"
@@ -206,9 +207,11 @@ class Curve:
         return obj
 
 
-    def add_keyframe(self, time, value):
+    def add_keyframe(self, time, value, attributes=None):
+        if attributes is None: attributes = np.copy(Curve.DEFAULT_ATTRIBUTES)
+        assert attributes.size == Curve.N_ATTRIBUTES - 3 # new_id, time, value are not in there
         new_id = self.array.shape[0]
-        new_row = np.expand_dims(np.concatenate((np.array([new_id, time, value]), np.copy(Curve.DEFAULT_ATTRIBUTES))), axis=0)
+        new_row = np.expand_dims(np.concatenate((np.array([new_id, time, value]), attributes)), axis=0)
         array = np.vstack((self.array, new_row))
         self.array = np.copy(array)
 
@@ -253,18 +256,28 @@ class Curve:
 
     def rename(self, new_name=""):
         self.fullname = new_name
+
+    def _get_data(self, rows="all", columns="all"):
+        if rows is "all": rows = list(range(len(self)))
+        if columns is "all": columns = list(range(Curve.N_ATTRIBUTES))
+        return np.copy(self.array[np.ix_(rows, columns)])
         
     def _get_row(self, row):
-        return np.copy(self.array[row,:])
+        return self._get_data(rows=[row]).squeeze() #np.copy(self.array[row,:])
     
     def _get_column(self, column):
-        return np.copy(self.array[:,column])
+        return self._get_data(columns=[column]).squeeze() #return np.copy(self.array[:,column])
+    
+    def _set_data(self, array, rows="all", columns="all"):
+        if rows is "all": rows = list(range(len(self)))
+        if columns is "all": columns = list(range(Curve.N_ATTRIBUTES))
+        self.array[np.ix_(rows, columns)] = np.copy(array)
     
     def _set_row(self, row, array):
-        self.array[row,:] = np.copy(array)
+        return self._set_data(array, rows=[row]) #self.array[row,:] = np.copy(array)
 
     def _set_column(self, column, array):
-        self.array[:,column] = np.copy(array)
+        return self._set_data(array, columns=[column]) #self.array[:,column] = np.copy(array)
 
     @staticmethod
     def from_array(array, **kwargs):
@@ -294,8 +307,8 @@ class Curve:
         return (np.min(values), np.max(values))
 
     def crop(self, start=None, stop=None):
-        start = start if start is not None else self.time_range[0]
-        stop = stop if stop is not None else self.time_range[1]
+        if start is None: start = self.time_range[0]
+        if stop is None: stop = self.time_range[1]
         indexes = []
         for i, time in enumerate(self.get_times()):
             if time >= start and time <= stop:
@@ -353,6 +366,7 @@ class Curve:
         except AttributeError:
             step = (self.time_range[1]-self.time_range[0])/(len(self))
             derivative = finite_scheme(self.get_values(), step)
+            times = self.get_times()[1:-1] # TODO delete, there for debug
             co = np.vstack((self.get_times()[1:-1], derivative)).T
             return Curve(coordinates=co, fullname=f'{name} of {self.fullname}')
         
@@ -435,3 +449,45 @@ class Curve:
     def __deepcopy__(self, memo):
         new = Curve.from_array(self.array.__deepcopy__(memo), fullname=self.fullname, color=getattr(self, "color", None))
         return new
+    
+
+    def stitch(self, curve:Curve, blend=False): # TODO write a test for this !
+        ## TODO maybe make a separate function for blending ? which blends linearly the entire curves, assuming they have same length and time
+        end = self.time_range[1]
+        other_start = curve.time_range[0]
+        if blend is False or blend is None:
+            curve.time_transl(end-other_start+1)
+            for i in range(len(curve)):
+                keyframe = curve.get_keyframe(i)
+                self.add_keyframe(keyframe[0], keyframe[1], keyframe[2:])
+        else:
+            first_time, last_time = end + 1 - blend, end
+            i=0
+            current_time = first_time
+            curve.time_transl(current_time-other_start) # there is an overlapping region
+            overlapping_self_ids = []
+            overlapping_other_ids = []
+            factors = []
+            while current_time <= end:
+                factor = (last_time-current_time)/(last_time-first_time)
+                curve_kf_id = int(curve.get_attribute("id")[i])
+                matching_self_kf_id = [int(id) for (id, time) in zip(self.get_attribute("id"),self.get_times()) if time==current_time]
+                assert len(matching_self_kf_id)==1, "Problem" # TODO write a better message
+                overlapping_self_ids.append(matching_self_kf_id[0])
+                overlapping_other_ids.append(curve_kf_id)
+                factors.append(factor)
+                i+=1
+                current_time = curve.get_times()[i]
+            attributes_to_blend:list[Attributes_Name] = [Attributes_Name.value, Attributes_Name.handle_left_x, Attributes_Name.handle_left_y, Attributes_Name.handle_right_x, Attributes_Name.handle_right_y]
+            columns = [attr.value for attr in attributes_to_blend]
+            self_array = self._get_data(overlapping_self_ids, columns)
+            other_array = curve._get_data(overlapping_other_ids, columns)
+            assert self_array.shape == other_array.shape, "Problem"  # TODO write a better message
+            assert self_array.shape[0] == len(factors), "Problem"  # TODO write a better message
+            big_factors = np.tile(np.array(factors), (1,len(columns)))
+            new_array = big_factors*self_array  + (1-big_factors)*other_array
+            self._set_data(new_array, overlapping_self_ids, columns)
+
+            for i_ in range(i+1, len(curve)):
+                keyframe = curve.get_keyframe(i)
+                self.add_keyframe(keyframe[0], keyframe[1], keyframe[2:])
