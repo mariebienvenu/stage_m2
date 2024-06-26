@@ -257,27 +257,23 @@ class Curve:
     def rename(self, new_name=""):
         self.fullname = new_name
 
-    def _get_data(self, rows="all", columns="all"):
-        if rows is "all": rows = list(range(len(self)))
-        if columns is "all": columns = list(range(Curve.N_ATTRIBUTES))
+    def _get_data(self, rows, columns):
         return np.copy(self.array[np.ix_(rows, columns)])
         
     def _get_row(self, row):
-        return self._get_data(rows=[row]).squeeze() #np.copy(self.array[row,:])
+        return np.copy(self.array[row,:])
     
     def _get_column(self, column):
-        return self._get_data(columns=[column]).squeeze() #return np.copy(self.array[:,column])
+        return np.copy(self.array[:,column])
     
-    def _set_data(self, array, rows="all", columns="all"):
-        if rows is "all": rows = list(range(len(self)))
-        if columns is "all": columns = list(range(Curve.N_ATTRIBUTES))
+    def _set_data(self, array, rows, columns):
         self.array[np.ix_(rows, columns)] = np.copy(array)
     
     def _set_row(self, row, array):
-        return self._set_data(array, rows=[row]) #self.array[row,:] = np.copy(array)
+        self.array[row,:] = np.copy(array)
 
     def _set_column(self, column, array):
-        return self._set_data(array, columns=[column]) #self.array[:,column] = np.copy(array)
+        self.array[:,column] = np.copy(array)
 
     @staticmethod
     def from_array(array, **kwargs):
@@ -300,7 +296,8 @@ class Curve:
     
     def update_time_range(self):
         times = self.get_times()
-        self.time_range = (np.min(times), np.max(times))
+        if times.size==0: self.time_range = (0,0)
+        else: self.time_range = (np.min(times), np.max(times))
 
     def get_value_range(self):
         values = self.get_values()
@@ -349,6 +346,7 @@ class Curve:
         assert os.path.exists(filename), f"Unable to load content of '{filename}' as it does not exist."
         file = open(filename)
         content = np.loadtxt(filename)
+        if content.size == 0 : return Curve(np.zeros((0,2)), time_range=(0,0))
         if len(content.shape)==1:
             content = np.expand_dims(content, axis=0)
         curve = Curve.from_array(content)
@@ -366,7 +364,6 @@ class Curve:
         except AttributeError:
             step = (self.time_range[1]-self.time_range[0])/(len(self))
             derivative = finite_scheme(self.get_values(), step)
-            times = self.get_times()[1:-1] # TODO delete, there for debug
             co = np.vstack((self.get_times()[1:-1], derivative)).T
             return Curve(coordinates=co, fullname=f'{name} of {self.fullname}')
         
@@ -453,41 +450,42 @@ class Curve:
 
     def stitch(self, curve:Curve, blend=False): # TODO write a test for this !
         ## TODO maybe make a separate function for blending ? which blends linearly the entire curves, assuming they have same length and time
-        end = self.time_range[1]
+        other = deepcopy(curve)
+        start, end = self.time_range
         other_start = curve.time_range[0]
         if blend is False or blend is None:
-            curve.time_transl(end-other_start+1)
-            for i in range(len(curve)):
-                keyframe = curve.get_keyframe(i)
+            other.time_transl(end-other_start+1)
+            for i in range(len(other)):
+                keyframe = other.get_keyframe(i)
                 self.add_keyframe(keyframe[0], keyframe[1], keyframe[2:])
         else:
-            first_time, last_time = end + 1 - blend, end
+            first_time, last_time = max(end - blend, start), end
             i=0
-            current_time = first_time
-            curve.time_transl(current_time-other_start) # there is an overlapping region
+            current_time = first_time-1
+            other.time_transl(first_time-other_start) # there is an overlapping region
             overlapping_self_ids = []
             overlapping_other_ids = []
             factors = []
-            while current_time <= end:
-                factor = (last_time-current_time)/(last_time-first_time)
-                curve_kf_id = int(curve.get_attribute("id")[i])
+            while current_time < end and i<len(other):
+                current_time = other.get_times()[i]
+                factor = (last_time-current_time)/(last_time-first_time) if last_time != first_time else 0.5
+                other_kf_id = int(other.get_attribute("id")[i])
                 matching_self_kf_id = [int(id) for (id, time) in zip(self.get_attribute("id"),self.get_times()) if time==current_time]
                 assert len(matching_self_kf_id)==1, "Problem" # TODO write a better message
                 overlapping_self_ids.append(matching_self_kf_id[0])
-                overlapping_other_ids.append(curve_kf_id)
+                overlapping_other_ids.append(other_kf_id)
                 factors.append(factor)
                 i+=1
-                current_time = curve.get_times()[i]
             attributes_to_blend:list[Attributes_Name] = [Attributes_Name.value, Attributes_Name.handle_left_x, Attributes_Name.handle_left_y, Attributes_Name.handle_right_x, Attributes_Name.handle_right_y]
             columns = [attr.value for attr in attributes_to_blend]
             self_array = self._get_data(overlapping_self_ids, columns)
-            other_array = curve._get_data(overlapping_other_ids, columns)
+            other_array = other._get_data(overlapping_other_ids, columns)
             assert self_array.shape == other_array.shape, "Problem"  # TODO write a better message
             assert self_array.shape[0] == len(factors), "Problem"  # TODO write a better message
-            big_factors = np.tile(np.array(factors), (1,len(columns)))
+            big_factors = np.tile(np.array(factors), (len(columns),1)).T
             new_array = big_factors*self_array  + (1-big_factors)*other_array
             self._set_data(new_array, overlapping_self_ids, columns)
 
-            for i_ in range(i+1, len(curve)):
-                keyframe = curve.get_keyframe(i)
+            for i_ in range(i, len(other)):
+                keyframe = other.get_keyframe(i_)
                 self.add_keyframe(keyframe[0], keyframe[1], keyframe[2:])
