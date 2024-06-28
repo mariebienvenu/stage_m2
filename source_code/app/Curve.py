@@ -303,7 +303,7 @@ class Curve:
         values = self.get_values()
         return (np.min(values), np.max(values))
 
-    def crop(self, start=None, stop=None):
+    def crop(self, start=None, stop=None, reindex=True):
         if start is None: start = self.time_range[0]
         if stop is None: stop = self.time_range[1]
         indexes = []
@@ -312,6 +312,10 @@ class Curve:
                 indexes.append(i)
         self.array = np.copy(self.array[indexes,:])
         self.update_time_range()
+        if reindex: self.reindex()
+
+    def reindex(self):
+        self.set_attribute("id", np.array(list(range(len(self)))))
 
     def get_keyframe_derivatives(self):
         ## computes derivatives at keyframes. Broken handles are automatically assigned a derivative of 0.
@@ -448,11 +452,12 @@ class Curve:
         return new
     
 
-    def stitch(self, curve:Curve, blend=False):
+    def stitch(self, curve:Curve, blend=False, self_end_time='auto', curve_start_time='auto'):
         ## TODO maybe make a separate function for blending ? which blends linearly the entire curves, assuming they have same length and time
         other = deepcopy(curve)
         start, end = self.time_range
-        other_start = curve.time_range[0]
+        if self_end_time!="auto": end = self_end_time
+        other_start = curve.time_range[0] if curve_start_time=='auto' else curve_start_time
         if blend is False or blend is None:
             other.time_transl(end-other_start+1)
             for i in range(len(other)):
@@ -466,7 +471,7 @@ class Curve:
             overlapping_self_ids = []
             overlapping_other_ids = []
             factors = []
-            while current_time < end and i<len(other):
+            while i<len(other) and other.get_times()[i]<=end: #current_time < end and i<len(other):
                 current_time = other.get_times()[i]
                 factor = (last_time-current_time)/(last_time-first_time) if last_time != first_time else 0.5
                 other_kf_id = int(other.get_attribute("id")[i])
@@ -487,3 +492,4 @@ class Curve:
             for i_ in range(i, len(other)):
                 keyframe = other.get_keyframe(i_)
                 self.add_keyframe(keyframe[0], keyframe[1], keyframe[2:])
+            self.update_time_range()
