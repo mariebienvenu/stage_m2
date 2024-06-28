@@ -452,7 +452,7 @@ class Curve:
         return new
     
 
-    def stitch(self, curve:Curve, blend=False, self_end_time='auto', curve_start_time='auto'):
+    def stitch(self, curve:Curve, blend=False, self_end_time='auto', curve_start_time='auto', verbose=0):
         ## TODO maybe make a separate function for blending ? which blends linearly the entire curves, assuming they have same length and time
         other = deepcopy(curve)
         start, end = self.time_range
@@ -468,6 +468,7 @@ class Curve:
             i=0
             current_time = first_time-1
             other.time_transl(first_time-other_start) # there is an overlapping region
+            if verbose>0: print(f"self_times:{self.get_times()}, curve_times(original):{curve.get_times()}, other_times(transl):{other.get_times()}")
             overlapping_self_ids = []
             overlapping_other_ids = []
             factors = []
@@ -476,6 +477,7 @@ class Curve:
                 factor = (last_time-current_time)/(last_time-first_time) if last_time != first_time else 0.5
                 other_kf_id = int(other.get_attribute("id")[i])
                 matching_self_kf_id = [int(id) for (id, time) in zip(self.get_attribute("id"),self.get_times()) if time==current_time]
+                if verbose>0: print(f"count={i}/{len(other)}, time={first_time}/{current_time}/{last_time}, other_id={other_kf_id}, self_id={matching_self_kf_id}")
                 assert len(matching_self_kf_id)==1, f"Found {len(matching_self_kf_id)} time matches during curve blending, expected 1."
                 overlapping_self_ids.append(matching_self_kf_id[0])
                 overlapping_other_ids.append(other_kf_id)
