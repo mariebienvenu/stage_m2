@@ -20,7 +20,7 @@ class FakeCurvePointer:
             if t>=time:
                 return v
             
-DO_SHOW = False
+DO_SHOW = True
 
 # COLOR
             
@@ -218,10 +218,6 @@ start, stop = curve_no_handles.get_auto_crop(use_handles=False, padding_out=0, p
 print(f"Found autocrop of {(start,stop)} whithout using handles")
 
 # test of curve stitching and blending
-
-'''arr = np.array([[i*5+j for j in range(5)] for i in range(5)])
-content = arr[(1,2),(3,4)]
-other_content= arr[np.ix_((1,2),(3,4))] # advanced slicing'''
 
 curve1 = Curve(coordinates, fullname='first curve')
 curve2 = Curve(coordinates, fullname='second curve')
