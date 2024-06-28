@@ -10,7 +10,8 @@ from app.dynamic_time_warping import DynamicTimeWarping
 import app.image_gradient as im_grad
 from app.curve import Curve
 
-class InternalProcess: # TODO: just did a pretty big refactory, should write a dedicated test file 
+class InternalProcess:
+    # TODO : do some update of Main (and debug using test_main) to make this makeover work in the pipeline
 
 
     COST_THRESHOLD = 2
