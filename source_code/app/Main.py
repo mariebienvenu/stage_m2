@@ -1,6 +1,5 @@
 
 import os
-from typing import List
 
 import numpy as np
 import pandas as pd
@@ -56,7 +55,7 @@ class Main(AbstractIO):
         return self.directory + "main_config.json"
     
     @property
-    def connexions_of_interest(self) -> List[dict]:
+    def connexions_of_interest(self) -> list[dict]:
         return self.config["connexions of interest"]
     
     @property
@@ -105,35 +104,23 @@ class Main(AbstractIO):
         #    banim.enrich() # TODO -- will be useful when we automatically decide of connexions based on multi-modal correlations
 
         self.internals = [
-            InternalProcess(vanim_ref, vanim_target, banim) for banim in banims
+            InternalProcess(vanim_ref, vanim_target, banim, verbose=self.verbose-1) for banim in banims
         ]
 
-        self.warps:List[List[warping.LinearWarp1D]] = [[] for _ in self.internals]
-        self.channels:List[List[str]] = [[] for _ in self.internals]
-        self.features:List[List[str]] = [[] for _ in self.internals]
+        # TODO the following paragraph needs an update based on the InternalProcess rework
+        self.is_impulsive:list[list[bool]] = [[] for _ in self.internals]
+        self.channels:list[list[str]] = [[] for _ in self.internals]
+        self.features:list[list[str]] = [None for _ in self.internals]
         for connexion in self.connexions_of_interest:
             obj_name, feature, channel, is_impulsive = connexion["object name"], connexion["video feature"], connexion["channel"], connexion["is impulsive"]
-            index = self.blender_scene.object_names.index(obj_name) if not self.no_blender else 0 ## costly
-            internal = self.internals[index]
-            # we prefer sparse warps for impulsive signals and dense ones for continuous signals
-            if is_impulsive: new_warp = internal.make_simplified_warp(
-                feature=feature,
-                constraint_threshold=2.,
-                interpolation=Main.WARP_INTERPOLATION,
-                local_scale=Main.DTW_CONSTRAINTS_LOCAL,
-                verbose=self.verbose-1
-            )
-            else : new_warp = internal.make_warp(
-                feature=feature,
-                interpolation=Main.WARP_INTERPOLATION,
-                verbose=self.verbose-1
-            )
-            self.warps[index].append(new_warp)
-            self.channels[index].append(channel)
-            self.features[index].append(feature)
+            internal_index = self.blender_scene.object_names.index(obj_name) if not self.no_blender else 0 ## costly
+            self.is_impulsive[internal_index].append(is_impulsive)  # we prefer sparse warps for impulsive signals and dense ones for continuous signals
+            self.channels[internal_index].append(channel)
+            if self.features[internal_index] is not None : raise NotImplementedError(f"Multiple features for single object not implemented yet. Tried to use {feature} in addition to {self.features[internal_index]}.")
+            self.features[internal_index] = feature            
 
-        zipped = zip(self.internals, self.warps, self.channels)
-        self.new_anims = [internal.make_new_anim(channels=channel, warps=warp) for internal, warp, channel in zipped]
+        zipped = zip(self.internals, self.features, self.is_impulsive, self.channels)
+        self.new_anims = [internal.process(feature=feature, channels=channels,filter_indexes=is_impulsive, warp_interpolation=Main.WARP_INTERPOLATION) for internal, feature, is_impulsive, channels in zipped]
         self.is_processed = True
         return self.new_anims
 
@@ -147,7 +134,8 @@ class Main(AbstractIO):
     def draw_diagrams(self, animation_index=0, save=True, show=False, directory=None):
         if directory is None: directory = self.directory + '/out/'
 
-        internal, warp, channel, feature = self.internals[animation_index], self.warps[animation_index][-1], self.channels[animation_index][-1], self.features[animation_index][-1]
+        internal, channel, feature = self.internals[animation_index], self.channels[animation_index][-1], self.features[animation_index]
+        warp = internal.warp
         dtw = internal.dtw
         feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
         original_curve = self.blender_scene.get_animations()[animation_index].find(channel) if not self.no_blender else Curve()
@@ -216,7 +204,7 @@ class Main(AbstractIO):
         fig6.update_layout(xaxis3_title="Time (frames)", xaxis4_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis3_title="Magnitude (Blender units)", showlegend=False)
         title6 = f'Global editing process using "{internal.feature}" feature on "{channel}" channel'
 
-        figures:List[go.Figure] = [fig0, fig1, fig2, fig3, fig4, fig5, fig6, fig7]
+        figures:list[go.Figure] = [fig0, fig1, fig2, fig3, fig4, fig5, fig6, fig7]
         titles = [title0, title1, title2, title3, title4, title5, title6, title7]
 
         if not os.path.exists(f'{self.directory}/out/') : os.mkdir(f'{self.directory}/out/')
