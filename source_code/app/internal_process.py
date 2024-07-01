@@ -2,6 +2,7 @@
 from typing import List # TODO should be removed, useless ; and legacy class too
 from copy import deepcopy
 import numpy as np
+from plotly.subplots import make_subplots
 
 from app.animation import Animation
 import app.warping as W
@@ -9,10 +10,12 @@ from app.dynamic_time_warping import DynamicTimeWarping
 
 import app.image_gradient as im_grad
 from app.curve import Curve
+from app.color import Color
+import app.visualisation as vis
+
 
 class InternalProcess:
     # TODO : do some update of Main (and debug using test_main) to make this makeover work in the pipeline
-
 
     COST_THRESHOLD = 2
     AREA_THRESHOLD = 0.1
@@ -40,7 +43,8 @@ class InternalProcess:
                 if normalize: self.normalize_curves()
                 self.do_dtw(redo=True)
                 still_issue = self.detect_number_issues()
-                if still_issue: raise RecursionError(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
+                #if still_issue: raise RecursionError(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
+                if still_issue and self.verbose>0: print(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
         self.make_warp(filter=filter_indexes, interpolation=warp_interpolation)
         self.make_new_anim(channels, use_operator=issue)
         return self.banim2
@@ -62,12 +66,15 @@ class InternalProcess:
 
 
     def do_dtw(self, redo=False):
+        self.former_dtw = getattr(self, "dtw", None)
+        self.former_dtw_constraints = getattr(self, "dtw_constraints", None)
         self.dtw = DynamicTimeWarping(self.curve1 if not redo else self.new_curve1, self.curve2) # performs the algorithm computation at init time
         self.dtw_constraints = self.dtw.global_constraints()
 
 
     def detect_number_issues(self):
         # TODO find a better name for the function, beurk
+        self.former_outliers = getattr(self, "outliers", None)
         self.outliers = self.dtw.detect_limitation(InternalProcess.COST_THRESHOLD, InternalProcess.COST_THRESHOLD, InternalProcess.AREA_THRESHOLD, InternalProcess.LOCAL_WINDOW_SIZE)
         if self.verbose>0: print(f"Internal Process : found {len(self.outliers)} outliers in shortest path.")
         return len(self.outliers)!=0
@@ -125,12 +132,94 @@ class InternalProcess:
 
     def make_new_anim(self, channels:list[str], use_operator=False):
         self.banim2 = Animation()
+        if use_operator: self.new_banim1 = Animation()
         for curve in self.banim1:
             if curve.fullname in channels:
-                temp_curve = self.operator(curve) if use_operator else curve                    
+                temp_curve = self.operator(curve) if use_operator else curve    
+                if use_operator: self.new_banim1.append(temp_curve)
                 self.banim2.append(temp_curve.apply_spatio_temporal_warp(self.warp, in_place=False))
             else:
+                if use_operator: self.new_banim1.append(curve)
                 self.banim2.append(curve)
+
+
+    def make_diagrams(self, number_issues=True):
+
+        inlier_color, outlier_color, path_color = Color.next(), Color.next(), Color.next()
+        ref_color, target_color = Color.next(), Color.next()
+
+        def aux_enriched_map(dtw:DynamicTimeWarping, pairs:list[list[int]], inliers:list[int], outliers:list[int]):
+            fig = dtw.make_map(path_color=path_color)
+            circle_indexes = inliers+outliers
+            circle_colors = [inlier_color]*len(inliers) + [outlier_color]*len(outliers)
+            for index, color in zip(circle_indexes, circle_colors):
+                x,y = pairs[index][1]-pairs[0][1], pairs[index][0]-pairs[0][0]
+                vis.add_circle(center=(x,y), color=color, fig=fig)
+            return fig
+        
+        def aux_matches_filter(dtw:DynamicTimeWarping, pairs:list[list[int]], naive_indexes:list[int], filtered_indexes:list[int], vertical_offset=4):
+            fig = make_subplots(
+                rows=1, cols=3, 
+                shared_xaxes='all', 
+                subplot_titles=["No filter", "Basic filter (1 criteria)", "Refined filter  (several criteria)"],
+                vertical_spacing=0.1, horizontal_spacing=0.1,
+            )
+
+            x1, y1, x2, y2 = dtw.times1, dtw.values1, dtw.times2, dtw.values2+vertical_offset
+            all_pairings = pairs
+            naive_pairings = [e for i,e in enumerate(pairs) if i in naive_indexes]
+            refined_pairings = [e for i,e in enumerate(pairs) if i in filtered_indexes]
+            for col in [1,2, 3]:
+                vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=all_pairings, color=(210, 210, 210), opacity=1, fig=fig, row=1, col=col)
+                vis.add_curve(y=y2, x=x2, name="curve1", color=target_color, fig=fig, row=1, col=col)
+                vis.add_curve(y=y1, x=x1, name="curve2", color=ref_color, fig=fig, row=1, col=col)
+            vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=all_pairings, color="green", opacity=1, fig=fig, row=1, col=1)
+            vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=naive_pairings, color="green", opacity=1, fig=fig, row=1, col=2)
+            vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=refined_pairings, color="green", opacity=1, fig=fig, row=1, col=3)
+
+            fig.update_layout(
+                xaxis1_title="Time (frames)",
+                xaxis2_title="Time (frames)",
+                xaxis3_title="Time (frames)",
+                yaxis_title="Amplitude (arbitrary)",
+            )
+            return fig
+
+        dtw = self.dtw
+        constraints = self.dtw_constraints
+        pairs = dtw.pairings
+        inliers = self.kept_indexes
+        outliers = getattr(self, "outliers", [])
+        naive_indexes = [0] + [index for index in range(1, len(pairs)-1) if constraints[index]>InternalProcess.COST_THRESHOLD] + [len(pairs)-1]
+        
+        fig1 = aux_enriched_map(dtw, pairs, inliers, outliers)
+        title1 = "Cost matrix with shortest path and selected nodes"
+
+        fig2 = aux_matches_filter(dtw, pairs, naive_indexes, inliers)
+        title2 = "Matches with no or simple or refined selection"
+
+        figures = [fig1, fig2]
+        titles = [title1, title2]
+
+        if not number_issues : return figures, titles
+
+        former_dtw:DynamicTimeWarping = self.former_dtw
+        former_constraints = self.former_dtw_constraints
+        former_pairs = former_dtw.pairings
+        former_outliers = self.former_outliers
+        former_inliers = former_dtw.filtered_indexes()
+        former_naive_indexes = [0] + [index for index in range(1, len(former_pairs)-1) if former_constraints[index]>InternalProcess.COST_THRESHOLD] + [len(former_pairs)-1]
+
+        fig3 = aux_enriched_map(former_dtw, former_pairs, former_inliers, former_outliers)
+        title3 = "Cost matrix with shortest path and selected nodes - before"
+
+        fig4 = aux_matches_filter(former_dtw, former_pairs, former_naive_indexes, former_inliers)
+        title4 = "Matches with no or simple or refined selection - before"
+
+        figures = [fig3, fig4, fig1, fig2]
+        titles = [title3, title4, title1+" - after", title2+" - after"]
+
+        return figures, titles
 
 
 
