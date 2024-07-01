@@ -167,7 +167,7 @@ class DynamicTimeWarping:
         return self._filtered_indexes
     
 
-    def detect_limitation(self, cost_threshold=2, constraint_threshold=2, area_difference_threshold=0.1, local_window_size=20, refine=True):
+    def detect_limitation(self, cost_threshold=7, constraint_threshold=2, area_difference_threshold=0.1, local_window_size=20, refine=True):
         """Local window_size is the size of the voisinage taken into account, in index space. It is not a time or even necessarily a number of frames."""
         cost_along_path = self.cost_along_shortest_path
         kept_indexes = self.filtered_indexes(constraint_threshold=constraint_threshold, area_difference_threshold=area_difference_threshold)
