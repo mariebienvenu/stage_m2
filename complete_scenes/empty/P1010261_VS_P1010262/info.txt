@@ -8,3 +8,4 @@ Discarded for not being a local constraint maxima : [103, 104, 106, 108, 123, 40
 Best score: 205.2416150401928
 Problematic indexes: []
 Corresponding gradients: X=[] and Y=[]
+Needed action: []
