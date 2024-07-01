@@ -2,9 +2,12 @@
 import numpy as np
 from tqdm import tqdm
 from copy import deepcopy
+import plotly.graph_objects as go
 
 from app.curve import Curve
 import app.maths_utils as m_utils
+import app.visualisation as vis
+from app.color import Color
 
 
 class DynamicTimeWarping:
@@ -184,4 +187,13 @@ class DynamicTimeWarping:
                     keep[i] = True
         problematic_indexes = [index for i, index in enumerate(problematic_indexes) if keep[i]]
         return problematic_indexes
+
+
+    def make_map(self, add_path=True, path_color=None, fig=None) -> go.Figure:
+        if fig is None: fig=go.Figure()
+        vis.add_heatmap(self.cost_matrix, fig=fig)
+        pairs = self.pairings
+        if add_path:
+            vis.add_curve(y=np.array(pairs)[:,0]-pairs[0][0], x=np.array(pairs)[:,1]-pairs[0][1], color=path_color, fig=fig)
+        return fig
 
