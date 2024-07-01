@@ -90,7 +90,23 @@ def add_pairings(y1:np.ndarray, y2:np.ndarray, pairs:list[list[int]], x1:list|np
 
 def add_heatmap(df:pd.DataFrame, min=None, max=None, is_correlation=False, fig=None, row=None, col=None, doShow=False):
     if fig is None: fig = go.Figure()
+    if type(df) is np.ndarray: df = pd.DataFrame(df) # new
     colorscale = 'RdBu' if is_correlation else 'Plasma'
     fig.add_trace(go.Heatmap(z=df, x=df.columns, y=df.index, colorscale=colorscale, zmax=max, zmin=min), row=row, col=col)
     if doShow: fig.show()
+    return fig
+
+
+def add_circle(center:tuple, radius:float=2, color=None, name=None, fig=None, row=None, col=None, doShow=False): # TODO test
+    if fig is None: fig = go.Figure()
+    color = Color.to_string(color) if color is not None else Color.to_string(Color.next())
+    x,y = center
+    fig.add_shape(
+        type="circle",
+        x0=x-radius, y0=y-radius, x1=x+radius, y1=y+radius,
+        line_color=color,
+        name=name,
+        col=col,
+        row=row
+    )
     return fig
