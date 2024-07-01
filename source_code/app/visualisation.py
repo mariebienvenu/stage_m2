@@ -97,7 +97,7 @@ def add_heatmap(df:pd.DataFrame, min=None, max=None, is_correlation=False, fig=N
     return fig
 
 
-def add_circle(center:tuple, radius:float=2, color=None, name=None, fig=None, row=None, col=None, doShow=False): # TODO test
+def add_circle(center:tuple, radius:float=2, color=None, name=None, fig=None, row=None, col=None, doShow=False):
     if fig is None: fig = go.Figure()
     color = Color.to_string(color) if color is not None else Color.to_string(Color.next())
     x,y = center
@@ -109,4 +109,5 @@ def add_circle(center:tuple, radius:float=2, color=None, name=None, fig=None, ro
         col=col,
         row=row
     )
+    if doShow: fig.show()
     return fig
