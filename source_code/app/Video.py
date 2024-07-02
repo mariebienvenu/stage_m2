@@ -23,9 +23,9 @@ class Video:
         self.filepath = filepath
         
         vid_capture = cv2.VideoCapture(filepath)
-        assert vid_capture.isOpened(), "Error opening the video file"
+        assert vid_capture.isOpened(), f"Error opening the video file at filepath:{filepath}"
         ret, frame = vid_capture.read()
-        assert ret, "Error reading the video file"
+        assert ret, f"Error reading the video file at filepath:{filepath}"
 
         self.fps = vid_capture.get(cv2.CAP_PROP_FPS)
         self.frame_count = int(vid_capture.get(cv2.CAP_PROP_FRAME_COUNT))
