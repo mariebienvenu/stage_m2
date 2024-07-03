@@ -74,6 +74,40 @@ def get_animation(obj_name):
     
     return animation
 
+
+def add_key(obj_name:str, curve_name:str, n_keys=1):
+    obj = None
+    for o in bpy.data.objects:
+        if o.name == obj_name:
+            obj = o
+    if obj is None:
+        return
+    
+    for curve in obj.animation_data.action.fcurves:
+        fullname = f"{curve.data_path} {['X','Y','Z'][curve.array_index]}"
+        debig=0
+        if curve_name == fullname:
+            frames = [kf.co[0] for kf in curve.keyframe_points]
+            for i in range(n_keys):
+                obj.keyframe_insert(curve.data_path, index=curve.array_index, frame=max(frames)+1+i)
+
+
+def remove_key(obj_name:str, curve_name:str, n_keys=1):
+    obj = None
+    for o in bpy.data.objects:
+        if o.name == obj_name:
+            obj = o
+    if obj is None:
+        return
+    
+    for curve in obj.animation_data.action.fcurves:
+        fullname = f"{curve.data_path} {['X','Y','Z'][curve.array_index]}"
+        debug=0
+        if curve_name == fullname:
+            frames = [kf.co[0] for kf in curve.keyframe_points]
+            for i in range(n_keys):
+                obj.keyframe_delete(curve.data_path, index=curve.array_index, frame=frames[-1-i])
+
     
 def set_animation(obj_name:str, animation:Animation):
     obj = None
@@ -90,9 +124,17 @@ def set_animation(obj_name:str, animation:Animation):
         fullname = f"{curve.data_path} {['X','Y','Z'][curve.array_index]}"
         target_curve = animation.find(fullname)
 
-        a = list(curve.keyframe_points)
+        target_size = len(target_curve)
+        current_size = len(list(curve.keyframe_points))
 
-        assert len(target_curve)==len(list(curve.keyframe_points)), "Problem ! Number of keyframes changed."
+        if target_size>current_size:
+            print("Number of keyframes changed, adding keys to blender fcurve.")
+            add_key(obj_name, fullname, target_size-current_size)
+        if target_size<current_size:
+            print("Number of keyframes changed, removing keys from blender fcurve.")
+            remove_key(obj_name, fullname, current_size-target_size)
+
+        ## problem here
 
         attr_names = C.Attributes_Name
         

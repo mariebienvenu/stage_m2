@@ -93,3 +93,19 @@ fig2.show()
 ## Test of b_utils.set_animation()
 
 b_utils.set_animation("Ball2", animation)
+
+
+## Test of b_utils.add_key, remove_key
+
+name, channel = "Ball3", "location Z"
+anim_before = b_utils.get_animation(name)
+b_utils.add_key(name, channel, 3)
+anim_after = b_utils.get_animation(name)
+print(f"Before adding keys: {anim_before.find(channel)}")
+print(f"After adding keys: {anim_after.find(channel)}")
+
+anim_before = b_utils.get_animation(name)
+b_utils.remove_key(name, channel, 3)
+anim_after = b_utils.get_animation(name)
+print(f"Before removing keys: {anim_before.find(channel)}")
+print(f"After removing keys: {anim_after.find(channel)}")
