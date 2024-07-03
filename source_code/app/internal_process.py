@@ -99,11 +99,17 @@ class InternalProcess:
                 output_curve.crop(stop=time_for_crop)
             if all([action == "add" for action in needed_action]):
                 times_in_ref = inliers_time_in_ref # len = m
+
+                ## new
+                input_curve_times = input_curve.get_times()
+                snapped_indexes = [np.argmin(np.abs(input_curve_times-time_ref)) for time_ref in times_in_ref]
+                snapped_time_in_ref = input_curve_times[np.unique(np.array(snapped_indexes))]
+
                 time_start, time_stop = self.dtw.bijection[0][[start, stop]]
                 delta = blend/2 if not(blend is False or blend is None) else 0
-                box_start = (time_start, times_in_ref[-2]+delta)
-                box_end = (times_in_ref[-1]-delta, time_stop)
-                box_to_duplicate = (times_in_ref[-2]-delta, times_in_ref[-1]+delta)
+                box_start = (time_start, snapped_time_in_ref[-2]+delta)
+                box_end = (snapped_time_in_ref[-1]-delta, time_stop)
+                box_to_duplicate = (snapped_time_in_ref[-2]-delta, snapped_time_in_ref[-1]+delta)
                 output_curve, motif, ending = deepcopy(input_curve), deepcopy(input_curve), deepcopy(input_curve)
                 for c, box in zip([output_curve, motif, ending],  [box_start, box_to_duplicate, box_end]):
                     c.crop(box[0], box[1])
@@ -137,13 +143,14 @@ class InternalProcess:
             if curve.fullname in channels:
                 temp_curve = self.operator(curve) if use_operator else curve    
                 if use_operator: self.new_banim1.append(temp_curve)
-                self.banim2.append(temp_curve.apply_spatio_temporal_warp(self.warp, in_place=False))
+                new_curve = temp_curve.apply_spatio_temporal_warp(self.warp, in_place=False)
+                self.banim2.append(new_curve)
             else:
                 if use_operator: self.new_banim1.append(curve)
                 self.banim2.append(curve)
 
 
-    def make_diagrams(self, number_issues=True):
+    def make_diagrams(self, number_issues=True, anim_style=None):
 
         inlier_color, outlier_color, path_color = Color.next(), Color.next(), Color.next()
         ref_color, target_color = Color.next(), Color.next()
@@ -237,8 +244,12 @@ class InternalProcess:
         fig7, title7 = go.Figure(), ""
         if len(self.banim1)>0:
             fig7 = make_subplots(rows=2, cols=2, shared_xaxes=True, subplot_titles=["Before", "After"])
-            self.banim1.display(fig=fig7, row=1, col=1)
-            self.new_banim1.display(fig=fig7, row=2, col=1)
+            if anim_style is None: 
+                self.banim1.display(fig=fig7, row=1, col=1)
+                self.new_banim1.display(fig=fig7, row=2, col=1)
+            else:
+                self.banim1.display(handles=False, style=anim_style, fig=fig7, row=1, col=1)
+                self.new_banim1.display(handles=False, style=anim_style, fig=fig7, row=2, col=1)
             title7 = "Original animation curve - before and after processing"
 
         fig8 = aux_along_path(former_dtw, former_constraints, former_inliers, former_outliers, 2)
