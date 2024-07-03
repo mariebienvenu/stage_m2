@@ -92,6 +92,8 @@ new_internal.detect_number_issues()
 
 ## Let's try to fix this
 
+InternalProcess.COST_THRESHOLD = 2
+
 print("-- Trying to fix the issue")
 fixed_internal = InternalProcess(Animation([vcurve1]), Animation([new_vcurve2]), Animation([bcurve1]), verbose=10)
 fixed_banim2 = fixed_internal.process(feature="Feature curve", channels=["Animation Curve"], only_temporal=True, filter_indexes=True, detect_issue=True, normalize=True)
@@ -103,7 +105,7 @@ for curve, name in zip([fixed_internal.curve1, fixed_curve1, fixed_internal.curv
     curve.display(fig=fig3, handles=False, style="lines+markers", name=name)
 if DO_SHOW: fig3.show()
 
-figures, titles = fixed_internal.make_diagrams(number_issues=True)
+figures, titles = fixed_internal.make_diagrams(number_issues=True, anim_style="lines+markers")
 for fig, title in zip(figures, titles):
     fig.update_layout(title=title)
     if DO_SHOW: fig.show()
@@ -145,7 +147,7 @@ for curve, name in zip([vcurve1, new_curve1, new_vcurve2, bcurve1, new_banim2[0]
 
 if DO_SHOW: fig2.show()
 
-figures, titles = new_internal.make_diagrams(number_issues=False)
+figures, titles = new_internal.make_diagrams(number_issues=False, anim_style="lines+markers")
 for fig, title in zip(figures, titles):
     fig.update_layout(title=title)
     if DO_SHOW: fig.show()
@@ -165,7 +167,7 @@ for curve, name in zip([fixed_internal.curve1, fixed_curve1, fixed_internal.curv
     curve.display(fig=fig3, handles=False, style="lines+markers", name=name)
 if DO_SHOW: fig3.show()
 
-figures, titles = fixed_internal.make_diagrams(number_issues=True)
+figures, titles = fixed_internal.make_diagrams(number_issues=True, anim_style="lines+markers")
 for fig, title in zip(figures, titles):
     fig.update_layout(title=title)
     if DO_SHOW: fig.show()
