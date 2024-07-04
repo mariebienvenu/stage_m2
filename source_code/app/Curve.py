@@ -468,7 +468,7 @@ class Curve:
             i=0
             current_time = first_time-1
             other.time_transl(first_time-other_start) # there is an overlapping region
-            if verbose>0: print(f"self_times:{self.get_times()}, curve_times(original):{curve.get_times()}, other_times(transl):{other.get_times()}")
+            #if verbose>0: print(f"self_times:{self.get_times()}, curve_times(original):{curve.get_times()}, other_times(transl):{other.get_times()}")
             overlapping_self_ids = []
             overlapping_other_ids = []
             factors = []
@@ -478,6 +478,8 @@ class Curve:
                 other_kf_id = int(other.get_attribute("id")[i])
                 matching_self_kf_id = [int(id) for (id, time) in zip(self.get_attribute("id"),self.get_times()) if time==current_time]
                 if verbose>0: print(f"count={i}/{len(other)}, time={first_time}/{current_time}/{last_time}, other_id={other_kf_id}, self_id={matching_self_kf_id}")
+                if len(matching_self_kf_id)!=1:
+                    debug=0
                 assert len(matching_self_kf_id)==1, f"Found {len(matching_self_kf_id)} time matches during curve blending, expected 1."
                 overlapping_self_ids.append(matching_self_kf_id[0])
                 overlapping_other_ids.append(other_kf_id)
