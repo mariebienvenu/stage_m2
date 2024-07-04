@@ -20,6 +20,7 @@ class LinearWarp1D(AbstractWarp):
 
     def __call__(self, t, x):
         return np.interp(t, self.input_data, self.output_data),x
+        ## TODO warping : add linear interpolation when outside of bounds... like identity + temporal_offset (basically to glue surrounding parts of the animation to the modified part)
     
 
 class CubicWarp1D(AbstractWarp):
