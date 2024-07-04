@@ -18,6 +18,7 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
 from copy import deepcopy
+import cv2
 
 import plotly
 plotly.io.kaleido.scope.mathjax= None # supposedly makes saving figures faster
@@ -33,7 +34,7 @@ warping = app.warping
 Color.reset()
 
 directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/empty/"
-SHOW = True
+SHOW = False
 CONSTRAINT_THRESHOLD = 2 #3
 AREA_THRESHOLD = 0.1 #0.3
 main.Main.DTW_CONSTRAINTS_LOCAL = 10
@@ -254,7 +255,7 @@ def distances(dict):
 
 
 def make_diagrams(dict):
-    makers = [local_VS_global_constraints, warping_and_kept_indexes, big_figure, naive_VS_refined_matches, best_path_in_cost_matrix, cost_along_best_path, score_along_cropping, distances]
+    makers = [local_VS_global_constraints, warping_and_kept_indexes, naive_VS_refined_matches, best_path_in_cost_matrix, cost_along_best_path, distances, big_figure] #, score_along_cropping
     titles : list[str] = []
     figures : list[go.Figure] = []
     for f in makers:
@@ -290,7 +291,7 @@ def experiment(ref:str, target:str):
     integrales = [integrale(bijection[1], bijection[0]) for bijection in bijections]
     integrale_ref = integrale(dtw.bijection[1], dtw.bijection[0])
     diffs = np.array([abs(integrale - integrale_ref)/(n*m)*100 for integrale in integrales])
-
+    
     pair_indexes = list(range(1, len(paths)))
     is_constrained_enough = [constraints[index]>CONSTRAINT_THRESHOLD for index in pair_indexes]
     is_similar_enough = [diffs[index-1]<AREA_THRESHOLD for index in pair_indexes]
@@ -303,18 +304,31 @@ def experiment(ref:str, target:str):
 
     warp = warping.LinearWarp1D(X_in=[dtw.bijection[0][index] for index in kept_indexes], X_out=[dtw.bijection[1][index] for index in kept_indexes])
 
+    problematic_indexes = dtw.detect_limitation()
+    grad_x = cv2.Sobel(dtw.cost_matrix, ddepth=cv2.CV_64F, dx=1, dy=0)
+    grad_y = cv2.Sobel(dtw.cost_matrix, ddepth=cv2.CV_64F, dx=0, dy=1)
+    grad_mag = np.sqrt(grad_x**2+grad_y**2)
+    #vis.add_heatmap(grad_mag, doShow=True)
+    pb_gradx = [grad_x[dtw.pairings[index][0],dtw.pairings[index][1]] for index in problematic_indexes]
+    pb_grady = [grad_y[dtw.pairings[index][0],dtw.pairings[index][1]] for index in problematic_indexes]
+    needed_action = ["add" if abs(dx)>abs(dy) else "delete" for dx,dy in zip(pb_gradx, pb_grady)]
+
     file = open(exp_directory+"info.txt", 'w')
-    file.writelines(
+    file.write("\n".join(
         [
+            f"Ref: {ref}, Target:{target}",
             f"Kept indexes: {kept_indexes}",
             f"Kept pairs: {[dtw.pairings[index] for index in kept_indexes]}",
             f"Corresponding times: {[(dtw.bijection[0][index],dtw.bijection[1][index]) for index in kept_indexes]}",
             f"Discarded for being not constrained enough : {discarded_for_constraint_value}",
             f"Discarded for being too far from ideal path : {discarded_for_integration_value}",
             f"Discarded for not being a local constraint maxima : {discarded_for_local_maxima}",
-            f"Best score: {dtw.score}"
+            f"Best score: {dtw.score}",
+            f"Problematic indexes: {problematic_indexes}",
+            f"Corresponding gradients: X={pb_gradx} and Y={pb_grady}",
+            f"Needed action: {needed_action}",
         ]
-    )
+    ))
     file.close()
 
     dictionary = {
@@ -337,6 +351,9 @@ def experiment(ref:str, target:str):
         "distances":dtw.DTW,
     }
     figures, titles = make_diagrams(dictionary)
+    additionnal_figures, additionnal_titles = main_obj.internals[0].make_diagrams(main_obj.internals[0].issue_detected)
+    figures += additionnal_figures
+    titles += additionnal_titles
     figures : list[go.Figure]
     titles : list[str] 
 
@@ -345,9 +362,6 @@ def experiment(ref:str, target:str):
         filetitle = title.replace('"','')
         figure.write_html(f'{exp_directory}/{filetitle}.html')
         if SHOW: figure.show()
-
-
-
 
 
 filenames = ["P1010258", "P1010259", "P1010260", "P1010261", "P1010262", "P1010263"]
