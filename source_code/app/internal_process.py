@@ -100,15 +100,15 @@ class InternalProcess:
             if all([action == "add" for action in needed_action]):
                 times_in_ref = inliers_time_in_ref # len = m
 
-                ## new
+                ## TODO this snap will not work well because it desynchronizes curves ; should come earlier in the algorithm.
                 input_curve_times = input_curve.get_times()
                 snapped_indexes = [np.argmin(np.abs(input_curve_times-time_ref)) for time_ref in times_in_ref]
                 snapped_time_in_ref = input_curve_times[np.unique(np.array(snapped_indexes))]
 
                 time_start, time_stop = self.dtw.bijection[0][[start, stop]]
                 delta = blend/2 if not(blend is False or blend is None) else 0
-                box_start = (time_start, snapped_time_in_ref[-2]+delta)
-                box_end = (snapped_time_in_ref[-1]-delta, time_stop)
+                box_start = (None, snapped_time_in_ref[-2]+delta)
+                box_end = (snapped_time_in_ref[-1]-delta, None)
                 box_to_duplicate = (snapped_time_in_ref[-2]-delta, snapped_time_in_ref[-1]+delta)
                 output_curve, motif, ending = deepcopy(input_curve), deepcopy(input_curve), deepcopy(input_curve)
                 for c, box in zip([output_curve, motif, ending],  [box_start, box_to_duplicate, box_end]):
