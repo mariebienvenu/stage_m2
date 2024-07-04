@@ -326,7 +326,7 @@ class Curve:
         return dy/dx*left_unbroken_handles*right_unbroken_handles 
     
     def sample(self, times:np.ndarray|int=None):
-        if len(self) <= 1 : return self ## TODO maybe test if this is a good idea ? Added in a debug session with Main having no blender
+        if len(self) <= 1 : return self
         assert "pointer" in dir(self), "Cannot sample a curve with no associated fcurve."
         if times is None: times = int(self.time_range[1]-self.time_range[0]+1)
         try:

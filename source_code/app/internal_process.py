@@ -100,7 +100,7 @@ class InternalProcess:
             if all([action == "add" for action in needed_action]):
                 times_in_ref = inliers_time_in_ref # len = m
 
-                ## TODO this snap will not work well because it desynchronizes curves ; should come earlier in the algorithm.
+                ## TODO this snap will not work well because it desynchronizes curves / or it is useless ; should come earlier in the algorithm when necessary
                 input_curve_times = input_curve.get_times()
                 snapped_indexes = [np.argmin(np.abs(input_curve_times-time_ref)) for time_ref in times_in_ref]
                 snapped_time_in_ref = input_curve_times[np.unique(np.array(snapped_indexes))]

@@ -107,7 +107,6 @@ class Main(AbstractIO):
             InternalProcess(vanim_ref, vanim_target, banim, verbose=self.verbose-1) for banim in banims
         ]
 
-        # TODO the following paragraph needs an update based on the InternalProcess rework
         self.is_impulsive:list[list[bool]] = [[] for _ in self.internals]
         self.channels:list[list[str]] = [[] for _ in self.internals]
         self.features:list[list[str]] = [None for _ in self.internals]

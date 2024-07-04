@@ -16,7 +16,14 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
-'''
+
+import app.main as main
+import app.visualisation as vis
+import app.dynamic_time_warping as DTW
+import app.abstract_io, app.warping, app.dcc_io, app.blender_utils, app.video_io
+import app.animation, app.color
+
+"""
 import app.blender_utils as b_utils
 import app.curve as C
 import app.internal_process as ip
@@ -24,15 +31,7 @@ import importlib
 importlib.reload(b_utils)
 importlib.reload(C)
 importlib.reload(ip)
- '''
-import app.main as main
-import app.visualisation as vis
-import app.dynamic_time_warping as DTW
-import app.abstract_io, app.warping, app.dcc_io, app.blender_utils, app.video_io
-import app.animation, app.color
 
-
-"""
 importlib.reload(main)
 importlib.reload(app.abstract_io)
 importlib.reload(app.internal_process)
@@ -46,6 +45,7 @@ importlib.reload(app.curve)
 importlib.reload(app.color)
 importlib.reload(vis)
 """
+
 Color = app.color.Color
 warping = app.warping
 Color.reset()
