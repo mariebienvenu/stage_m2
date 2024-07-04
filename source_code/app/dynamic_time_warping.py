@@ -173,6 +173,7 @@ class DynamicTimeWarping:
                 for jdx,j in enumerate(self._filtered_indexes)
             ]) for idx,i in enumerate(self._filtered_indexes)
         ]
+        debug=0
         self._filtered_indexes = [i for i,k in zip(self._filtered_indexes,keep) if k]
         self.filtered_indexes_done = True
         return self._filtered_indexes
