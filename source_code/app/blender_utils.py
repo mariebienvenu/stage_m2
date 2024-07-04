@@ -128,13 +128,11 @@ def set_animation(obj_name:str, animation:Animation):
         current_size = len(list(curve.keyframe_points))
 
         if target_size>current_size:
-            print("Number of keyframes changed, adding keys to blender fcurve.")
+            print(f"Number of keyframes changed, adding {target_size-current_size} keys to blender fcurve.")
             add_key(obj_name, fullname, target_size-current_size)
         if target_size<current_size:
-            print("Number of keyframes changed, removing keys from blender fcurve.")
+            print(f"Number of keyframes changed, removing {current_size-target_size} keys from blender fcurve.")
             remove_key(obj_name, fullname, current_size-target_size)
-
-        ## problem here
 
         attr_names = C.Attributes_Name
         
