@@ -148,7 +148,7 @@ class DynamicTimeWarping:
         return self._alternate_path_differences
     
 
-    def filtered_indexes(self, use_global=True, use_constraint_local_maximum=True, constraint_threshold=2, area_difference_threshold=0.1):
+    def filtered_indexes(self, use_global=True, use_constraint_local_maximum=True, constraint_threshold=2, area_difference_threshold=0.1, time_window=5):
         ## TODO dtw.filtered_indexes() -- not tested yet
         if self.filtered_indexes_done : return self._filtered_indexes
         pair_indexes = list(range(1, len(self.pairings)-1))
@@ -163,6 +163,17 @@ class DynamicTimeWarping:
             and self.is_index_similar_enough[i] 
             and self.is_index_local_max[i]
         ] + [len(constraints)-1]
+        short_constraints = [e for i,e in enumerate(constraints) if i in self._filtered_indexes]
+        keep = [
+            all([
+                abs(i-j)>time_window 
+                or short_constraints[jdx]<short_constraints[idx] 
+                or (short_constraints[jdx]==short_constraints[idx] and j>i) 
+                or i==j 
+                for jdx,j in enumerate(self._filtered_indexes)
+            ]) for idx,i in enumerate(self._filtered_indexes)
+        ]
+        self._filtered_indexes = [i for i,k in zip(self._filtered_indexes,keep) if k]
         self.filtered_indexes_done = True
         return self._filtered_indexes
     
