@@ -28,6 +28,12 @@ def get_filename():
 def check_filename(filename):
     assert get_filename()==filename, f"Wrong file opened. Expected {filename} and found {get_filename()}."
 
+
+def is_match(curve_name:str, other_curve_name:str):
+    first = curve_name.replace('"', "'")
+    second = other_curve_name.replace('"', "'")
+    return first==second
+
     
 def get_animation(obj_name):
     animation = Animation()
@@ -64,7 +70,7 @@ def get_animation(obj_name):
 
         animation.append(Curve.from_array(
             data,
-            fullname=f"{curve.data_path} {['X','Y','Z'][curve.array_index]}",
+            fullname=f"{curve.data_path} {['X','Y','Z'][curve.array_index]}".replace('"', "'"),
             name=curve.data_path,
             channel=curve.array_index,
             time_range=tuple(curve.range()),
@@ -86,7 +92,7 @@ def add_key(obj_name:str, curve_name:str, n_keys=1):
     for curve in obj.animation_data.action.fcurves:
         fullname = f"{curve.data_path} {['X','Y','Z'][curve.array_index]}"
         debig=0
-        if curve_name == fullname:
+        if is_match(curve_name,fullname):
             frames = [kf.co[0] for kf in curve.keyframe_points]
             for i in range(n_keys):
                 obj.keyframe_insert(curve.data_path, index=curve.array_index, frame=max(frames)+1+i)
@@ -103,7 +109,7 @@ def remove_key(obj_name:str, curve_name:str, n_keys=1):
     for curve in obj.animation_data.action.fcurves:
         fullname = f"{curve.data_path} {['X','Y','Z'][curve.array_index]}"
         debug=0
-        if curve_name == fullname:
+        if is_match(curve_name,fullname):
             frames = [kf.co[0] for kf in curve.keyframe_points]
             for i in range(n_keys):
                 obj.keyframe_delete(curve.data_path, index=curve.array_index, frame=frames[-1-i])
@@ -122,7 +128,12 @@ def set_animation(obj_name:str, animation:Animation):
     for curve in obj.animation_data.action.fcurves:
 
         fullname = f"{curve.data_path} {['X','Y','Z'][curve.array_index]}"
-        target_curve = animation.find(fullname)
+        target_curve = None
+        for anim_curve in animation:
+            if is_match(anim_curve.fullname, fullname): target_curve=anim_curve
+        if target_curve is None:
+            debug = 0
+            raise NotImplementedError(f"euh pas trouvé {fullname} dans {animation}")
 
         target_size = len(target_curve)
         current_size = len(list(curve.keyframe_points))
