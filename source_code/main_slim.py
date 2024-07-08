@@ -51,15 +51,17 @@ warping = app.warping
 Color.reset()
 Color.next()
 
-directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/bouncing_ball_plus1/"
+directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/fireworks_first_try/"
 main_obj = main.Main(directory, verbose=10)
 
 main_obj.process(force=True)
 main_obj.to_blender()
 main_obj.blender_scene.from_software() #to recover new fcurve pointer
 
-main_obj.draw_diagrams(show=True)
-figures, titles = main_obj.internals[0].make_diagrams(anim_style="lines+markers")
+anim_index = 1
+
+main_obj.draw_diagrams(animation_index=anim_index, show=True)
+figures, titles = main_obj.internals[anim_index].make_diagrams(anim_style="lines+markers", number_issues=False)
 for fig, title in zip(figures, titles):
     fig.update_layout(title=title)
     fig.show()
