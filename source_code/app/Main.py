@@ -115,7 +115,7 @@ class Main(AbstractIO):
             internal_index = self.blender_scene.object_names.index(obj_name) if not self.no_blender else 0 ## costly
             self.is_impulsive[internal_index].append(is_impulsive)  # we prefer sparse warps for impulsive signals and dense ones for continuous signals
             self.channels[internal_index].append(channel)
-            if self.features[internal_index] is not None : raise NotImplementedError(f"Multiple features for single object not implemented yet. Tried to use {feature} in addition to {self.features[internal_index]}.")
+            if self.features[internal_index] is not None and self.features[internal_index]!=feature : raise NotImplementedError(f"Multiple features for single object not implemented yet. Tried to use {feature} in addition to {self.features[internal_index]}.")
             self.features[internal_index] = feature            
 
         zipped = zip(self.internals, self.features, self.is_impulsive, self.channels)
@@ -138,7 +138,8 @@ class Main(AbstractIO):
         dtw = internal.dtw
         feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
         original_curve = self.blender_scene.get_animations()[animation_index].find(channel) if not self.no_blender else Curve()
-        edited_curve =  b_utils.get_animation("Ball_edited").find(channel)  if not self.no_blender else Curve() # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
+        obj_name = self.connexions_of_interest[0]["object name"]
+        edited_curve =  b_utils.get_animation(f"{obj_name}_edited").find(channel)  if not self.no_blender else Curve() # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
 
         Color.reset()
         
