@@ -88,7 +88,7 @@ class Video:
             key = cv2.waitKey(0)
             if key == ord(close_key):
                 cv2.destroyWindow("Frame by frame")
-                break
+                return
             elif key == ord(previous_key) and start+diff>=1:
                 diff -= 1
             elif key == ord(next_key) and start+diff<self.frame_count-1:
