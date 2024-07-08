@@ -31,6 +31,7 @@ class InternalProcess:
 
     def process(self, feature:str, channels:list[str], only_temporal=True, detect_issue=True, blend_if_issue=10, filter_indexes=True, warp_interpolation="linear", normalize="True"):
         if not only_temporal: raise NotImplementedError
+        if feature is None: return self.banim1
         self.select(feature)
         if normalize: self.normalize_curves()
         self.do_dtw()
@@ -138,6 +139,7 @@ class InternalProcess:
 
     def make_new_anim(self, channels:list[str], use_operator=False):
         self.banim2 = Animation()
+        found_channel = [False for _ in channels] # for debug purposes
         if use_operator: self.new_banim1 = Animation()
         for curve in self.banim1:
             if curve.fullname in channels:
@@ -145,9 +147,12 @@ class InternalProcess:
                 if use_operator: self.new_banim1.append(temp_curve)
                 new_curve = temp_curve.apply_spatio_temporal_warp(self.warp, in_place=False)
                 self.banim2.append(new_curve)
+                found_channel[channels.index(curve.fullname)] = True
             else:
                 if use_operator: self.new_banim1.append(curve)
                 self.banim2.append(curve)
+        if not all(found_channel):
+            debug = 0
 
 
     def make_diagrams(self, number_issues=True, anim_style=None):
