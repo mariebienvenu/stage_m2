@@ -65,3 +65,11 @@ figures, titles = main_obj.internals[anim_index].make_diagrams(anim_style="lines
 for fig, title in zip(figures, titles):
     fig.update_layout(title=title)
     fig.show()
+
+anim_index = 0
+
+main_obj.draw_diagrams(animation_index=anim_index, show=True)
+figures, titles = main_obj.internals[anim_index].make_diagrams(anim_style="lines+markers", number_issues=False)
+for fig, title in zip(figures, titles):
+    fig.update_layout(title=title)
+    fig.show()
