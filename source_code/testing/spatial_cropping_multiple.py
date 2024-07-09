@@ -39,12 +39,10 @@ def draw_rectangle(event,x,y,flags,param):
     elif event == cv2.EVENT_MOUSEMOVE:
         if drawing == True:
             rectangles[current_rectangle_index]["x2"], rectangles[current_rectangle_index]["y2"] = x,y
-            #cv2.rectangle(frame,(x1, y1),(x,y),(0,255,0),-1)
     
     elif event == cv2.EVENT_LBUTTONUP:
         drawing = False
         rectangles[current_rectangle_index]["x2"], rectangles[current_rectangle_index]["y2"] = x,y
-        #cv2.rectangle(frame,(x1,y1),(x2,y2),(0,255,0),-1)
 
 cv2.namedWindow(VIDEO_NAME)
 cv2.setMouseCallback(VIDEO_NAME, draw_rectangle)

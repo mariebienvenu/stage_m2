@@ -4,7 +4,7 @@ import numpy as np
 from enum import Enum
 
 from app.image_processing import ImageProcessing
-
+from app.color import Color
 
 def no_crop(height, width):
     return {'x1':0, 'x2':width, 'y1':0, 'y2':height}
@@ -107,16 +107,18 @@ class Video:
             return getattr(ImageProcessing, image_processing)(frame)
     
 
-    def get_spatial_crop_input_from_user(self, initial_box : dict = None, verbose=0):
-        global frame_idx, x1, x2, y1, y2, drawing, frame
-        frame_idx = 0
+    def get_spatial_crop_input_from_user(self, initial_boxes : list[dict] = None, verbose=0):
         close_key, previous_key, next_key = 'q', 'b', 'n' #quit, before, next
+        add_key, delete_key = 'a', 'd' # add, delete
+        change_current_left_key, change_current_right_key = 'i', 'o'
 
-
+        global rectangles, current_rectangle_index, frame_idx, drawing, frame
+        current_rectangle_index=0
+        frame_idx = 0
         frame = self.get_frame(frame_idx)
-        x1, x2, y1, y2 = 0, frame.shape[1], 0, frame.shape[0]
-        if initial_box is not None:
-            x1, x2, y1, y2 = initial_box.values()
+        rectangles = [{"x1":0, "x2":frame.shape[1], "y1":0, "y2":frame.shape[0]}]
+        if initial_boxes is not None:
+            rectangles = initial_boxes
         drawing = False
 
         def draw_rectangle(event, x, y, flags, param):
@@ -124,22 +126,26 @@ class Video:
             frame = self.get_frame(frame_idx)
             if event == cv2.EVENT_LBUTTONDOWN:
                 drawing = True
-                x1, y1 = x,y
+                rectangles[current_rectangle_index]["x1"], rectangles[current_rectangle_index]["y1"] = x,y
             elif event == cv2.EVENT_MOUSEMOVE:
                 if drawing == True:
-                    x2, y2 = x,y
+                    rectangles[current_rectangle_index]["x2"], rectangles[current_rectangle_index]["y2"] = x,y
             elif event == cv2.EVENT_LBUTTONUP:
                 drawing = False
-                x2, y2 = x,y
+                rectangles[current_rectangle_index]["x2"], rectangles[current_rectangle_index]["y2"] = x,y
 
         cv2.namedWindow("Get crop zone from user", flags = cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO | cv2.WINDOW_GUI_EXPANDED) # does not work as intended
         cv2.resizeWindow("Get crop zone from user", 100, 100)
         cv2.setMouseCallback("Get crop zone from user", draw_rectangle)
 
         while True:
+            Color.reset()
             current = max(0, min(frame_idx, self.frame_count))
             frame = self.get_frame(current)
-            cv2.rectangle(frame, (x1,y1), (x2,y2), (0,255,0), 3)
+            for rect in rectangles:
+                x1, x2, y1, y2 = rect.values()
+                color = Color.next()
+                cv2.rectangle(frame,(x1,y1),(x2,y2),color,3)
             cv2.imshow("Get crop zone from user", frame)
             key = cv2.waitKey(1)# & 0xFF
             if key == ord(close_key):
@@ -149,9 +155,25 @@ class Video:
                 frame_idx -= 1
             elif key == ord(next_key) and frame_idx < self.frame_count-1:
                 frame_idx += 1
-            if verbose>0: print(f'Displaying frame {frame_idx}')
+            elif key == ord(add_key):
+                current_rectangle_index = len(rectangles)
+                rectangles.append({"x1":0, "x2":0, "y1":0, "y2":0})
+            elif key == ord(delete_key):
+                rectangles.pop(current_rectangle_index)
+                current_rectangle_index -= 1
+            elif key == ord(change_current_left_key):
+                if current_rectangle_index > 0:
+                    current_rectangle_index -= 1
+            elif key == ord(change_current_right_key):
+                if current_rectangle_index < len(rectangles)-1:
+                    current_rectangle_index += 1
+            if verbose>0: print(f'Displaying frame {frame_idx} and modifying rectangle {current_rectangle_index}/{len(rectangles)}')
 
-        return {'x1':min(x1,x2), 'x2':max(x1,x2), 'y1':min(y1,y2), 'y2':max(y1,y2)}
+        result = []
+        for rect in rectangles:
+            x1, x2, y1, y2 = rect.values()
+            result.append({'x1':min(x1,x2), 'x2':max(x1,x2), 'y1':min(y1,y2), 'y2':max(y1,y2)})
+        return result
     
     
     @classmethod # -> classmethods are better if there is inheritance & overload
