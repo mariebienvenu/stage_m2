@@ -1,1 +1,1 @@
-{"spatial crop": {"x1": 3, "x2": 1274, "y1": 6, "y2": 715}, "time crop": {"start": 21, "stop": 59}, "image processing method": "gray", "background proportion": 0, "frame rate": 30.000733962910406}
+{"spatial crops": [{"x1": 3, "x2": 1274, "y1": 6, "y2": 715}], "time crop": {"start": 21, "stop": 59}, "image processing method": "gray", "background proportion": 0, "frame rate": 30.000733962910406}
