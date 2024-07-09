@@ -3,10 +3,10 @@ import os, sys
 
 from app.video_io import VideoIO, default_config
 
-data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/'
+data_path = 'C:/Users/Marie Bienvenu/stage_m2/irl_scenes/03-28 used red object/'
 assert os.path.exists(data_path), "Wrong PATH"
 
-VIDEO_NAME = '03-28 used red object/sec' #21 added light and glove/close_startup'
+VIDEO_NAME = 'sec' #21 added light and glove/close_startup'
 
 ## Test config file handling : make_default_config(), save_config(), load_config()
 
@@ -50,3 +50,7 @@ video_io.draw_diagrams(show=True)
 
 anim = video_io.to_animation()
 anim.display(handles=False, style="lines+markers", doShow=True)
+
+# Test cropped and processed video maker : record_video()
+
+video_io.record_video()

@@ -245,7 +245,7 @@ class VideoIO(AbstractIO):
 
     def record_video(self):
         videos = []
-        for i,crop in enumerate(self.spatial_crops):
+        for j,crop in enumerate(self.spatial_crops):
             frame_count = self.time_crop[1]-self.time_crop[0]+1
             frame_height = crop["y2"]-crop["y1"]
             frame_width = crop["x2"]-crop["x1"]
@@ -253,7 +253,7 @@ class VideoIO(AbstractIO):
             for i,index in enumerate(range(self.time_crop[0], self.time_crop[1]+1)):
                 frame = self.video.get_frame(index, image_processing=self.image_processing_method, crop=crop)
                 content[i,:,:] = np.copy(frame)
-            video = Video.from_array(content, self.directory+f'/_{self.name}_preprocessed_{i+1}.mp4', fps=self.video.fps)
+            video = Video.from_array(content, self.directory+f'/_{self.name}_preprocessed_{j+1}.mp4', fps=self.video.fps)
             videos.append(video)
         return videos
 
