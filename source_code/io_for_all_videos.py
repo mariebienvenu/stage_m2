@@ -34,10 +34,11 @@ for directory in directories:
             video_io.save_config()
 
             if (
-                video_io.spatial_crop['x1']==0 and 
-                video_io.spatial_crop['y1']==0 and
-                video_io.spatial_crop['x2']==video_io.video.frame_width and 
-                video_io.spatial_crop['y2']==video_io.video.frame_height
+                len(video_io.spatial_crops)==1 and
+                video_io.spatial_crops[0]['x1']==0 and 
+                video_io.spatial_crops[0]['y1']==0 and
+                video_io.spatial_crops[0]['x2']==video_io.video.frame_width and 
+                video_io.spatial_crops[0]['y2']==video_io.video.frame_height
             ):
                 video_io.get_spatial_crop_input_from_user()
 
@@ -48,7 +49,7 @@ for directory in directories:
             video_io.draw_diagrams(time_in_seconds=time_in_seconds)
             video_io.to_animation()
 
-            vid = video_io.record_video() # a bit long + requires loading the entire video in memory...
+            #vid = video_io.record_video() # a bit long + requires loading the entire video in memory...
 
 tf = time()
 print(f'Computation took {int(tf-t0)} seconds.') # less than two minutes for 10 videos # way longer if longer videos or higher fps -> up to 10 minutes per video
