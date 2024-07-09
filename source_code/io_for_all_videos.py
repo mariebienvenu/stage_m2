@@ -41,7 +41,7 @@ for directory in directories:
                 video_io.spatial_crops[0]['y2']==video_io.video.frame_height
             ):
                 video_io.get_spatial_crop_input_from_user()
-
+            
             video_io.process()
             if video_io.time_crop[0]==0 and video_io.time_crop[1]==video_io.oflow_len:
                 video_io.auto_time_crop()      
