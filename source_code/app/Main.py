@@ -211,7 +211,7 @@ class Main(AbstractIO):
         for figure,title in zip(figures, titles):
             figure.update_layout(title=title)
             filetitle = title.replace('"','')
-            if save: figure.write_html(f'{directory}/{filetitle}.html')
+            if save: figure.write_html(f'{directory}/{filetitle}_{animation_index}.html')
             if show: figure.show()
 
         return figures
