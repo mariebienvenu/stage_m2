@@ -17,7 +17,7 @@ class TangentSemantic(Enum):
     KEEP_BOTH = 3
 
 
-class SemanticRetiming:
+class SemanticRetiming: ## TODO wirte dedicated test file
 
 
     def __init__(self, animation:Animation, channels:list[str], matches:np.ndarray, tangent_semantic=TangentSemantic.KEEP_ANGLE):
