@@ -26,15 +26,16 @@ class InternalProcess:
         self.vanim1 = vanim_ref
         self.vanim2 = vanim_target
         self.banim1 = banim
+        self.processed_channels = [False for _ in banim]
         self.verbose = verbose # TODO make use of this more
 
 
-    def process(self, feature:str, channels:list[str], only_temporal=True, detect_issue=True, blend_if_issue=10, filter_indexes=True, warp_interpolation="linear", normalize="True"):
+    def process(self, feature:str, channels:list[str], only_temporal=True, detect_issue=True, blend_if_issue=10, filter_indexes=True, warp_interpolation="linear", normalize=True, spot_for_dtw_constraint=False):
         if not only_temporal: raise NotImplementedError
         if feature is None: return self.banim1
         self.select(feature)
         if normalize: self.normalize_curves()
-        self.do_dtw()
+        self.do_dtw(spot=spot_for_dtw_constraint)
         self.issue_detected = False
         if detect_issue:
             self.issue_detected = self.detect_number_issues()
@@ -42,7 +43,7 @@ class InternalProcess:
                 self.operator = self.process_number_issues(blend=blend_if_issue)
                 self.new_curve1 = self.operator(self.curve1)
                 if normalize: self.normalize_curves()
-                self.do_dtw(redo=True)
+                self.do_dtw(redo=True, spot=spot_for_dtw_constraint)
                 still_issue = self.detect_number_issues()
                 #if still_issue: raise RecursionError(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
                 if still_issue and self.verbose>0: print(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
@@ -66,10 +67,10 @@ class InternalProcess:
             return
 
 
-    def do_dtw(self, redo=False):
+    def do_dtw(self, redo=False, spot=False):
         self.former_dtw = getattr(self, "dtw", None)
         self.former_dtw_constraints = getattr(self, "dtw_constraints", None)
-        self.dtw = DynamicTimeWarping(self.curve1 if not redo else self.new_curve1, self.curve2) # performs the algorithm computation at init time
+        self.dtw = DynamicTimeWarping(self.curve1 if not redo else self.new_curve1, self.curve2, use_spot=spot) # performs the algorithm computation at init time
         self.dtw_constraints = self.dtw.global_constraints()
 
 
@@ -138,16 +139,19 @@ class InternalProcess:
 
 
     def make_new_anim(self, channels:list[str], use_operator=False):
+        reference = Animation([c for c in getattr(self, "banim2", self.banim1)])
         self.banim2 = Animation()
         found_channel = [False for _ in channels] # for debug purposes
         if use_operator: self.new_banim1 = Animation()
-        for curve in self.banim1:
+        for i,curve in enumerate(reference):
             if curve.fullname in channels:
+                if self.processed_channels[i]: raise NotImplementedError(f"Cannot process twice the same channel. Tried processing {curve.fullname}.")
                 temp_curve = self.operator(curve) if use_operator else curve    
                 if use_operator: self.new_banim1.append(temp_curve)
                 new_curve = temp_curve.apply_spatio_temporal_warp(self.warp, in_place=False)
                 self.banim2.append(new_curve)
                 found_channel[channels.index(curve.fullname)] = True
+                self.processed_channels[i] = True
             else:
                 if use_operator: self.new_banim1.append(curve)
                 self.banim2.append(curve)
@@ -163,6 +167,7 @@ class InternalProcess:
         def aux_enriched_map(dtw:DynamicTimeWarping, pairs:list[list[int]], inliers:list[int], outliers:list[int]):
             fig = dtw.make_map(path_color=path_color)
             circle_indexes = inliers+outliers
+            if len(circle_indexes)>50: return fig
             circle_colors = [inlier_color]*len(inliers) + [outlier_color]*len(outliers)
             for index, color in zip(circle_indexes, circle_colors):
                 x,y = pairs[index][1]-pairs[0][1], pairs[index][0]-pairs[0][0]
@@ -197,18 +202,21 @@ class InternalProcess:
             )
             return fig
         
-        def aux_along_path(dtw:DynamicTimeWarping, constraints:np.ndarray, inliers:list[int], outliers:list[int], rectangle_width=1):
+        def aux_along_path(dtw:DynamicTimeWarping, constraints:np.ndarray, distances:np.ndarray, inliers:list[int], outliers:list[int], rectangle_width=1):
             fig = go.Figure()
             rect_indexes = inliers+outliers
             rect_colors = [inlier_color]*len(inliers) + [outlier_color]*len(outliers)
-            for index, color in zip(rect_indexes, rect_colors):
-                fig.add_vrect(x0=index-rectangle_width/2, x1=index+rectangle_width/2, opacity=0.8, line_width=0, fillcolor=Color.to_string(color))
+            if len(rect_indexes)<50:
+                for index, color in zip(rect_indexes, rect_colors):
+                    fig.add_vrect(x0=index-rectangle_width/2, x1=index+rectangle_width/2, opacity=0.3, line_width=0, fillcolor=Color.to_string(color))
             vis.add_curve(y=constraints, name="contribution as saved cost", fig=fig)
             vis.add_curve(y=dtw.cost_along_shortest_path, name="instant cost", fig=fig)
+            vis.add_curve(y=distances, name="distance to ideal path", fig=fig)
             return fig
             
         dtw = self.dtw
         constraints = self.dtw_constraints
+        distances = dtw.alternate_path_differences()
         pairs = dtw.pairings
         inliers = self.kept_indexes
         outliers = getattr(self, "outliers", [])
@@ -220,8 +228,8 @@ class InternalProcess:
         fig2 = aux_matches_filter(dtw, pairs, naive_indexes, inliers)
         title2 = "Matches with no or simple or refined selection"
 
-        fig3 = aux_along_path(dtw, constraints, inliers, outliers, 2)
-        title3 = "Cost and saved cost along shortest path"
+        fig3 = aux_along_path(dtw, constraints, distances, inliers, outliers, 2)
+        title3 = "Cost and filter criteria along shortest path"
 
         figures = [fig1, fig2, fig3]
         titles = [title1, title2, title3]
@@ -230,6 +238,7 @@ class InternalProcess:
 
         former_dtw:DynamicTimeWarping = self.former_dtw
         former_constraints = self.former_dtw_constraints
+        former_distances = former_dtw.alternate_path_differences()
         former_pairs = former_dtw.pairings
         former_outliers = self.former_outliers
         former_inliers = former_dtw.filtered_indexes()
@@ -257,8 +266,8 @@ class InternalProcess:
                 self.new_banim1.display(handles=False, style=anim_style, fig=fig7, row=2, col=1)
             title7 = "Original animation curve - before and after processing"
 
-        fig8 = aux_along_path(former_dtw, former_constraints, former_inliers, former_outliers, 2)
-        title8 = "Cost and saved cost along shortest path - before"
+        fig8 = aux_along_path(former_dtw, former_constraints, former_distances, former_inliers, former_outliers, 2)
+        title8 = "Cost and filter criteria along shortest path - before"
 
         figures = [fig6, fig7, fig8, fig4, fig5, fig1, fig2, fig3]
         titles = [title6, title7, title8, title4, title5, title1+" - after", title2+" - after", title3+" - after"]

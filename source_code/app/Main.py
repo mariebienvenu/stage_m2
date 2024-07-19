@@ -40,6 +40,7 @@ class Main(AbstractIO):
 
     WARP_INTERPOLATION = "linear" # the way the warping is interpolated between matches
     DTW_CONSTRAINTS_LOCAL = 10 # if 0 : dtw constraint computation is global ; else, it is local with a range of DTW_CONSTRAINTS_LOCAL (in frames)
+    SPOT_FOR_DTW_CONSTRAINTS = False
 
     def __init__(self, directory, no_blender=False, verbose=0):
         super(Main, self).__init__(directory, verbose)
@@ -106,20 +107,31 @@ class Main(AbstractIO):
         self.internals = [
             InternalProcess(vanim_ref, vanim_target, banim, verbose=self.verbose-1) for banim in banims
         ]
+        self.figures_and_titles:list[list[tuple[list[go.Figure],list[str]]]] = []
 
         self.is_impulsive:list[list[bool]] = [[] for _ in self.internals]
-        self.channels:list[list[str]] = [[] for _ in self.internals]
-        self.features:list[list[str]] = [None for _ in self.internals]
+        self.channels:list[list[list[str]]] = [[] for _ in self.internals]
+        self.features:list[list[str]] = [[] for _ in self.internals]
         for connexion in self.connexions_of_interest:
             obj_name, feature, channel, is_impulsive = connexion["object name"], connexion["video feature"], connexion["channel"], connexion["is impulsive"]
             internal_index = self.blender_scene.object_names.index(obj_name) if not self.no_blender else 0 ## costly
             self.is_impulsive[internal_index].append(is_impulsive)  # we prefer sparse warps for impulsive signals and dense ones for continuous signals
-            self.channels[internal_index].append(channel)
-            if self.features[internal_index] is not None and self.features[internal_index]!=feature : raise NotImplementedError(f"Multiple features for single object not implemented yet. Tried to use {feature} in addition to {self.features[internal_index]}.")
-            self.features[internal_index] = feature            
+            if feature not in self.features[internal_index]:
+                self.features[internal_index].append(feature)
+                self.channels[internal_index].append([])
+            feature_index = self.features[internal_index].index(feature)
+            self.channels[internal_index][feature_index].append(channel)
 
         zipped = zip(self.internals, self.features, self.is_impulsive, self.channels)
-        self.new_anims = [internal.process(feature=feature, channels=channels,filter_indexes=is_impulsive, warp_interpolation=Main.WARP_INTERPOLATION) for internal, feature, is_impulsive, channels in zipped]
+        self.new_anims = []
+        for obj_index, (internal, features, is_impulsive, channels_list) in enumerate(zipped):
+            self.figures_and_titles.append([])
+            new_anim = None
+            for feature_index, (feature, channels) in enumerate(zip(features, channels_list)):
+                    new_anim = internal.process(feature=feature, channels=channels,filter_indexes=is_impulsive, warp_interpolation=Main.WARP_INTERPOLATION, spot_for_dtw_constraint=Main.SPOT_FOR_DTW_CONSTRAINTS)
+                    self.figures_and_titles[obj_index].append(self.draw_diagrams(obj_index, feature_index))
+            self.new_anims.append(new_anim)
+        #self.new_anims = [internal.process(feature=feature, channels=channels,filter_indexes=is_impulsive, warp_interpolation=Main.WARP_INTERPOLATION, spot_for_dtw_constraint=Main.SPOT_FOR_DTW_CONSTRAINTS) for internal, feature, is_impulsive, channels in zipped]
         self.is_processed = True
         return self.new_anims
 
@@ -130,16 +142,19 @@ class Main(AbstractIO):
         self.blender_scene.set_animations(self.new_anims, in_place=self.edit_in_place)
 
 
-    def draw_diagrams(self, animation_index=0, save=True, show=False, directory=None):
-        if directory is None: directory = self.directory + '/out/'
+    def draw_diagrams(self, object_index=0, feature_index=0):
 
-        internal, channel, feature = self.internals[animation_index], self.channels[animation_index][-1], self.features[animation_index]
+        internal, channels, feature = self.internals[object_index], self.channels[object_index][feature_index], self.features[object_index][feature_index]
+        channel = channels[-1]
         warp = internal.warp
         dtw = internal.dtw
         feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
-        original_curve = self.blender_scene.get_animations()[animation_index].find(channel) if not self.no_blender else Curve()
+        original_curve = self.blender_scene.get_animations()[object_index].find(channel) if not self.no_blender else Curve()
         obj_name = self.connexions_of_interest[0]["object name"]
-        edited_curve =  b_utils.get_animation(f"{obj_name}_edited").find(channel)  if not self.no_blender else Curve() # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
+        edited_curve =  b_utils.get_animation(f"{obj_name}{self.blender_scene.edited_suffix}").find(channel)  if not self.no_blender else Curve() # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
+        
+        original_curve = Animation([self.blender_scene.get_animations()[object_index].find(channel) for channel in channels]) if not self.no_blender else Animation()
+        edited_curve =  Animation([b_utils.get_animation(f"{obj_name}{self.blender_scene.edited_suffix}").find(channel) for channel in channels])  if not self.no_blender else Animation()
 
         Color.reset()
         
@@ -151,7 +166,7 @@ class Main(AbstractIO):
         title0 = f'Comparison of the initial and retook video feature curve "{feature}"'
 
         ## Connexion : video feature curve VS animation curve
-        fig7 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: {feature}', f'Animation curve: {original_curve.fullname}'], vertical_spacing=0.1)
+        fig7 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: {feature}', f'Animation curve: {obj_name}'], vertical_spacing=0.1)
         feature_curve1.display(handles=False, style="lines", fig=fig7, col=1, row=1)
         original_curve.display(fig=fig7, col=1, row=2)
         original_curve.sample().display(fig=fig7, row=2, col=1, handles=False, style='lines')
@@ -202,16 +217,27 @@ class Main(AbstractIO):
         original_curve.sample().display(fig=fig6,  row=2, col=1, handles=False, style='lines')
         edited_curve.sample().display(fig=fig6, row=2, col=2, handles=False, style='lines')
         fig6.update_layout(xaxis3_title="Time (frames)", xaxis4_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis3_title="Magnitude (Blender units)", showlegend=False)
-        title6 = f'Global editing process using "{internal.feature}" feature on "{channel}" channel'
+        title6 = f'Global editing process using "{feature}" feature on "{channel}" channel' if len(channels)==1 else f'Global editing process using "{feature}" feature on {len(channels)} channels of {obj_name}'
 
         figures:list[go.Figure] = [fig0, fig1, fig2, fig3, fig4, fig5, fig6, fig7]
         titles = [title0, title1, title2, title3, title4, title5, title6, title7]
 
-        if not os.path.exists(f'{self.directory}/out/') : os.mkdir(f'{self.directory}/out/')
-        for figure,title in zip(figures, titles):
-            figure.update_layout(title=title)
-            filetitle = title.replace('"','')
-            if save: figure.write_html(f'{directory}/{filetitle}_{animation_index}.html')
-            if show: figure.show()
+        other_figures, other_titles = internal.make_diagrams(number_issues=False, anim_style="lines+markers") # TODO should not be like this
 
-        return figures
+        return figures+other_figures, titles+other_titles
+
+
+    def display(self, save=True, show=False, directory=None):
+        if directory is None: directory = self.directory + '/out/'
+        if not os.path.exists(directory) : os.mkdir(directory)
+        object_index, feature_index = 0, 0
+        for liste in self.figures_and_titles:
+            for figures, titles in liste:
+                for figure,title in zip(figures, titles):
+                    figure.update_layout(title=title)
+                    filetitle = title.replace('"','')
+                    if save: figure.write_html(f'{directory}/{filetitle}_{object_index}_{feature_index}.html')
+                    if show: figure.show()
+                feature_index += 1
+            object_index += 1
+            feature_index = 0
