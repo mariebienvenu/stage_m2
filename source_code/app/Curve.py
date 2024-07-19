@@ -325,6 +325,23 @@ class Curve:
         right_unbroken_handles = np.array([ht not in [Handle_Type.FREE.value, Handle_Type.VECTOR.value] for ht in self.get_attribute(Attributes_Name.handle_right_type)])
         return dy/dx*left_unbroken_handles*right_unbroken_handles 
     
+    def do_tangents_matter(self): # TODO write test in dedicated test file
+        interpolation = self.get_attribute(Attributes_Name.handle_left_type), self.get_attribute(Attributes_Name.handle_right_type)
+        mattering_interpolation = [Interpolation_Type.BEZIER]
+        tangent_matter = [inter in mattering_interpolation for inter in interpolation]
+        return np.array(tangent_matter)
+
+    def are_tangents_aligned(self, epsilon=1e-10): # TODO write test in dedicated test file
+        left_x, x, right_x = self.get_attribute(Attributes_Name.handle_left_x), self.get_attribute(Attributes_Name.time), self.get_attribute(Attributes_Name.handle_right_x)
+        left_y, y, right_y = self.get_attribute(Attributes_Name.handle_left_y), self.get_attribute(Attributes_Name.value), self.get_attribute(Attributes_Name.handle_right_y)
+        a = x-left_x
+        b = y-left_y
+        c = right_x-left_x
+        d = right_y-left_x
+        determinant = a*d-b*c
+        is_colinear = np.array([abs(det)<epsilon for det in determinant])
+        return is_colinear*self.do_tangents_matter()
+    
     def sample(self, times:np.ndarray|int=None):
         if len(self) <= 1 : return self
         assert "pointer" in dir(self), "Cannot sample a curve with no associated fcurve."
