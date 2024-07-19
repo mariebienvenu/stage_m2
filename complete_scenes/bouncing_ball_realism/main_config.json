@@ -1,0 +1,1 @@
+{"video extension": ".mp4", "video reference filename": "P1010261", "video target filename": "P1010263", "blender scene filename": "scene.blend", "connexions of interest": [{"object name": "Ball", "channel": "location Z", "video feature": "Second derivative of Location Y 1", "is impulsive": true}], "edit in place": false, "temporal offset": 4}
