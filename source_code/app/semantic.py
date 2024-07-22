@@ -17,7 +17,21 @@ class TangentSemantic(Enum):
     KEEP_BOTH = 3
 
 
-class SemanticRetiming: ## TODO wirte dedicated test file
+class SemanticRetiming: ## TODO write dedicated test file
+
+
+    REGULARIZATION_WEIGHT = 1 # Global factor, will decide how much the regularization will weigh in compared to the matches
+    ALIGNMENT_WEIGHT = 1 # Should be <=1 # This is not a good name : alignment are preserved natively. This is meant to  help enforce symmetry inside a key (between the left and right tangent length).
+    BROKEN_WEIGHT = 0.2 # Should be <=1
+    NEIGHBOURS_WEIGHT = 0.2 #0.7 # Should be <=1 ## Actually, by construction, there is no need to enforce symmetries between keys as they will be kept natively
+    #But it will help still : it will penalize neighbour which are changing from base in a different manner, but not penalize neigbours which are changing from base in the same manner.
+
+
+    def reset_weights():
+        SemanticRetiming.REGULARIZATION_WEIGHT = 1
+        SemanticRetiming.ALIGNMENT_WEIGHT = 0.5
+        SemanticRetiming.BROKEN_WEIGHT = 0.3
+        SemanticRetiming.NEIGHBOURS_WEIGHT = 1
 
 
     def __init__(self, animation:Animation, channels:list[str], matches:np.ndarray, tangent_semantic=TangentSemantic.KEEP_ANGLE):
@@ -35,14 +49,15 @@ class SemanticRetiming: ## TODO wirte dedicated test file
         if self.is_processed and not force: return self.new_animation
         self.snap()
         self.make_retiming_warp()
-        self.optimize_tangent_scaling()
+        regul, broken, aligned, neighbour = SemanticRetiming.REGULARIZATION_WEIGHT, SemanticRetiming.BROKEN_WEIGHT, SemanticRetiming.ALIGNMENT_WEIGHT, SemanticRetiming.NEIGHBOURS_WEIGHT
+        self.optimize_tangent_scaling(broken_weight=regul*broken, aligned_weight=regul*aligned, neighbours_weight=regul*neighbour)
         self.make_new_animation()
         self.is_processed = True
         return self.new_animation
 
     
     def snap(self, to_integer=True, attraction=0):
-        all_times = np.concatenate([curve.get_times() for curve in self.animation if curve.fullname in self.channels])
+        all_times = np.concatenate([curve.get_times() for curve in self.animation if curve.fullname in self.channels]).astype(int)
         times = np.unique(all_times)
         histogram = np.bincount(all_times)
         occurences = np.array([histogram[t] for t in times]) # if channels is of length 1, this should be all 1
@@ -73,30 +88,33 @@ class SemanticRetiming: ## TODO wirte dedicated test file
         self.retiming_warp = W.make_warp(dimension=1, interpolation=interpolation, X_in=self.snapped_times_reference, X_out=self.snapped_times_target)
     
 
-    def optimize_tangent_scaling(self, regularization_weight=1):
+    def optimize_tangent_scaling(self, broken_weight=1, aligned_weight=1, neighbours_weight=1):
         ## We are going to get the left and right scaling that should be applied to the keys that are on snapped times
         ## Taking into account some form of regularization in time : 1D chain with unknown only interacting with neigbours
         left_zipper = zip(self.snapped_times_target[1:], self.snapped_times_target[:-1], self.snapped_times_reference[1:], self.snapped_times_reference[:-1])
-        basic_left = [1]+[(y-y_bef)/(x-x_bef) for y,y_bef,x,x_bef in left_zipper]
+        self.basic_left = [1]+[(y-y_bef)/(x-x_bef) for y,y_bef,x,x_bef in left_zipper]
         right_zipper = zip(self.snapped_times_target[:-1], self.snapped_times_target[1:], self.snapped_times_reference[:-1], self.snapped_times_reference[1:])
-        basic_right = [(y_aft-y)/(x_aft-x) for y,y_aft,x,x_aft in right_zipper]+[1]
+        self.basic_right = [(y_aft-y)/(x_aft-x) for y,y_aft,x,x_aft in right_zipper]+[1]
 
         n_unknown = 2*self.match_count
-        initial_conditions = np.array([basic_left[i//2] if i%2==0 else basic_right[i//2] for i in range(n_unknown)])
+        initial_conditions = np.array([self.basic_left[i//2] if i%2==0 else self.basic_right[i//2] for i in range(n_unknown)])
+        alignments = np.sum(np.array([curve.are_tangents_aligned() for curve in self.animation if curve.fullname in self.channels]), axis=0)
+        regularization_weights = [(aligned_weight if alignments[i//2]>0 else broken_weight) if i%2==0 else neighbours_weight for i in range(n_unknown-1)]
 
         # We are going to find X such as to minimize ||AX-B||²
         A = np.zeros((2*n_unknown-1, n_unknown))
         for i in range(n_unknown):
             A[i,i] = 1
-            A[n_unknown+i, i] = regularization_weight
-            if i!=0:
-                A[n_unknown+i, i-1] = -regularization_weight
+            if i != n_unknown-1:
+                A[n_unknown+i, i] = regularization_weights[i]
+                A[n_unknown+i, i+1] = -regularization_weights[i]
         B = np.zeros((2*n_unknown-1))
         for i in range(n_unknown):
             B[i] = initial_conditions[i]
 
         ## Doing the solving
-        X = linalg.lsqr(A=A, b=B)
+        least_squares = linalg.lsqr(A=A, b=B)
+        X = least_squares[0] # there are other outputs... Like 9 more, mostly some info about how the algo went
 
         self.new_left = [X[2*i] for i in range(self.match_count)]
         self.new_right = [X[2*i+1] for i in range(self.match_count)]
@@ -104,9 +122,9 @@ class SemanticRetiming: ## TODO wirte dedicated test file
     
     def left_tangent_operator(self, key_time_reference, tangent_vector):
         ## This implements the "keep_angle" semantic
-        if key_time_reference >= self.snapped_times_reference[-1]:
+        if key_time_reference > self.snapped_times_reference[-1]:
             return self.new_right[-1]*tangent_vector
-        if key_time_reference < self.snapped_times_reference[0]:
+        if key_time_reference <=     self.snapped_times_reference[0]:
             return self.new_left[0]*tangent_vector
         current_index = 0
         while current_index<self.match_count and key_time_reference > self.snapped_times_reference[current_index]:
@@ -148,8 +166,8 @@ class SemanticRetiming: ## TODO wirte dedicated test file
                 times = curve.get_times()
                 values = curve.get_values()
                 co = np.vstack((times, values)).T
-                left_tangent_pos = np.vstack((curve.get_attribute('tangent_left_x'), curve.get_attribute('tangent_left_y'))).T
-                right_tangent_pos = np.vstack((curve.get_attribute('tangent_right_x'), curve.get_attribute('tangent_right_y'))).T
+                left_tangent_pos = np.vstack((curve.get_attribute('handle_left_x'), curve.get_attribute('handle_left_y'))).T
+                right_tangent_pos = np.vstack((curve.get_attribute('handle_right_x'), curve.get_attribute('handle_right_y'))).T
                 left_tangent_vector = left_tangent_pos - co
                 right_tangent_vector = right_tangent_pos - co
 
@@ -158,80 +176,10 @@ class SemanticRetiming: ## TODO wirte dedicated test file
 
                 new_curve.apply_spatio_temporal_warp(self.retiming_warp)
                 new_times, new_values = new_curve.get_times(), new_curve.get_values()
-                new_curve.set_attribute("tangent_left_x", new_left_tangent_vector[:,0]+new_times)
-                new_curve.set_attribute("tangent_left_y", new_left_tangent_vector[:,1]+new_values)
-                new_curve.set_attribute("tangent_right_x", new_right_tangent_vector[:,0]+new_times)
-                new_curve.set_attribute("tangent_right_y", new_right_tangent_vector[:,1]+new_values)
+                new_curve.set_attribute("handle_left_x", new_left_tangent_vector[:,0]+new_times)
+                new_curve.set_attribute("handle_left_y", new_left_tangent_vector[:,1]+new_values)
+                new_curve.set_attribute("handle_right_x", new_right_tangent_vector[:,0]+new_times)
+                new_curve.set_attribute("handle_right_y", new_right_tangent_vector[:,1]+new_values)
 
                 self.new_animation.append(new_curve)
         return self.new_animation
-
-    """def tangent_time_stretch(self, epsilon=1e-10):
-        keep_aligned = [False for _ in range(self.match_count)]
-        symmetry_to_left = [False for _ in range(self.match_count)]
-        symmetry_to_right = [False for _ in range(self.match_count)]
-        for channel in self.channels:
-            curve = self.animation.find(channel)
-            are_aligned = curve.are_tangents_aligned()
-            left_tangent_vector = np.hstack((curve.get_attribute('left_tangent_x')-curve.get_attribute('time'), curve.get_attribute('left_tangent_y')-curve.get_attribute('value')))
-            right_tangent_vector = np.hstack((curve.get_attribute('right_tangent_x')-curve.get_attribute('time'), curve.get_attribute('right_tangent_y')-curve.get_attribute('value')))
-            lshape = left_tangent_vector.shape
-            debug=1
-            for i,time in enumerate(self.snapped_times_reference):                
-                times = curve.get_times()
-                index = list(times).index(time)
-                if are_aligned[index]:
-                    keep_aligned[i] = True
-                if i>=1:
-                    previous_index = list(times).index(self.snapped_times_reference[i-1])
-                    lx,ly = right_tangent_vector[previous_index,:]
-                    rx,ry = left_tangent_vector[index,:]
-                    if abs(ly-ry)<epsilon and abs(lx+rx)<epsilon:
-                        symmetry_to_left[index]=True
-                        symmetry_to_right[previous_index] = True
-        debug=2
-        left_zipper = zip(self.snapped_times_target[1:], self.snapped_times_target[:-1], self.snapped_times_reference[1:], self.snapped_times_reference[:-1])
-        basic_left_stretch = [1]+[(y-y_bef)/(x-x_bef) for y,y_bef,x,x_bef in left_zipper]
-        right_zipper = zip(self.snapped_times_target[:-1], self.snapped_times_target[1:], self.snapped_times_reference[:-1], self.snapped_times_reference[1:])
-        basic_right_stretch = [(y_aft-y)/(x_aft-x) for y,y_aft,x,x_aft in right_zipper]+[1]
-
-        ## We will use scipy.optimize.linprog to solve our problem, which is to enforce alignment and symmetry while minimizing change.
-
-        self.left_time_stretch = []
-        self.right_time_stretch = []
-        for i,channel in enumerate(self.channels):
-            self.left_time_stretch.append([])
-            self.right_time_stretch.append([])
-            snapped_index = 0
-            curve = self.animation.find(channel)
-            times = curve.get_times()
-            for j in range(len(curve)):
-                time = times[j]
-                if time in self.snapped_times:
-                    snapped_index = list(self.snapped_times).index(time)
-                    basic_left_stretch = 
-                    basic_right_stretch =
-                    if keep_aligned[snapped_index]:
-                        if symmetry_to_left[snapped_index]:
-
-                        else:
-                        if symmetry_to_right[snapped_index]:
-                        else:
-                    else:
-                        if symmetry_to_left[snapped_index]:
-                        else:
-                        if symmetry_to_right[snapped_index]:
-                        else:
-                else:
-
-                self.left_time_stretch[i].append(left_stretch)
-                self.right_time_stretch[i].append(right_stretch)
-        return
-    
-
-    def tangent_value_stretch(self, mode=TangentSemantic.KEEP_ANGLE):
-        return # TODO
-    
-    def make_new_animation(self):
-        self.new_animation = None
-        # TODO"""
