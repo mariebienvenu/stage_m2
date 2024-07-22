@@ -17,7 +17,7 @@ class TangentSemantic(Enum):
     KEEP_BOTH = 3
 
 
-class SemanticRetiming: ## TODO write dedicated test file
+class SemanticRetiming:
 
 
     REGULARIZATION_WEIGHT = 1 # Global factor, will decide how much the regularization will weigh in compared to the matches
