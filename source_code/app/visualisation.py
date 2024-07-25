@@ -9,7 +9,7 @@ import pandas as pd
 from app.color import Color
 
 
-def add_curve(y, color=None, opacity=None, x=None, name="", fig=None, row=None, col=None, style="lines", legend=None):
+def add_curve(y, color=None, opacity=None, x=None, name="", fig=None, row=None, col=None, style="lines", legend=True):
     if opacity is None : opacity = 1.
     color = Color.to_string(color, opacity) if color is not None else Color.to_string(Color.next(), opacity)
     Y = np.array(y)

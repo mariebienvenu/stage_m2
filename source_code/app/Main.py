@@ -41,6 +41,7 @@ class Main(AbstractIO):
     WARP_INTERPOLATION = "linear" # the way the warping is interpolated between matches
     DTW_CONSTRAINTS_LOCAL = 10 # if 0 : dtw constraint computation is global ; else, it is local with a range of DTW_CONSTRAINTS_LOCAL (in frames)
     SPOT_FOR_DTW_CONSTRAINTS = False
+    USE_SEMANTIC = True
 
     def __init__(self, directory, no_blender=False, verbose=0):
         super(Main, self).__init__(directory, verbose)
@@ -101,6 +102,8 @@ class Main(AbstractIO):
         vanim_target.enrich()
         if not self.no_blender: banims = self.blender_scene.get_animations()
         else : banims = [Animation()]
+        for i,banim in enumerate(banims):
+            banim.save(self.directory+f'/{i}/')
         #for banim in banims:
         #    banim.enrich() # TODO -- will be useful when we automatically decide of connexions based on multi-modal correlations
 
@@ -128,7 +131,7 @@ class Main(AbstractIO):
             self.figures_and_titles.append([])
             new_anim = None
             for feature_index, (feature, channels) in enumerate(zip(features, channels_list)):
-                    new_anim = internal.process(feature=feature, channels=channels,filter_indexes=is_impulsive, warp_interpolation=Main.WARP_INTERPOLATION, spot_for_dtw_constraint=Main.SPOT_FOR_DTW_CONSTRAINTS)
+                    new_anim = internal.process(feature=feature, channels=channels,filter_indexes=is_impulsive, warp_interpolation=Main.WARP_INTERPOLATION, spot_for_dtw_constraint=Main.SPOT_FOR_DTW_CONSTRAINTS, use_semantic=Main.USE_SEMANTIC)
                     self.figures_and_titles[obj_index].append(self.draw_diagrams(obj_index, feature_index))
             self.new_anims.append(new_anim)
         #self.new_anims = [internal.process(feature=feature, channels=channels,filter_indexes=is_impulsive, warp_interpolation=Main.WARP_INTERPOLATION, spot_for_dtw_constraint=Main.SPOT_FOR_DTW_CONSTRAINTS) for internal, feature, is_impulsive, channels in zipped]
@@ -241,3 +244,66 @@ class Main(AbstractIO):
                 feature_index += 1
             object_index += 1
             feature_index = 0
+
+
+
+def for_the_paper(main:Main, object_index=0, feature_index=0, save=True, show=False):
+    ## What we need
+    # S_in
+    # S_out
+    # Heatmap with path [and circled matches ?]
+    # Matches between S_in and S_out
+    # Constraints along best path
+    internal, channels, feature = main.internals[object_index], main.channels[object_index][feature_index], main.features[object_index][feature_index]
+    channel = channels[-1]
+    warp = internal.warp
+    dtw = internal.dtw
+    feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
+    Color.reset()
+    '''
+    ## Video feature : original VS retake
+    fig0 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: initial', f'Video feature curve: retook'], vertical_spacing=0.1)
+    feature_curve1.display(handles=False, style="lines", fig=fig0, col=1, row=1)
+    feature_curve2.display(handles=False, style="lines", fig=fig0, col=1, row=2)
+    fig0.update_layout(xaxis2_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis2_title="Magnitude (~pixels)", showlegend=False)
+    title0 = f'Comparison of the initial and retook video feature curve "{feature}"'
+
+    ## Video feature : original VS retake
+    fig0 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: initial', f'Video feature curve: retook'], vertical_spacing=0.1)
+    feature_curve1.display(handles=False, style="lines", fig=fig0, col=1, row=1)
+    feature_curve2.display(handles=False, style="lines", fig=fig0, col=1, row=2)
+    fig0.update_layout(xaxis2_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis2_title="Magnitude (~pixels)", showlegend=False)
+    title0 = f'Comparison of the initial and retook video feature curve "{feature}"'
+    '''
+    inlier_color, outlier_color, path_color = Color.next(), Color.next(), Color.next()
+    ref_color, target_color = Color.next(), Color.next()
+    constraints = internal.dtw_constraints
+    distances = dtw.alternate_path_differences()
+    pairs = dtw.pairings
+    inliers = internal.kept_indexes
+    outliers = getattr(internal, "outliers", [])
+    vertical_offset = 10
+
+    x1, y1, x2, y2 = dtw.times1, dtw.values1, dtw.times2, dtw.values2+vertical_offset
+    all_pairings = pairs
+    refined_pairings = [e for i,e in enumerate(pairs) if i in inliers]
+
+    ## Matches selected
+    fig = vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=all_pairings, color=(210, 210, 210), opacity=1)
+    vis.add_curve(y=y2, x=x2, name="curve1", color=target_color, fig=fig)
+    vis.add_curve(y=y1, x=x1, name="curve2", color=ref_color, fig=fig)
+    vis.add_pairings(y2=y2, x2=x2, y1=y1, x1=x1, pairs=refined_pairings, color="green", opacity=1, fig=fig)
+
+    fig.update_layout(
+        xaxis_title="Time (frames)",
+        yaxis_title="Amplitude (arbitrary)",
+    )
+    title = "Filtered correspondance"
+
+
+    directory = main.directory + '/out/'
+    if not os.path.exists(directory) : os.mkdir(directory)
+    fig.update_layout(title=title)
+    filetitle = title.replace('"','')
+    if save: fig.write_html(f'{directory}/{filetitle}_{object_index}_{feature_index}.html')
+    if show: fig.show()

@@ -7,6 +7,7 @@ from app.color import Color
 from app.curve import Curve
 from app.animation import Animation
 from app.semantic import SemanticRetiming
+import app.visualisation as vis
 
 DO_SHOW = True
 
@@ -59,14 +60,12 @@ animation.display(fig=fig, row=1,col=1)
 new_animation[0].display(fig=fig, row=2,col=1, name="regular")
 
 ## What if we used no semantics ?
-SemanticRetiming.REGULARIZATION_WEIGHT = 0
-new_animation = semantic.process(force=True)
+new_animation = semantic.process(force=True, regularization_weight=0)
 print(f"No regularization scenario: expected {scaling}, got {semantic.new_left}")
 new_animation[0].display(fig=fig, row=2, col=1, name="no regularization", opacity=0.3)
 
 ## What if we used only semantics ?
-SemanticRetiming.REGULARIZATION_WEIGHT = 100
-new_animation = semantic.process(force=True)
+new_animation = semantic.process(force=True, regularization_weight=100)
 print(f"Extreme regularization scenario: {semantic.new_left}, {semantic.new_right}")
 new_animation[0].display(fig=fig, row=2, col=1, name="no matches", opacity=0.3)
 
@@ -74,27 +73,26 @@ if DO_SHOW: fig.show()
 SemanticRetiming.reset_weights()
 
 ## let's play with the amount of neighbour impact (symmetries)
-SemanticRetiming.REGULARIZATION_WEIGHT = 100
 
 # Case of : no neigbours
 SemanticRetiming.NEIGHBOURS_WEIGHT = 0
 SemanticRetiming.ALIGNMENT_WEIGHT = 1
 SemanticRetiming.BROKEN_WEIGHT = 1
-new_animation = semantic.process(force=True)
+new_animation = semantic.process(force=True, regularization_weight=100)
 print(f"Extreme regularization + no neighbours scenario: expected [1.5, 1.5, 0.6, 1.6, 2], got {semantic.new_left}, {semantic.new_right}")
 
 # Case of : full neighbours
 SemanticRetiming.NEIGHBOURS_WEIGHT = 1
 SemanticRetiming.ALIGNMENT_WEIGHT = 0
 SemanticRetiming.BROKEN_WEIGHT = 0
-new_animation = semantic.process(force=True)
+new_animation = semantic.process(force=True, regularization_weight=100)
 print(f"Extreme regularization + full neighbours scenario: got {semantic.new_left}") # Same as no regularization ! because neighbour continuity is already granted...
 
 # Case of : everything
 SemanticRetiming.NEIGHBOURS_WEIGHT = 1
 SemanticRetiming.ALIGNMENT_WEIGHT = 1
 SemanticRetiming.BROKEN_WEIGHT = 1
-new_animation = semantic.process(force=True)
+new_animation = semantic.process(force=True, regularization_weight=100)
 print(f"Extreme regularization + max everything scenario: expected {np.average(scaling)}, got {semantic.new_left}") # Uniform scaling
 
 
@@ -147,7 +145,46 @@ if DO_SHOW: fig.show()
 weights = [0, 1, 5, 20]
 fig = make_subplots(rows=1, cols=len(weights), shared_xaxes=True, shared_yaxes=True, subplot_titles=[f"Weight={w}" for w in weights])
 for i,weight in enumerate(weights):
-    SemanticRetiming.REGULARIZATION_WEIGHT = weight
-    new_animation = semantic.process(force=True)
+    new_animation = semantic.process(force=True, regularization_weight=weight)
     new_animation[0].display(fig=fig, row=1, col=i+1)
 if DO_SHOW: fig.show()
+
+## Real anmation curves
+
+anim = Animation.load("C:/Users/Marie Bienvenu/stage_m2/complete_scenes/bouncing_ball_plus1_pretty/0/")
+
+anim.display(doShow=True)
+
+matches = np.array([
+    [2, 5],
+    [60, 20],
+    [191, 314],
+    [341, 452],
+    [491, 735],
+    [641, 863]
+])
+
+channels = ["pose.bones['Ball'].location Y"]
+curve = anim.find(channels[0])
+
+semantic = SemanticRetiming(anim, channels, matches)
+new_animation = semantic.process()
+new_curve = new_animation.find(channels[0])
+
+fig = make_subplots(rows=2, cols=1, shared_xaxes=True, shared_yaxes=True, subplot_titles=["Original animation", "Retimed animation"])
+curve.display(fig=fig, row=1,col=1)
+new_curve.display(fig=fig, row=2,col=1)
+if DO_SHOW: fig.show()
+
+start, stop = curve.time_range
+start, stop = int(start), int(stop)
+
+lefts, rights = np.zeros((stop-start+1)), np.zeros((stop-start+1))
+
+for i, time in enumerate(range(start, stop+1)):
+    lefts[i] = abs(semantic.left_tangent_operator(time, np.array([-1, 1]))[0])
+    rights[i] = semantic.right_tangent_operator(time, np.array([1, 1]))[0]
+
+fig = vis.add_curve(y=lefts, x=list(range(start, stop+1)), name="left scaling")
+vis.add_curve(y=rights, x=list(range(start, stop+1)), name="right scaling", fig=fig)
+fig.show()

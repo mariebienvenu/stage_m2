@@ -18,58 +18,47 @@ import pandas as pd
 import numpy as np
 
 import app.main as main
+import app.internal_process as internpro
 import app.visualisation as vis
 import app.dynamic_time_warping as DTW
-import app.abstract_io, app.warping, app.dcc_io, app.blender_utils, app.video_io
+import app.abstract_io, app.warping, app.dcc_io, app.video_io
+import app.blender_utils as b_utils
 import app.animation, app.color
 
-"""
-import app.blender_utils as b_utils
-import app.curve as C
-import app.internal_process as ip
 import importlib
-importlib.reload(b_utils)
-importlib.reload(C)
-importlib.reload(ip)
-
 importlib.reload(main)
-importlib.reload(app.abstract_io)
-importlib.reload(app.internal_process)
-importlib.reload(app.warping)
-importlib.reload(DTW)
-importlib.reload(app.dcc_io)
-importlib.reload(app.blender_utils)
-importlib.reload(app.video_io)
-importlib.reload(app.animation)
-importlib.reload(app.curve)
-importlib.reload(app.color)
-importlib.reload(vis)
-"""
+importlib.reload(internpro)
 
 Color = app.color.Color
 warping = app.warping
 Color.reset()
-Color.next()
+Color.next()    
 
-directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/fireworks_first_try/"
-main_obj = main.Main(directory, verbose=10)
+BLENDER = True
+#main.Main.SPOT_FOR_DTW_CONSTRAINTS = 1 #bugs
+#internpro.InternalProcess.CONSTRAINT_THRESHOLD = 2.2 # walk_cycle
+main.Main.USE_SEMANTIC = False #bouncing ball test
+
+directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/bouncing_ball_samenumber/"
+main_obj = main.Main(directory, verbose=10, no_blender=(not BLENDER))
 
 main_obj.process(force=True)
-main_obj.to_blender()
-main_obj.blender_scene.from_software() #to recover new fcurve pointer
+if BLENDER:
+    main_obj.to_blender()
+    main_obj.blender_scene.from_software(in_place=False) #to recover new fcurve pointer
 
-anim_index = 1
+#main_obj.internals[0].vanim1.display(handles=False, style="lines+markers", doShow=True)
+#main_obj.internals[0].vanim2.display(handles=False, style="lines+markers", doShow=True)
 
-main_obj.draw_diagrams(animation_index=anim_index, show=True)
-figures, titles = main_obj.internals[anim_index].make_diagrams(anim_style="lines+markers", number_issues=False)
+main_obj.display(show=False)
+
+print("--------- END -----------")
+'''
+object_index = 0
+figures, titles = main_obj.internals[object_index].make_diagrams(anim_style="lines+markers", number_issues=False)
 for fig, title in zip(figures, titles):
     fig.update_layout(title=title)
     fig.show()
+'''
 
-anim_index = 0
-
-main_obj.draw_diagrams(animation_index=anim_index, show=True)
-figures, titles = main_obj.internals[anim_index].make_diagrams(anim_style="lines+markers", number_issues=False)
-for fig, title in zip(figures, titles):
-    fig.update_layout(title=title)
-    fig.show()
+main.for_the_paper(main_obj)

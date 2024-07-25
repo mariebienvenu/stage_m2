@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 from app.animation import Animation
 import app.warping as W
 from app.dynamic_time_warping import DynamicTimeWarping
+from app.semantic import SemanticRetiming
 
 import app.image_gradient as im_grad
 from app.curve import Curve
@@ -30,7 +31,7 @@ class InternalProcess:
         self.verbose = verbose # TODO make use of this more
 
 
-    def process(self, feature:str, channels:list[str], only_temporal=True, detect_issue=True, blend_if_issue=10, filter_indexes=True, warp_interpolation="linear", normalize=True, spot_for_dtw_constraint=False):
+    def process(self, feature:str, channels:list[str], only_temporal=True, detect_issue=True, blend_if_issue=10, filter_indexes=True, warp_interpolation="linear", normalize=True, spot_for_dtw_constraint=False, use_semantic=True):
         if not only_temporal: raise NotImplementedError
         if feature is None: return self.banim1
         self.select(feature)
@@ -45,10 +46,11 @@ class InternalProcess:
                 if normalize: self.normalize_curves()
                 self.do_dtw(redo=True, spot=spot_for_dtw_constraint)
                 still_issue = self.detect_number_issues()
-                #if still_issue: raise RecursionError(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
-                if still_issue and self.verbose>0: print(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
-        self.make_warp(filter=filter_indexes, interpolation=warp_interpolation)
-        self.make_new_anim(channels, use_operator=self.issue_detected)
+                if still_issue:
+                    if self.verbose>0: print(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
+                    raise RecursionError(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
+                self.update_anim(channels=channels)
+        self.make_new_anim(channels, filter=filter_indexes, interpolation=warp_interpolation, use_semantic=use_semantic)
         return self.banim2
 
 
@@ -127,17 +129,47 @@ class InternalProcess:
                 output_curve.stitch(ending, blend=blend, self_end_time=self_end_time, curve_start_time=curve_start_time, verbose=self.verbose-1)
             return output_curve
         return operator # can be used for both the reference feature curve, and the reference animation ! yay
+    
+
+    def update_anim(self, channels:list[str]):
+        reference = Animation([c for c in getattr(self, "banim2", self.banim1)])
+        found_channel = [False for _ in channels] # for debug purposes
+        self.new_banim1 = Animation()
+        for i,curve in enumerate(reference):
+            if curve.fullname in channels:
+                if self.processed_channels[i]: raise NotImplementedError(f"Cannot process twice the same channel. Tried processing {curve.fullname}.")
+                temp_curve = self.operator(curve)
+                self.new_banim1.append(temp_curve)
+                found_channel[channels.index(curve.fullname)] = True
+            else:
+                self.new_banim1.append(curve)
+        if not all(found_channel):
+            debug = 0
 
 
-    def make_warp(self, filter=True, interpolation="linear"):
+    '''def make_warp(self, filter=True, interpolation="linear"):
         time_in, time_out = self.dtw.bijection
         self.kept_indexes = self.dtw.filtered_indexes() if filter else list(range(len(self.dtw.pairings)))
         if len(self.kept_indexes)<=2: 
             if self.verbose>0: print(f"Warp simplification did not work ; no index was selected. Reverting to dense warp computation.")
             self.kept_indexes = list(range(len(self.dtw.pairings)))
-        self.warp = W.make_warp(dimension=1, interpolation=interpolation, X_in=time_in[self.kept_indexes], X_out=time_out[self.kept_indexes])
+        self.warp = W.make_warp(dimension=1, interpolation=interpolation, X_in=time_in[self.kept_indexes], X_out=time_out[self.kept_indexes])'''
 
+    
+    def make_new_anim(self, channels:list[str], filter=True, interpolation="linear", use_semantic=True):
+        time_in, time_out = self.dtw.bijection
+        self.kept_indexes = self.dtw.filtered_indexes() if filter else list(range(len(self.dtw.pairings)))
+        if len(self.kept_indexes)<=2: 
+            if self.verbose>0: print(f"Warp simplification did not work ; no index was selected. Reverting to dense warp computation.")
+            self.kept_indexes = list(range(len(self.dtw.pairings)))
+        self.matches = np.array([time_in[self.kept_indexes],time_out[self.kept_indexes]]).T
 
+        self.semantic_retiming = SemanticRetiming(getattr(self, "new_banim1", self.banim1), channels, self.matches)
+        self.banim2 = self.semantic_retiming.process(interpolation=interpolation, regularization_weight=use_semantic)
+        self.warp = self.semantic_retiming.retiming_warp
+        return self.banim2
+
+    '''
     def make_new_anim(self, channels:list[str], use_operator=False):
         reference = Animation([c for c in getattr(self, "banim2", self.banim1)])
         self.banim2 = Animation()
@@ -156,7 +188,7 @@ class InternalProcess:
                 if use_operator: self.new_banim1.append(curve)
                 self.banim2.append(curve)
         if not all(found_channel):
-            debug = 0
+            debug = 0'''
 
 
     def make_diagrams(self, number_issues=True, anim_style=None):
@@ -231,8 +263,11 @@ class InternalProcess:
         fig3 = aux_along_path(dtw, constraints, distances, inliers, outliers, 2)
         title3 = "Cost and filter criteria along shortest path"
 
-        figures = [fig1, fig2, fig3]
-        titles = [title1, title2, title3]
+        fig4 = self.semantic_retiming.diagram()
+        title4 = "Tangent semantic"
+
+        figures = [fig1, fig2, fig3, fig4]
+        titles = [title1, title2, title3, title4]
 
         if not number_issues : return figures, titles
 
@@ -269,7 +304,7 @@ class InternalProcess:
         fig8 = aux_along_path(former_dtw, former_constraints, former_distances, former_inliers, former_outliers, 2)
         title8 = "Cost and filter criteria along shortest path - before"
 
-        figures = [fig6, fig7, fig8, fig4, fig5, fig1, fig2, fig3]
-        titles = [title6, title7, title8, title4, title5, title1+" - after", title2+" - after", title3+" - after"]
+        figures = [fig6, fig7, fig8, fig4, fig5, fig1, fig2, fig3, fig4]
+        titles = [title6, title7, title8, title4, title5, title1+" - after", title2+" - after", title3+" - after", title4+" - after"]
 
         return figures, titles

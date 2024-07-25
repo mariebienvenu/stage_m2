@@ -14,7 +14,7 @@ from app.curve import Curve
 
 def list_objects():
     for o in bpy.data.objects:
-        print(o.name, o.location)
+        print(o.name, o.location, o.animation_data)
 
 def list_scenes():
     # print all scene names in a list
@@ -34,6 +34,22 @@ def is_match(curve_name:str, other_curve_name:str):
     second = other_curve_name.replace('"', "'")
     return first==second
 
+def do_stuff(obj_name='RIG-rex'): 
+    # for debug
+    for o in bpy.data.objects:
+        anim_data, action, curves = False, False, False
+        if o.name == obj_name:
+            anim_data = getattr(o, "animation_data", False)
+            if anim_data is not False:
+                action = getattr(anim_data, "action", False)
+                if action is not False:
+                    curves = getattr(action, 'fcurves', False)
+            print(o.name, anim_data, action, curves)
+            print(o.animation_data)
+            print(o.animation_data.action)
+            print(anim_data.action)
+            print(o.animation_data.action.fcurves)
+
     
 def get_animation(obj_name):
     animation = Animation()
@@ -42,8 +58,11 @@ def get_animation(obj_name):
     for o in bpy.data.objects:
         if o.name == obj_name:
             obj = o
+            break # TODO sometimes the algo breaks because there is several obj_name, and maybe the last one has no fcurves (action=None...) ; don't know why. caused with RIG-rex.
     if obj is None:
         return animation
+    
+    debug = obj.animation_data.action
     
     for curve in obj.animation_data.action.fcurves:
         

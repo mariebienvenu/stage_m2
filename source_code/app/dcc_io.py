@@ -24,6 +24,10 @@ class SoftIO(AbstractIO):
     def __init__(self, directory, verbose=0):
         super(SoftIO, self).__init__(directory, verbose)
         self.finalize_init(default_config)
+
+    @property
+    def edited_suffix(self):
+        return ".001" #"_edited"
     
     @property
     def config_filename(self):
@@ -81,14 +85,14 @@ class SoftIO(AbstractIO):
 
     def to_software(self, in_place=False):
         for (obj_name, animation) in zip(self.object_names, self._animations):
-            target_obj = obj_name if in_place else obj_name+"_edited"
+            target_obj = obj_name if in_place else obj_name+self.edited_suffix
             b_utils.set_animation(target_obj, animation)
         self.process(force=True)
 
 
     def from_software(self, in_place=True):
         self._animations = [
-            b_utils.get_animation(obj_name+"_edited" if not in_place else obj_name) for obj_name in self.object_names
+            b_utils.get_animation(obj_name+self.edited_suffix if not in_place else obj_name) for obj_name in self.object_names
         ]
         for anim in self._animations:
             anim.crop(self.start, self.stop)

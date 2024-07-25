@@ -8,6 +8,7 @@ import scipy.sparse.linalg as linalg
 from app.animation import Animation
 from app.curve import Attributes_Name, Curve
 import app.warping as W
+import app.visualisation as vis
 
 
 class TangentSemantic(Enum):
@@ -20,7 +21,7 @@ class TangentSemantic(Enum):
 class SemanticRetiming:
 
 
-    REGULARIZATION_WEIGHT = 1 # Global factor, will decide how much the regularization will weigh in compared to the matches
+    #REGULARIZATION_WEIGHT = 1 # Global factor, will decide how much the regularization will weigh in compared to the matches
     ALIGNMENT_WEIGHT = 1 # Should be <=1 # This is not a good name : alignment are preserved natively. This is meant to  help enforce symmetry inside a key (between the left and right tangent length).
     BROKEN_WEIGHT = 0.2 # Should be <=1
     NEIGHBOURS_WEIGHT = 0.2 #0.7 # Should be <=1 ## Actually, by construction, there is no need to enforce symmetries between keys as they will be kept natively
@@ -28,7 +29,6 @@ class SemanticRetiming:
 
 
     def reset_weights():
-        SemanticRetiming.REGULARIZATION_WEIGHT = 1
         SemanticRetiming.ALIGNMENT_WEIGHT = 0.5
         SemanticRetiming.BROKEN_WEIGHT = 0.3
         SemanticRetiming.NEIGHBOURS_WEIGHT = 1
@@ -45,18 +45,18 @@ class SemanticRetiming:
         self.is_processed = False
 
 
-    def process(self, force=False):
+    def process(self, force=False, interpolation="linear", regularization_weight=1):
         if self.is_processed and not force: return self.new_animation
         self.snap()
-        self.make_retiming_warp()
-        regul, broken, aligned, neighbour = SemanticRetiming.REGULARIZATION_WEIGHT, SemanticRetiming.BROKEN_WEIGHT, SemanticRetiming.ALIGNMENT_WEIGHT, SemanticRetiming.NEIGHBOURS_WEIGHT
+        self.make_retiming_warp(interpolation=interpolation)
+        regul, broken, aligned, neighbour = regularization_weight, SemanticRetiming.BROKEN_WEIGHT, SemanticRetiming.ALIGNMENT_WEIGHT, SemanticRetiming.NEIGHBOURS_WEIGHT
         self.optimize_tangent_scaling(broken_weight=regul*broken, aligned_weight=regul*aligned, neighbours_weight=regul*neighbour)
         self.make_new_animation()
         self.is_processed = True
         return self.new_animation
 
     
-    def snap(self, to_integer=True, attraction=0):
+    def snap(self, to_integer=True, attraction=50):
         all_times = np.concatenate([curve.get_times() for curve in self.animation if curve.fullname in self.channels]).astype(int)
         times = np.unique(all_times)
         histogram = np.bincount(all_times)
@@ -98,7 +98,16 @@ class SemanticRetiming:
 
         n_unknown = 2*self.match_count
         initial_conditions = np.array([self.basic_left[i//2] if i%2==0 else self.basic_right[i//2] for i in range(n_unknown)])
-        alignments = np.sum(np.array([curve.are_tangents_aligned() for curve in self.animation if curve.fullname in self.channels]), axis=0)
+        alignments = np.zeros((self.match_count))
+        for curve in self.animation:
+            if curve.fullname in self.channels:
+                are_aligned = curve.are_tangents_aligned()
+                times = curve.get_times()
+                for (time, is_aligned) in zip(times, are_aligned):
+                    if time in self.snapped_times_reference and is_aligned:
+                        match_index = list(self.snapped_times_reference).index(time)
+                        alignments[match_index] += 1
+        #np.sum(np.array([curve.are_tangents_aligned() for curve in self.animation if curve.fullname in self.channels]), axis=0)
         regularization_weights = [(aligned_weight if alignments[i//2]>0 else broken_weight) if i%2==0 else neighbours_weight for i in range(n_unknown-1)]
 
         # We are going to find X such as to minimize ||AX-B||²
@@ -131,8 +140,8 @@ class SemanticRetiming:
             current_index += 1
         if key_time_reference == self.snapped_times_reference[current_index]:
             return self.new_left[current_index]*tangent_vector
-        scale_before = self.new_left[current_index-1]
-        scale_after = self.new_right[current_index]
+        scale_before = self.new_left[current_index]
+        scale_after = self.new_right[current_index-1]
         time_before, time_after = self.snapped_times_reference[current_index-1], self.snapped_times_reference[current_index]
         correct_scale = scale_before + (scale_after-scale_before)*(key_time_reference-time_before)/(time_after-time_before)
         return correct_scale*tangent_vector
@@ -149,8 +158,8 @@ class SemanticRetiming:
             current_index -= 1
         if key_time_reference == self.snapped_times_reference[current_index]:
             return self.new_right[current_index]*tangent_vector
-        scale_before = self.new_left[current_index]
-        scale_after = self.new_right[current_index+1]
+        scale_before = self.new_right[current_index]
+        scale_after = self.new_left[current_index+1]
         time_before, time_after = self.snapped_times_reference[current_index], self.snapped_times_reference[current_index+1]
         correct_scale = scale_before + (scale_after-scale_before)*(key_time_reference-time_before)/(time_after-time_before)
         return correct_scale*tangent_vector
@@ -183,3 +192,14 @@ class SemanticRetiming:
 
                 self.new_animation.append(new_curve)
         return self.new_animation
+    
+
+    def diagram(self):
+
+        fig = vis.add_curve(y=self.basic_left, x=self.snapped_times_reference, name="Left basic warp")
+        vis.add_curve(y=self.basic_right, x=self.snapped_times_reference, name="Right basic warp", fig=fig)
+
+        vis.add_curve(y=self.new_left, x=self.snapped_times_reference, name="Left new warp", fig=fig)
+        vis.add_curve(y=self.new_right, x=self.snapped_times_reference, name="Right new warp", fig=fig)
+
+        return fig

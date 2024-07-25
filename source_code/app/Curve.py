@@ -224,7 +224,7 @@ class Curve:
         if name is None: name = self.fullname
         times = self.get_times()
         values = self.get_values()
-        if not handles:
+        if not handles or not hasattr(self,"pointer"):
             fig = vis.add_curve(x=times, y=values, name=name, style=style, color=color, opacity=opacity, fig=fig, row=row, col=col)
         if handles:
             handle_times = np.concatenate((self.get_attribute('handle_left_x'), self.get_attribute('handle_right_x')))
@@ -233,7 +233,7 @@ class Curve:
                 x = [handle_times[id], times[id], handle_times[id+len(self)]]
                 y = [handle_values[id], values[id], handle_values[id+len(self)]]
                 fig = vis.add_curve(x=x, y=y, style="markers+lines", color=color, opacity=0.4*opacity, fig=fig, row=row, col=col, legend=False)
-            fig = self.sample().display(handles=False, style='lines', color=color, opacity=opacity, name=name, fig=fig, row=row, col=col) # drawing the interpolated curve
+            if hasattr(self,"pointer"): fig = self.sample().display(handles=False, style='lines', color=color, opacity=opacity, name=name, fig=fig, row=row, col=col) # drawing the interpolated curve
         if doShow: fig.show()
         return fig
     
@@ -326,9 +326,9 @@ class Curve:
         return dy/dx*left_unbroken_handles*right_unbroken_handles 
     
     def do_tangents_matter(self): # TODO write test in dedicated test file
-        interpolation = self.get_attribute(Attributes_Name.handle_left_type), self.get_attribute(Attributes_Name.handle_right_type)
+        interpolation = self.get_attribute(Attributes_Name.interpolation).astype(int)
         mattering_interpolation = [Interpolation_Type.BEZIER]
-        tangent_matter = [inter in mattering_interpolation for inter in interpolation]
+        tangent_matter = [Interpolation_Type(inter) in mattering_interpolation for inter in interpolation]
         return np.array(tangent_matter)
 
     def are_tangents_aligned(self, epsilon=1e-10): # TODO write test in dedicated test file
@@ -337,7 +337,7 @@ class Curve:
         a = x-left_x
         b = y-left_y
         c = right_x-left_x
-        d = right_y-left_x
+        d = right_y-left_y
         determinant = a*d-b*c
         is_colinear = np.array([abs(det)<epsilon for det in determinant])
         return is_colinear*self.do_tangents_matter()
@@ -507,6 +507,9 @@ class Curve:
             self_array = self._get_data(overlapping_self_ids, columns)
             other_array = other._get_data(overlapping_other_ids, columns)
             big_factors = np.tile(np.array(factors), (len(columns),1)).T
+            if len(overlapping_self_ids)==1:
+                debug = 0
+                big_factors[0, 1:5] = (1, 1, 0, 0)
             new_array = big_factors*self_array  + (1-big_factors)*other_array
             self._set_data(new_array, overlapping_self_ids, columns)
 

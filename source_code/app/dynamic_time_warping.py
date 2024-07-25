@@ -10,9 +10,21 @@ import app.visualisation as vis
 from app.color import Color
 
 
+def spot(half_size=4, max=100, min=5, profile='linear'):
+    if profile != "linear" : raise NotImplementedError(f"Profiles others than linear have not been implmemented. Asked for {profile}.")
+    spot = np.zeros((2*half_size+1, 2*half_size+1))
+    for i in range(2*half_size+1):
+        for j in range(2*half_size+1):
+            dist = np.sqrt((i-half_size)**2 + (j-half_size)**2)
+            if dist <= half_size:
+                spot[i,j] = max - dist/half_size*(max-min)
+    return spot
+
+
+
 class DynamicTimeWarping:
 
-    def __init__(self, curve1:Curve, curve2:Curve, normalize=True):
+    def __init__(self, curve1:Curve, curve2:Curve, normalize=True, use_spot=False):
         self.curve1 = deepcopy(curve1)
         self.curve2 = deepcopy(curve2)
         if normalize: self.curve1.normalize(), self.curve2.normalize()
@@ -26,7 +38,9 @@ class DynamicTimeWarping:
 
         self.local_processed = False
         self.global_processed = False
+        self.global_spot_processed = False
         self.filtered_indexes_done = False
+        self.use_spot = use_spot
     
 
     def compute(self, eps=1e-11) : #1e-11 if distances is float64, Ae-5 if float32
@@ -57,6 +71,7 @@ class DynamicTimeWarping:
                 distances[i+1,j+1] = cost + additionnal_cost
         return distances
 
+
     @staticmethod
     def shortest_path(distances:np.ndarray, costs:np.ndarray):
         n,m = costs.shape
@@ -83,6 +98,7 @@ class DynamicTimeWarping:
         path = reverse_path[::-1]
         return path
 
+
     def local_constraints(self, window_size=10):
         if self.local_processed: return self._local_constraints
         range_x = len(self.curve1)
@@ -103,13 +119,26 @@ class DynamicTimeWarping:
     
 
     def global_constraints(self):
-        """Computes the cost each pair contributed to save to the final score, using DTW"""
-        if self.global_processed: return self._global_constraints
-        N = self.bijection[0].size
-        self.global_constraints_distances = np.zeros((N, self.values1.size+1, self.values2.size+1))
-        self.global_constraints_alternative_paths = [None for _ in range(N)]
+        res = self.global_constraints_spot(spot_half_size=int(self.use_spot)) if self.use_spot else self.global_constraints_no_spot()
+        self._global_constraints = res
+        ## TODO revoir ça, c'est super mal fait
+        if self.use_spot:
+            self.global_constraints_alternative_paths = self.global_constraints_spot_alternative_paths
+            self.global_constraints_distances = self.global_constraints_spot_distances
+        else:
+            self.global_constraints_alternative_paths = self.global_constraints_no_spot_alternative_paths
+            self.global_constraints_distances = self.global_constraints_no_spot_distances
+        return res
+    
 
-        self._global_constraints = np.zeros((N))
+    def global_constraints_no_spot(self):
+        """Computes the cost each pair contributed to save to the final score, using DTW"""
+        if self.global_processed: return self._global_constraints_no_spot
+        N = self.bijection[0].size
+        self.global_constraints_no_spot_distances = np.zeros((N, self.values1.size+1, self.values2.size+1))
+        self.global_constraints_no_spot_alternative_paths = [None for _ in range(N)]
+
+        self._global_constraints_no_spot = np.zeros((N))
         cost_matrix = np.copy(self.cost_matrix)
         distances = DynamicTimeWarping.distances(cost_matrix)
 
@@ -123,15 +152,57 @@ class DynamicTimeWarping:
             
             distances = DynamicTimeWarping.distances(cost_matrix, distances, start_i=ix, start_j=iy) # recompute DTW with this modified cost matrix using previous data as much as possible
             
-            self.global_constraints_distances[index,:,:] = distances
-            self.global_constraints_alternative_paths[index] = DynamicTimeWarping.shortest_path(distances, cost_matrix)
+            self.global_constraints_no_spot_distances[index,:,:] = distances
+            self.global_constraints_no_spot_alternative_paths[index] = DynamicTimeWarping.shortest_path(distances, cost_matrix)
 
             alternative_score = distances[-1,-1]
             minimal_additionnal_cost = alternative_score - self.score
-            self._global_constraints[index] = minimal_additionnal_cost
+            self._global_constraints_no_spot[index] = minimal_additionnal_cost
 
         self.global_processed = True
-        return self._global_constraints
+        return self._global_constraints_no_spot
+    
+
+    def global_constraints_spot(self, spot_half_size=4, spot_max=100, spot_min=5):
+        """Computes the cost each pair contributed to save to the final score, using DTW"""
+        if self.global_spot_processed: return self._global_constraints_spot
+        N = self.bijection[0].size
+        self.global_constraints_spot_distances = np.zeros((N, self.values1.size+1, self.values2.size+1))
+        self.global_constraints_spot_alternative_paths = [None for _ in range(N)]
+        spot_mtx = spot(spot_half_size, spot_max, spot_min)
+
+        self._global_constraints_spot = np.zeros((N))
+        cost_matrix = np.copy(self.cost_matrix)
+        distances = DynamicTimeWarping.distances(cost_matrix)
+
+        n,m = cost_matrix.shape
+
+        for index in tqdm(range(N-1-spot_half_size, spot_half_size, -1), desc="Global constraint on DTW computation"):
+
+            previous_ix, previous_iy = self.pairings[index+1]
+            x1, y1, x2, y2 = max(previous_ix-spot_half_size, 0), max(previous_iy-spot_half_size, 0), min(previous_ix+spot_half_size+1, n), min(previous_iy+spot_half_size+1, m)
+            cost_matrix[x1:x2, y1:y2] = self.cost_matrix[x1:x2, y1:y2] # repair the cost matrix
+
+            ix, iy = self.pairings[index]
+            x1, y1, x2, y2 = max(ix-spot_half_size, 0), max(iy-spot_half_size, 0), min(ix+spot_half_size+1, n-1), min(iy+spot_half_size+1, m-1)
+            w, h = min(x2-ix,ix-x1), min(y2-iy, iy-y1)
+            real_half_size = min(w,h)
+            if real_half_size != spot_half_size :
+                cost_matrix[ix-real_half_size:ix+real_half_size+1, iy-real_half_size:iy+real_half_size+1] += spot(half_size=real_half_size)
+            else:
+                cost_matrix[ix-spot_half_size:ix+spot_half_size+1, iy-spot_half_size:iy+spot_half_size+1] += spot_mtx # put prohibitive cost
+            
+            distances = DynamicTimeWarping.distances(cost_matrix, distances, start_i=ix-spot_half_size, start_j=iy-spot_half_size) # recompute DTW with this modified cost matrix using previous data as much as possible
+            
+            self.global_constraints_spot_distances[index,:,:] = distances
+            self.global_constraints_spot_alternative_paths[index] = DynamicTimeWarping.shortest_path(distances, cost_matrix)
+
+            alternative_score = distances[-1,-1]
+            minimal_additionnal_cost = alternative_score - self.score
+            self._global_constraints_spot[index] = minimal_additionnal_cost
+
+        self.global_spot_processed = True
+        return self._global_constraints_spot
     
 
     def alternate_path_differences(self):
@@ -140,7 +211,7 @@ class DynamicTimeWarping:
         self._alternate_path_differences = np.zeros_like(global_constraints)
         timespan1, timespan2 = self.curve1.time_range[1] - self.curve1.time_range[0], self.curve2.time_range[1] - self.curve2.time_range[0]
         for i, path in enumerate(alternative_paths):
-            if i==0 or i==len(alternative_paths)-1:
+            if path is None:
                 continue
             bij_x, bij_y = np.array([self.times1[i] for i,_ in path]), np.array([self.times2[j] for _,j in path])
             self._alternate_path_differences[i] = m_utils.distL1(bij_x,bij_y, self.bijection[0], self.bijection[1])
@@ -148,7 +219,7 @@ class DynamicTimeWarping:
         return self._alternate_path_differences
     
 
-    def filtered_indexes(self, use_global=True, use_constraint_local_maximum=True, constraint_threshold=2, area_difference_threshold=0.1, time_window=5):
+    def filtered_indexes(self, use_global=True, use_constraint_local_maximum=True, constraint_threshold=2, area_difference_threshold=0.1, time_window=15): # 1/4sec #time_window was 5 before...
         ## TODO dtw.filtered_indexes() -- not tested yet
         if self.filtered_indexes_done : return self._filtered_indexes
         pair_indexes = list(range(1, len(self.pairings)-1))
@@ -166,7 +237,8 @@ class DynamicTimeWarping:
         short_constraints = [e for i,e in enumerate(constraints) if i in self._filtered_indexes]
         keep = [
             all([
-                abs(i-j)>time_window 
+                abs(self.bijection[0][i]-self.bijection[0][j])>time_window # before, it was just abs(i-j)>time_window, but it actually makes no sense in term of units ?
+                or abs(self.bijection[1][i]-self.bijection[1][j])>time_window 
                 or short_constraints[jdx]<short_constraints[idx] 
                 or (short_constraints[jdx]==short_constraints[idx] and j>i) 
                 or i==j 
@@ -208,4 +280,4 @@ class DynamicTimeWarping:
         if add_path:
             vis.add_curve(y=np.array(pairs)[:,0]-pairs[0][0], x=np.array(pairs)[:,1]-pairs[0][1], color=path_color, fig=fig)
         return fig
-
+    
