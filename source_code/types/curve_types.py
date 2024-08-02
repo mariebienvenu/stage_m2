@@ -18,28 +18,15 @@ class Axis(Enum):
     Z = 2
     NEITHER = 3 # Useful for "Visibility" for instance, or IK/FK switch...
 
-class KeyType(Enum):
-    """Specifies the behaviour of the key when moving neigbour keys."""
-    KEYFRAME = 0 ; """Fixed key. Extremes, Moving Holds, and other special cases should be seen as fixed keys."""
-    BREAKDOWN = 1 ; """Moves when moving neighbour keys."""
-
 class TangentState(Enum):
     """Specifies whether the two handles of a tangent are linked or not."""
     ALIGNED = 0
     BROKEN = 1
 
-class TangentBehaviour(Enum):
-    """Specifies how the user defined the tangents."""
-    USER_DEFINED = 0 ; """The user defined custom values for the tangent."""
-    LINEAR = 1 ; """The tangent is set to produce linear interpolation (usually combined with TangentType.BROKEN)."""
-    FLAT = 2 ; """The tangent is perfectly flat."""
-    AUTO = 3 ; """The tangent is calculated by the DCC (usually combined with TangentState.ALIGNED)."""
-
-# NEW : replaced Interpolation
-class AnimationStage(Enum):
+class KeyframeTypeToAdd(Enum):
     """Specifies at what stage a keyframe is, in terms of the classic animation pipeline : Blocking/Posing, Spline/Polish"""
-    BLOCKING = 0
-    SPLINE = 1
+    BLOCKING = 0 # Constant interpolation
+    SPLINE = 1 # Bézier interpolation
 
 
 class AnimationCurve(Protocol):
@@ -64,7 +51,10 @@ class AnimationCurve(Protocol):
     def name(self) -> str : """The name of the curve, used for debug and lisibility ; example : "Ball_1, Location X". """
 
     @property
-    def id() : """Unique identifier of the curve. Used for sanity checks."""
+    def id(self) : """Unique identifier of the curve. Used for sanity checks."""
+
+    @property
+    def key_type_to_add(self) -> KeyframeTypeToAdd : """The type of interpolation chosen when adding a new key to the curve"""
 
     ## IMPORTANT
     def evaluate(time:float) -> float : """Evaluates the curve at given time (in frames)."""
@@ -74,8 +64,6 @@ class AnimationCurve(Protocol):
     ## Getters
     def get_time(self, index:int) -> float : """X component of key number @index (in frames)."""
     def get_value(self, index:int) -> float : """Y component of key number @index."""
-    def get_keytype(self, index:int) -> KeyType : """Whether the key number @index is a Keyframe or a Breakdown."""
-    def get_animation_stage(self, index:int) -> AnimationStage : """Whether the key number @index is at the Blocking or Spline stage."""
 
     def get_tangent_state(self, index:int) -> TangentState : """Whether the tangent of the key number @index is broken or not."""
 
@@ -84,14 +72,11 @@ class AnimationCurve(Protocol):
     def get_right_tangent_time(self, index:int) -> float : """Right tangent handle's X component of key number @index (in frames)."""
     def get_right_tangent_value(self, index:int) -> float : """Right tangent handle's Y component of key number @index."""
 
-    def get_left_tangent_behaviour(self, index:int) -> TangentBehaviour : """Left tangent's behaviour of key number @index."""
-    def get_right_tangent_behaviour(self, index:int) -> TangentBehaviour : """Right tangent's behaviour of key number @index."""
-
     ## Setters
     def set_time(self, index:int, time:float) -> None : ...
     def set_value(self, index:int, value:float) -> None : ...
     def set_tangent_state(self, index:int, state:TangentState) -> None : ...
-    def set_left_tangent_time(self, index:int, x:float) -> None : ...
-    def set_left_tangent_value(self, index:int, y:float) -> None : ...
-    def set_right_tangent_time(self, index:int, x:float) -> None : ...
-    def set_right_tangent_value(self, index:int, y:float) -> None : ...
+    def set_left_tangent_time(self, index:int, time:float) -> None : ...
+    def set_left_tangent_value(self, index:int, value:float) -> None : ...
+    def set_right_tangent_time(self, index:int, time:float) -> None : ...
+    def set_right_tangent_value(self, index:int, value:float) -> None : ...
