@@ -1,0 +1,2 @@
+aveugle 1 = 5 semantic
+aveugle 2 = no semantic
