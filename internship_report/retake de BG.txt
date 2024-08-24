@@ -1,0 +1,2 @@
+C est utilisé pour la fct curve et pour le path (page 12 et 14) 
+Page 14 input et output animation inversée par rapport aux schémas de la page 16 (14 : x input et 16: y input)
