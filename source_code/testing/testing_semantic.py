@@ -133,7 +133,8 @@ animation = Animation([curve])
 
 ## Okay, let's go !
 semantic = SemanticRetiming(animation, channels, matches)
-new_animation = semantic.process()
+new_animation = semantic.process(regularization_weight=5)
+semantic.diagram().show()
 
 ## Illustration
 fig = make_subplots(rows=2, cols=1, shared_xaxes=True, shared_yaxes=True, subplot_titles=["Original animation", "Retimed animation"])
@@ -157,18 +158,19 @@ anim.display(doShow=True)
 
 matches = np.array([
     [2, 5],
-    [60, 20],
+    [66, 20],
     [191, 314],
     [341, 452],
     [491, 735],
     [641, 863]
 ])
 
-channels = ["pose.bones['Ball'].location Y"]
-curve = anim.find(channels[0])
+main_channel = "pose.bones['Ball'].location Y"
+channels = [c.fullname for i,c in enumerate(anim) if i in [1, 3, 4, 5]]
+curve = anim.find(main_channel)
 
-semantic = SemanticRetiming(anim, channels, matches)
-new_animation = semantic.process()
+semantic = SemanticRetiming(anim, channels, matches, main_channel=main_channel)
+new_animation = semantic.process(regularization_weight=5)
 new_curve = new_animation.find(channels[0])
 
 fig = make_subplots(rows=2, cols=1, shared_xaxes=True, shared_yaxes=True, subplot_titles=["Original animation", "Retimed animation"])
@@ -179,12 +181,19 @@ if DO_SHOW: fig.show()
 start, stop = curve.time_range
 start, stop = int(start), int(stop)
 
-lefts, rights = np.zeros((stop-start+1)), np.zeros((stop-start+1))
+def lefts_rights(semantic:SemanticRetiming, start, stop):
 
-for i, time in enumerate(range(start, stop+1)):
-    lefts[i] = abs(semantic.left_tangent_operator(time, np.array([-1, 1]))[0])
-    rights[i] = semantic.right_tangent_operator(time, np.array([1, 1]))[0]
+    lefts, rights = np.zeros((stop-start+1)), np.zeros((stop-start+1))
 
+    for i, time in enumerate(range(start, stop+1)):
+        lefts[i] = abs(semantic.left_tangent_operator(time, np.array([-0.1, 0.1]))[0])*10
+        rights[i] = semantic.right_tangent_operator(time, np.array([0.1, 0.1]))[0]*10
+    
+    return lefts,rights
+
+lefts, rights = lefts_rights(semantic, start, stop)
 fig = vis.add_curve(y=lefts, x=list(range(start, stop+1)), name="left scaling")
 vis.add_curve(y=rights, x=list(range(start, stop+1)), name="right scaling", fig=fig)
 fig.show()
+
+semantic.diagram().show()

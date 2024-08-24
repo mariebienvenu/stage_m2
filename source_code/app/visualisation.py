@@ -9,13 +9,13 @@ import pandas as pd
 from app.color import Color
 
 
-def add_curve(y, color=None, opacity=None, x=None, name="", fig=None, row=None, col=None, style="lines", legend=True):
+def add_curve(y, color=None, opacity=None, x=None, name="", fig=None, row=None, col=None, style="lines", legend=True, linewidth=None, lineshape=None) -> go.Figure:
     if opacity is None : opacity = 1.
     color = Color.to_string(color, opacity) if color is not None else Color.to_string(Color.next(), opacity)
     Y = np.array(y)
     X = np.array(x) if x is not None else np.array(list(range(Y.size)))
     if fig is None: fig = go.Figure()
-    fig.add_trace(go.Scatter(x=X, y=Y, name=name, line_color=color, mode=style, showlegend=legend), row=row, col=col)
+    fig.add_trace(go.Scatter(x=X, y=Y, name=name, line_color=color, mode=style, showlegend=legend, line_width=linewidth, line_shape=lineshape), row=row, col=col)
     return fig
 
 
@@ -75,7 +75,7 @@ def magnitude_angle(
     return fig
 
 
-def add_pairings(y1:np.ndarray, y2:np.ndarray, pairs:list[list[int]], x1:list|np.ndarray=None, x2:list|np.ndarray=None, color=None, opacity=0.3, fig=None, row=None, col=None, doShow=False):
+def add_pairings(y1:np.ndarray, y2:np.ndarray, pairs:list[list[int]], x1:list|np.ndarray=None, x2:list|np.ndarray=None, color=None, opacity=0.3, fig=None, row=None, col=None, doShow=False) -> go.Figure:
     color = Color.to_string(color, opacity) if color is not None else Color.to_string((100,100,100), opacity)
     if fig is None: fig = go.Figure()
     if x1 is None: x1 = list(range(y1.size))

@@ -29,6 +29,7 @@ def default_config():
                 "channel": "Location Y",
                 "video feature": "First derivative of Velocity Y",
                 "is impulsive": True,
+                "is main channel": False,
             },
         ],
         "edit in place": False,
@@ -116,24 +117,27 @@ class Main(AbstractIO):
         self.channels:list[list[list[str]]] = [[] for _ in self.internals]
         self.features:list[list[str]] = [[] for _ in self.internals]
         for connexion in self.connexions_of_interest:
-            obj_name, feature, channel, is_impulsive = connexion["object name"], connexion["video feature"], connexion["channel"], connexion["is impulsive"]
+            obj_name, feature, channel, is_impulsive, is_main = connexion["object name"], connexion["video feature"], connexion["channel"], connexion["is impulsive"], connexion["is main channel"]
             internal_index = self.blender_scene.object_names.index(obj_name) if not self.no_blender else 0 ## costly
             self.is_impulsive[internal_index].append(is_impulsive)  # we prefer sparse warps for impulsive signals and dense ones for continuous signals
             if feature not in self.features[internal_index]:
                 self.features[internal_index].append(feature)
                 self.channels[internal_index].append([])
             feature_index = self.features[internal_index].index(feature)
-            self.channels[internal_index][feature_index].append(channel)
+            if is_main : 
+                self.channels[internal_index][feature_index] = [channel] + self.channels[internal_index][feature_index]
+            else: self.channels[internal_index][feature_index].append(channel)
 
         zipped = zip(self.internals, self.features, self.is_impulsive, self.channels)
         self.new_anims = []
         for obj_index, (internal, features, is_impulsive, channels_list) in enumerate(zipped):
             self.figures_and_titles.append([])
-            new_anim = None
+            new_anim = Animation()
             for feature_index, (feature, channels) in enumerate(zip(features, channels_list)):
-                    new_anim = internal.process(feature=feature, channels=channels,filter_indexes=is_impulsive, warp_interpolation=Main.WARP_INTERPOLATION, spot_for_dtw_constraint=Main.SPOT_FOR_DTW_CONSTRAINTS, use_semantic=Main.USE_SEMANTIC)
-                    self.figures_and_titles[obj_index].append(self.draw_diagrams(obj_index, feature_index))
-            self.new_anims.append(new_anim)
+                new_anim = internal.process(feature=feature, channels=channels,filter_indexes=is_impulsive, warp_interpolation=Main.WARP_INTERPOLATION, spot_for_dtw_constraint=Main.SPOT_FOR_DTW_CONSTRAINTS, use_semantic=Main.USE_SEMANTIC, main_channel_index=0)
+                self.figures_and_titles[obj_index].append(self.draw_diagrams(obj_index, feature_index))
+            reduced_anim = Animation([curve for curve in new_anim if any([b_utils.is_match(curve.fullname, channel) for channels in channels_list for channel in channels])])
+            self.new_anims.append(reduced_anim)
         #self.new_anims = [internal.process(feature=feature, channels=channels,filter_indexes=is_impulsive, warp_interpolation=Main.WARP_INTERPOLATION, spot_for_dtw_constraint=Main.SPOT_FOR_DTW_CONSTRAINTS) for internal, feature, is_impulsive, channels in zipped]
         self.is_processed = True
         return self.new_anims
@@ -152,25 +156,27 @@ class Main(AbstractIO):
         warp = internal.warp
         dtw = internal.dtw
         feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
-        original_curve = self.blender_scene.get_animations()[object_index].find(channel) if not self.no_blender else Curve()
-        obj_name = self.connexions_of_interest[0]["object name"]
-        edited_curve =  b_utils.get_animation(f"{obj_name}{self.blender_scene.edited_suffix}").find(channel)  if not self.no_blender else Curve() # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
-        
-        original_curve = Animation([self.blender_scene.get_animations()[object_index].find(channel) for channel in channels]) if not self.no_blender else Animation()
-        edited_curve =  Animation([b_utils.get_animation(f"{obj_name}{self.blender_scene.edited_suffix}").find(channel) for channel in channels])  if not self.no_blender else Animation()
+        #original_curve = self.blender_scene.get_animations()[object_index].find(channel) if not self.no_blender else Curve()
+        obj_name = self.blender_scene.object_names[object_index]
+        #edited_curve =  b_utils.get_animation(f"{obj_name}{self.blender_scene.edited_suffix}").find(channel)  if not self.no_blender else Curve() # because self.new_anims[animation_index].find(channel) does not retrieve the fcurve
+        full_original_anim = self.blender_scene.get_animations()[object_index] if not self.no_blender else Animation()
+        full_edited_anim = b_utils.get_animation(f"{obj_name}{self.blender_scene.edited_suffix}") if not self.no_blender else Animation()
+        original_curve = Animation([c for c in full_original_anim if any([b_utils.is_match(c.fullname, channel) for channel in channels])])
+        edited_curve =  Animation([c for c in full_edited_anim if any([b_utils.is_match(c.fullname, channel) for channel in channels])])
+        ref_color, target_color = Color.colors[3], Color.colors[4]
 
         Color.reset()
         
         ## Video feature : original VS retake
         fig0 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: initial', f'Video feature curve: retook'], vertical_spacing=0.1)
-        feature_curve1.display(handles=False, style="lines", fig=fig0, col=1, row=1)
-        feature_curve2.display(handles=False, style="lines", fig=fig0, col=1, row=2)
+        feature_curve1.display(handles=False, style="lines", fig=fig0, col=1, row=1, color=ref_color)
+        feature_curve2.display(handles=False, style="lines", fig=fig0, col=1, row=2, color=target_color)
         fig0.update_layout(xaxis2_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis2_title="Magnitude (~pixels)", showlegend=False)
         title0 = f'Comparison of the initial and retook video feature curve "{feature}"'
 
         ## Connexion : video feature curve VS animation curve
-        fig7 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: {feature}', f'Animation curve: {obj_name}'], vertical_spacing=0.1)
-        feature_curve1.display(handles=False, style="lines", fig=fig7, col=1, row=1)
+        fig7 = make_subplots(rows=2, shared_xaxes=True, shared_yaxes=True, subplot_titles=[f'Video feature curve: {feature}', f'Animation curve: {obj_name}'], vertical_spacing=0.1)
+        feature_curve1.display(handles=False, style="lines", fig=fig7, col=1, row=1, color=ref_color)
         original_curve.display(fig=fig7, col=1, row=2)
         original_curve.sample().display(fig=fig7, row=2, col=1, handles=False, style='lines')
         fig7.update_layout(xaxis2_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis2_title="Magnitude (Blender unit)", showlegend=False)
@@ -190,15 +196,15 @@ class Main(AbstractIO):
         title2 = "Time bijection"
 
         ## DTW pairs
-        fig3 = vis.add_curve(y=dtw.values2+3, x=dtw.times2, name='retook')
-        vis.add_curve(y=dtw.values1, x=dtw.times1, name='initial', fig=fig3)
+        fig3 = vis.add_curve(y=dtw.values2+3, x=dtw.times2, name='retook', color=target_color)
+        vis.add_curve(y=dtw.values1, x=dtw.times1, name='initial', fig=fig3, color=ref_color)
         vis.add_pairings(y1=dtw.values1, y2=dtw.values2+3, pairs=dtw.pairings, x1=dtw.times1, x2=dtw.times2, fig=fig3)
         fig3.update_layout(xaxis_title="Time (frames)", yaxis_title="Magnitude (~pixels)")
         title3 = f'Matches between initial and retook feature curve "{feature}"'
 
-        ## DTW local constraints along the path
-        fig4 = vis.add_curve(y=internal.dtw_constraints, name="local - chosen")
-        vis.add_curve(y=dtw.global_constraints(), name="global", fig=fig4)
+        ## DTW constraints along the path
+        fig4 = vis.add_curve(y=internal.dtw_constraints, linewidth=3, color=Color.colors[6])
+        #vis.add_curve(y=dtw.global_constraints(), name="global", fig=fig4)
         fig4.update_layout(xaxis_title="DTW path (pairs over time)", yaxis_title="Avoided cost (~pixels)")
         title4 = "Constraint on DTW chosen path over time"
 
@@ -213,8 +219,8 @@ class Main(AbstractIO):
 
         ## Global visualisation
         fig6 = make_subplots(rows=2, cols=2, shared_xaxes="all", row_titles=["Video curves", "Animation curves"], column_titles=["Before", "After"], vertical_spacing=0.1, horizontal_spacing=0.1)
-        feature_curve1.display(handles=False, style="lines", row=1, col=1, fig=fig6)
-        feature_curve2.display(handles=False, style="lines", row=1, col=2, fig=fig6)
+        feature_curve1.display(handles=False, style="lines", row=1, col=1, fig=fig6, color=ref_color)
+        feature_curve2.display(handles=False, style="lines", row=1, col=2, fig=fig6, color=target_color)
         original_curve.display(fig=fig6, row=2, col=1)
         edited_curve.display(fig=fig6, row=2, col=2)
         original_curve.sample().display(fig=fig6,  row=2, col=1, handles=False, style='lines')
@@ -225,7 +231,7 @@ class Main(AbstractIO):
         figures:list[go.Figure] = [fig0, fig1, fig2, fig3, fig4, fig5, fig6, fig7]
         titles = [title0, title1, title2, title3, title4, title5, title6, title7]
 
-        other_figures, other_titles = internal.make_diagrams(number_issues=False, anim_style="lines+markers") # TODO should not be like this
+        other_figures, other_titles = internal.make_diagrams(number_issues=internal.issue_detected, anim_style="lines+markers") # TODO should not be like this
 
         return figures+other_figures, titles+other_titles
 
@@ -247,7 +253,7 @@ class Main(AbstractIO):
 
 
 
-def for_the_paper(main:Main, object_index=0, feature_index=0, save=True, show=False):
+def for_the_paper_workflow(main:Main, object_index=0, feature_index=0, save=True, show=False):
     ## What we need
     # S_in
     # S_out
@@ -260,23 +266,20 @@ def for_the_paper(main:Main, object_index=0, feature_index=0, save=True, show=Fa
     dtw = internal.dtw
     feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
     Color.reset()
-    '''
-    ## Video feature : original VS retake
-    fig0 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: initial', f'Video feature curve: retook'], vertical_spacing=0.1)
-    feature_curve1.display(handles=False, style="lines", fig=fig0, col=1, row=1)
-    feature_curve2.display(handles=False, style="lines", fig=fig0, col=1, row=2)
-    fig0.update_layout(xaxis2_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis2_title="Magnitude (~pixels)", showlegend=False)
-    title0 = f'Comparison of the initial and retook video feature curve "{feature}"'
+    inlier_color, outlier_color, path_color = Color.next(), Color.next(), Color.next()
+    ref_color, target_color = Color.next(), Color.next()
+    obj_name = main.connexions_of_interest[0]["object name"]
+    original_curve = Animation([main.blender_scene.get_animations()[object_index].find(channel) for channel in channels]) if not main.no_blender else Animation()
+    edited_curve =  Animation([b_utils.get_animation(f"{obj_name}{main.blender_scene.edited_suffix}").find(channel) for channel in channels])  if not main.no_blender else Animation()
+
 
     ## Video feature : original VS retake
     fig0 = make_subplots(rows=2, shared_xaxes=True, subplot_titles=[f'Video feature curve: initial', f'Video feature curve: retook'], vertical_spacing=0.1)
-    feature_curve1.display(handles=False, style="lines", fig=fig0, col=1, row=1)
-    feature_curve2.display(handles=False, style="lines", fig=fig0, col=1, row=2)
+    feature_curve1.display(handles=False, style="lines", fig=fig0, col=1, row=1, color=ref_color)
+    feature_curve2.display(handles=False, style="lines", fig=fig0, col=1, row=2, color=target_color)
     fig0.update_layout(xaxis2_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis2_title="Magnitude (~pixels)", showlegend=False)
     title0 = f'Comparison of the initial and retook video feature curve "{feature}"'
-    '''
-    inlier_color, outlier_color, path_color = Color.next(), Color.next(), Color.next()
-    ref_color, target_color = Color.next(), Color.next()
+    
     constraints = internal.dtw_constraints
     distances = dtw.alternate_path_differences()
     pairs = dtw.pairings
@@ -300,10 +303,81 @@ def for_the_paper(main:Main, object_index=0, feature_index=0, save=True, show=Fa
     )
     title = "Filtered correspondance"
 
+    directory = main.directory + '/out/'
+    if not os.path.exists(directory) : os.mkdir(directory)
+
+    figures = [fig, fig0]
+    titles = [title, title0]
+
+    for f, t in zip(figures, titles):
+        f.update_layout(title=t)
+        filetitle = t.replace('"','')
+        if save: f.write_html(f'{directory}/{filetitle}_{object_index}_{feature_index}.html')
+        if show: f.show()
+
+
+
+def for_the_paper_teaser_and_ball(main:Main, object_index=0, feature_index=0, save=True, show=False):
+    ## What we need
+    # Global with only altitude, and with also scaling
+    internal, channels, feature = main.internals[object_index], main.channels[object_index][feature_index], main.features[object_index][feature_index]
+    channel = channels[-1]
+    warp = internal.warp
+    dtw = internal.dtw
+    feature_curve1, feature_curve2 = internal.vanim1.find(feature), internal.vanim2.find(feature)
+    Color.reset()
+    inlier_color, outlier_color, path_color = Color.next(), Color.next(), Color.next()
+    ref_color, target_color = Color.colors[3], Color.colors[4]
+    obj_name = main.blender_scene.object_names[object_index]
+    original_curve = Animation([main.blender_scene.get_animations()[object_index].find(channel) for channel in channels]) if not main.no_blender else Animation()
+    edited_curve =  Animation([b_utils.get_animation(f"{obj_name}{main.blender_scene.edited_suffix}").find(channel) for channel in channels])  if not main.no_blender else Animation()
+
+    constraints = internal.dtw_constraints
+    distances = dtw.alternate_path_differences()
+    pairs = dtw.pairings
+    inliers = internal.kept_indexes
+    outliers = getattr(internal, "outliers", [])
+    vertical_offset = 10
+
+    x1, y1, x2, y2 = dtw.times1, dtw.values1, dtw.times2, dtw.values2+vertical_offset
+    all_pairings = pairs
+    refined_pairings = [e for i,e in enumerate(pairs) if i in inliers]
+
+    ## Global visualisation
+    fig6 = make_subplots(rows=2, cols=2, shared_xaxes="all", row_titles=["Video curves", "Animation curves"], column_titles=["Before", "After"], vertical_spacing=0.1, horizontal_spacing=0.1)
+    feature_curve1.display(handles=False, style="lines", row=1, col=1, fig=fig6, color=ref_color)
+    feature_curve2.display(handles=False, style="lines", row=1, col=2, fig=fig6, color=target_color)
+    original_curve.display(fig=fig6, row=2, col=1)
+    edited_curve.display(fig=fig6, row=2, col=2)
+    original_curve.sample().display(fig=fig6,  row=2, col=1, handles=False, style='lines')
+    edited_curve.sample().display(fig=fig6, row=2, col=2, handles=False, style='lines')
+    fig6.update_layout(xaxis3_title="Time (frames)", xaxis4_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis3_title="Magnitude (Blender units)", showlegend=False)
+    title6 = f'Global editing process using "{feature}" feature on "{channel}" channel' if len(channels)==1 else f'Global editing process using "{feature}" feature on {len(channels)} channels of {obj_name}'
+
+    ## Global visualisation - only transl Y
+    fig7 = make_subplots(rows=2, cols=2, shared_xaxes="all", row_titles=["Video curves", "Animation curves"], column_titles=["Before", "After"], vertical_spacing=0.1, horizontal_spacing=0.1)
+    feature_curve1.display(handles=False, style="lines", row=1, col=1, fig=fig7, color=ref_color)
+    feature_curve2.display(handles=False, style="lines", row=1, col=2, fig=fig7, color=target_color)
+    original_curve[0].display(fig=fig7, row=2, col=1)
+    edited_curve[0].display(fig=fig7, row=2, col=2)
+    original_curve[0].sample().display(fig=fig7,  row=2, col=1, handles=False, style='lines')
+    edited_curve[0].sample().display(fig=fig7, row=2, col=2, handles=False, style='lines')
+    fig7.update_layout(xaxis3_title="Time (frames)", xaxis4_title="Time (frames)", yaxis1_title="Magnitude (~pixels)", yaxis3_title="Magnitude (Blender units)", showlegend=False)
+    title7 = f'Global editing process using "{feature}" feature on "Translation Y" channel'
+
 
     directory = main.directory + '/out/'
     if not os.path.exists(directory) : os.mkdir(directory)
-    fig.update_layout(title=title)
-    filetitle = title.replace('"','')
-    if save: fig.write_html(f'{directory}/{filetitle}_{object_index}_{feature_index}.html')
-    if show: fig.show()
+
+    figures = [fig6, fig7]
+    titles = [title6, title7]
+
+    for f, t in zip(figures, titles):
+        f.update_layout(title=t)
+        filetitle = t.replace('"','')
+        if save: f.write_html(f'{directory}/{filetitle}_{object_index}_{feature_index}.html')
+        if show: f.show()
+
+
+def for_the_report(main:Main):
+    return

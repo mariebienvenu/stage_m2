@@ -142,17 +142,18 @@ print(f"Score: {score1} Score:{sum(costs)}")
 
 
 # Comparison between DTW and DSW
+color1, color2 = Color.next(), Color.next()
 
 co1 = np.vstack((t,x)).T
 co2 = np.vstack((t,y)).T
-curve1, curve2 = Curve(co1), Curve(co2)  
-dtw = DynamicTimeWarping(curve1, curve2)
+curve1, curve2 = Curve(co1, color=color1), Curve(co2, color=color2)
+dtw = DynamicTimeWarping(curve1, curve2, normalize=False)
 dtw_pairs = dtw.pairings
 
 fig6 = make_subplots(rows=1, cols=2, subplot_titles=[f"Space Warp: {score1}", f"Time Warp: {dtw.score}"])
 for col in [1,2]:
-    vis.add_curve(y=x, x=t, fig=fig6, style="lines", row=1, col=col)
-    vis.add_curve(y=y, x=t, fig=fig6, style="lines", row=1, col=col)
+    vis.add_curve(y=x, x=t, fig=fig6, style="lines", row=1, col=col, color=curve1.color)
+    vis.add_curve(y=y, x=t, fig=fig6, style="lines", row=1, col=col, color=curve2.color)
 vis.add_pairings(x1=t[x_index], y1=x_croissant, x2=t[y_index], y2=y_croissant, pairs=path1, fig=fig6, col=1, row=1)
 vis.add_pairings(x1=t, y1=x, x2=t, y2=y, pairs=dtw_pairs, fig=fig6, col=2, row=1)
 fig6.show()

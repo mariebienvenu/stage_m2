@@ -42,8 +42,8 @@ for directory in directories:
             ):
                 video_io.get_spatial_crop_input_from_user()
 
-            if '411' in video_name or '412' in video_name:
-                video_io.get_spatial_crop_input_from_user()
+            '''if '404' in video_name or '405' in video_name:
+                video_io.get_spatial_crop_input_from_user()'''
             
             video_io.process()
             if video_io.time_crop[0]==0 and video_io.time_crop[1]==video_io.oflow_len:
@@ -52,8 +52,8 @@ for directory in directories:
             video_io.draw_diagrams(time_in_seconds=time_in_seconds)
             video_io.to_animation()
 
-            if '411' in video_name or '412' in video_name:
-                vid = video_io.record_video() # a bit long + requires loading the entire video in memory...
+            '''if '404' in video_name or '405' in video_name:
+                vid = video_io.record_video() # a bit long + requires loading the entire video in memory...'''
 
 tf = time()
 print(f'Computation took {int(tf-t0)} seconds.') # less than two minutes for 10 videos # way longer if longer videos or higher fps -> up to 10 minutes per video

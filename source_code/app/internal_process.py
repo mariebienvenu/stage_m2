@@ -31,7 +31,7 @@ class InternalProcess:
         self.verbose = verbose # TODO make use of this more
 
 
-    def process(self, feature:str, channels:list[str], only_temporal=True, detect_issue=True, blend_if_issue=10, filter_indexes=True, warp_interpolation="linear", normalize=True, spot_for_dtw_constraint=False, use_semantic=True):
+    def process(self, feature:str, channels:list[str], only_temporal=True, detect_issue=True, blend_if_issue=10, filter_indexes=True, warp_interpolation="linear", normalize=True, spot_for_dtw_constraint=False, use_semantic=True, main_channel_index=None):
         if not only_temporal: raise NotImplementedError
         if feature is None: return self.banim1
         self.select(feature)
@@ -50,7 +50,7 @@ class InternalProcess:
                     if self.verbose>0: print(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
                     raise RecursionError(f"Internal Process failed to solve outlier issues. \n\t Outliers:{self.outliers} (expected [])")
                 self.update_anim(channels=channels)
-        self.make_new_anim(channels, filter=filter_indexes, interpolation=warp_interpolation, use_semantic=use_semantic)
+        self.make_new_anim(channels, filter=filter_indexes, interpolation=warp_interpolation, use_semantic=use_semantic, main_channel_index=main_channel_index)
         return self.banim2
 
 
@@ -156,7 +156,7 @@ class InternalProcess:
         self.warp = W.make_warp(dimension=1, interpolation=interpolation, X_in=time_in[self.kept_indexes], X_out=time_out[self.kept_indexes])'''
 
     
-    def make_new_anim(self, channels:list[str], filter=True, interpolation="linear", use_semantic=True):
+    def make_new_anim(self, channels:list[str], filter=True, interpolation="linear", use_semantic=True, main_channel_index=None):
         time_in, time_out = self.dtw.bijection
         self.kept_indexes = self.dtw.filtered_indexes() if filter else list(range(len(self.dtw.pairings)))
         if len(self.kept_indexes)<=2: 
@@ -164,7 +164,9 @@ class InternalProcess:
             self.kept_indexes = list(range(len(self.dtw.pairings)))
         self.matches = np.array([time_in[self.kept_indexes],time_out[self.kept_indexes]]).T
 
-        self.semantic_retiming = SemanticRetiming(getattr(self, "new_banim1", self.banim1), channels, self.matches)
+        main_channel = channels[main_channel_index] if main_channel_index is not None else None
+        anim = getattr(self, "new_banim1", getattr(self, "banim2", self.banim1))
+        self.semantic_retiming = SemanticRetiming(anim, channels, self.matches, main_channel=main_channel)
         self.banim2 = self.semantic_retiming.process(interpolation=interpolation, regularization_weight=use_semantic)
         self.warp = self.semantic_retiming.retiming_warp
         return self.banim2

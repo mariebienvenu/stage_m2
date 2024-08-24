@@ -9,6 +9,7 @@ from app.animation import Animation
 from app.curve import Attributes_Name, Curve
 import app.warping as W
 import app.visualisation as vis
+import app.blender_utils as b_utils
 
 
 class TangentSemantic(Enum):
@@ -29,12 +30,12 @@ class SemanticRetiming:
 
 
     def reset_weights():
-        SemanticRetiming.ALIGNMENT_WEIGHT = 0.5
-        SemanticRetiming.BROKEN_WEIGHT = 0.3
-        SemanticRetiming.NEIGHBOURS_WEIGHT = 1
+        SemanticRetiming.ALIGNMENT_WEIGHT = 1 #0.5
+        SemanticRetiming.BROKEN_WEIGHT = 0.2 # 0.3
+        SemanticRetiming.NEIGHBOURS_WEIGHT = 0.2 #1
 
 
-    def __init__(self, animation:Animation, channels:list[str], matches:np.ndarray, tangent_semantic=TangentSemantic.KEEP_ANGLE):
+    def __init__(self, animation:Animation, channels:list[str], matches:np.ndarray, tangent_semantic=TangentSemantic.KEEP_ANGLE, main_channel=None):
         """Matches should be ordered in time"""
         if tangent_semantic.value != TangentSemantic.KEEP_ANGLE.value: raise NotImplementedError(f"Tangent semantic not implemented yet. Expected TangentSemantic.KEEP_ANGLE, got {tangent_semantic}")
         self.matches = matches # array of size (n,2) with the match "times"
@@ -43,11 +44,14 @@ class SemanticRetiming:
         self.match_count = matches.shape[0]
         self.tangent_semantic = tangent_semantic # not used currently
         self.is_processed = False
+        if main_channel is not None:
+            assert main_channel in channels, f"Main channel is not even in channels : expected {main_channel} in {channels}"
+            self.main_channel = main_channel
 
 
-    def process(self, force=False, interpolation="linear", regularization_weight=1):
+    def process(self, force=False, interpolation="linear", regularization_weight=1, snap_attraction=50):
         if self.is_processed and not force: return self.new_animation
-        self.snap()
+        self.snap(attraction=snap_attraction)
         self.make_retiming_warp(interpolation=interpolation)
         regul, broken, aligned, neighbour = regularization_weight, SemanticRetiming.BROKEN_WEIGHT, SemanticRetiming.ALIGNMENT_WEIGHT, SemanticRetiming.NEIGHBOURS_WEIGHT
         self.optimize_tangent_scaling(broken_weight=regul*broken, aligned_weight=regul*aligned, neighbours_weight=regul*neighbour)
@@ -57,7 +61,8 @@ class SemanticRetiming:
 
     
     def snap(self, to_integer=True, attraction=50):
-        all_times = np.concatenate([curve.get_times() for curve in self.animation if curve.fullname in self.channels]).astype(int)
+        all_times = np.concatenate([curve.get_times() for curve in self.animation if any([b_utils.is_match(curve.fullname, channel) for channel in self.channels])]).astype(int)
+        if hasattr(self, "main_channel"): all_times = all_times = self.animation.find(self.main_channel).get_times().astype(int)
         times = np.unique(all_times)
         histogram = np.bincount(all_times)
         occurences = np.array([histogram[t] for t in times]) # if channels is of length 1, this should be all 1
@@ -74,6 +79,7 @@ class SemanticRetiming:
             debug = 0
             raise AssertionError("Two matches converged to the same keyframe, this is not handled. Will crash.")
         if to_integer: self.snapped_matches = self.snapped_matches.astype(int)
+        print(f"Snapped times : {self.snapped_matches}")
 
     
     @property
@@ -168,7 +174,7 @@ class SemanticRetiming:
     def make_new_animation(self):
         self.new_animation = Animation()
         for curve in self.animation:
-            if curve.fullname not in self.channels:
+            if not any([b_utils.is_match(curve.fullname, channel) for channel in self.channels]):
                 self.new_animation.append(curve)
             else:
                 new_curve = deepcopy(curve)
@@ -196,10 +202,12 @@ class SemanticRetiming:
 
     def diagram(self):
 
-        fig = vis.add_curve(y=self.basic_left, x=self.snapped_times_reference, name="Left basic warp")
-        vis.add_curve(y=self.basic_right, x=self.snapped_times_reference, name="Right basic warp", fig=fig)
+        n = 2*self.snapped_times_reference.size
+        x = [self.snapped_times_reference[e//2] for e in range(n)]
+        y = [self.basic_left[i//2] if i%2==0 else self.basic_right[i//2] for i in range(n)]
+        fig = vis.add_curve(y=y, x=x, name="Initial, piecewise constant scaling", lineshape='hv')
 
-        vis.add_curve(y=self.new_left, x=self.snapped_times_reference, name="Left new warp", fig=fig)
-        vis.add_curve(y=self.new_right, x=self.snapped_times_reference, name="Right new warp", fig=fig)
+        y2 = [self.new_left[i//2] if i%2==0 else self.new_right[i//2] for i in range(n)]
+        vis.add_curve(y=y2, x=x, name="New, piecewise linear scaling", lineshape='linear', fig=fig)
 
         return fig

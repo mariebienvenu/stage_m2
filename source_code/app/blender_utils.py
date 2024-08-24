@@ -151,8 +151,8 @@ def set_animation(obj_name:str, animation:Animation):
         for anim_curve in animation:
             if is_match(anim_curve.fullname, fullname): target_curve=anim_curve
         if target_curve is None:
-            debug = 0
-            raise NotImplementedError(f"euh pas trouvé {fullname} dans {animation}")
+            print(f"Curve '{fullname}' of '{obj_name}' will not be edited.")
+            continue
 
         target_size = len(target_curve)
         current_size = len(list(curve.keyframe_points))

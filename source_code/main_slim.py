@@ -37,28 +37,23 @@ Color.next()
 BLENDER = True
 #main.Main.SPOT_FOR_DTW_CONSTRAINTS = 1 #bugs
 #internpro.InternalProcess.CONSTRAINT_THRESHOLD = 2.2 # walk_cycle
-main.Main.USE_SEMANTIC = False #bouncing ball test
+main.Main.USE_SEMANTIC = 5 #5 #bouncing ball test
 
-directory = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes/bouncing_ball_samenumber/"
-main_obj = main.Main(directory, verbose=10, no_blender=(not BLENDER))
+PATH = "C:/Users/Marie Bienvenu/stage_m2/complete_scenes"
+
+directory = "/bouncing_ball_plus1_pretty/"
+main_obj = main.Main(PATH+directory, verbose=10, no_blender=(not BLENDER))
 
 main_obj.process(force=True)
 if BLENDER:
     main_obj.to_blender()
-    main_obj.blender_scene.from_software(in_place=False) #to recover new fcurve pointer
-
-#main_obj.internals[0].vanim1.display(handles=False, style="lines+markers", doShow=True)
-#main_obj.internals[0].vanim2.display(handles=False, style="lines+markers", doShow=True)
-
+    main_obj.blender_scene.from_software(in_place=True) #to recover new fcurve pointer
 main_obj.display(show=False)
 
-print("--------- END -----------")
-'''
-object_index = 0
-figures, titles = main_obj.internals[object_index].make_diagrams(anim_style="lines+markers", number_issues=False)
-for fig, title in zip(figures, titles):
-    fig.update_layout(title=title)
-    fig.show()
-'''
+if directory == "/bouncing_ball_samenumber/":
+    main.for_the_paper_workflow(main_obj)
 
-main.for_the_paper(main_obj)
+if directory == "/bouncing_ball_plus1_pretty/":
+    main.for_the_paper_teaser_and_ball(main_obj)
+
+print("--------- END -----------")

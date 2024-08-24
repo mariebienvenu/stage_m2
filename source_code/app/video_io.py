@@ -99,7 +99,15 @@ class VideoIO(AbstractIO):
     @property
     def oflow_frame_times(self):
         return self.video.frame_times[:-1]
-        
+    
+
+    def get_oflow(self, frame_index:int, crop_index=0): #  TODO test in dedicated file + put it into self.process
+        crop = self.spatial_crops[crop_index]
+        frame_before = self.video.get_frame(frame_index, image_processing=self.image_processing_method, crop=crop)
+        frame_after = self.video.get_frame(frame_index+1, image_processing=self.image_processing_method, crop=crop)
+        flow = OpticalFlow.compute_oflow(frame_before, frame_after, use_degrees=True)
+        return flow        
+
 
     def process(self, force=False):
         if self.is_processed and not force:
